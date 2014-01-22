@@ -1,5 +1,16 @@
 *.py[cod]
 
+# Optimizers
+optimizers/smac_2_06_01-dev/*
+optimizers/spearmint_april2013_mod/*
+optimizers/hyperopt_august2013_mod/*
+
+# Runsolver
+runsolver/src/*
+
+# benchmark runs
+benchmarks/*/*_*/*
+
 # C extensions
 *.so
 
