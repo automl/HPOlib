@@ -92,8 +92,68 @@ def use_option_parser():
     parser.add_argument("--restore", default=None, dest="restore",
                       help=restore_help_string)
 
-    args = parser.parse_args()
-    return args
+    args, unknown = parser.parse_known_args()
+    return args, unknown
+
+
+def parse_config_values_from_unknown_arguments(unknown_arguments, config):
+    """Parse values not recognized by use_option_parser for config values.
+
+    Args:
+       unknown_arguments: A list of arguments which is returned by
+           use_option_parser. It should only contain keys which are allowed
+           in config files.
+        config: A ConfigParser.SafeConfigParser object which contains all keys
+           should be parsed from the unknown_arguments list.
+    Returns:
+        an argparse.Namespace object containing the parsed values.
+    Raises:
+        an error if an argument from unknown_arguments is not a key in config
+    """
+    further_possible_command_line_arguments = []
+    for section in config.sections():
+        for key in config.options(section):
+            further_possible_command_line_arguments.append("--" + section +
+                                                           ":" + key)
+    for key in config.defaults():
+        further_possible_command_line_arguments.append("--DEFAULT:" + key)
+
+    parser = ArgumentParser()
+    for argument in further_possible_command_line_arguments:
+        parser.add_argument(argument)
+
+    return parser.parse_args(unknown_arguments)
+
+
+def override_config_with_cli_arguments(config, config_overrides):
+    arg_dict = vars(config_overrides)
+    for key in arg_dict:
+        if arg_dict[key] is not None:
+            split_key = key.split(":")
+            if len(split_key) != 2:
+                raise ValueError("Command line argument must be in the style "
+                                 "of --SECTION:key. Please check that there "
+                                 "is exactly one colon. You provided: %s" %
+                                 key)
+            config.set(split_key[0], split_key[1], arg_dict[key])
+
+    return config
+
+
+def save_config_to_file(file, config):
+    for section in config.sections():
+        file.write("[DEFAULT]\n")
+        for key in config.defaults():
+            if config.get(section, key) is None or \
+              config.get(section, key) != "":
+                file.write(key + " = " + config.get("DEFAULT", key) + "\n")
+
+        file.write("[" + section + "]\n")
+        for key in config.options(section):
+            if config.get(section, key) is None or \
+              config.get(section, key) != "":
+                file.write(key + " = " + config.get(section, key) + "\n")
+
 
 
 def main():
@@ -101,11 +161,17 @@ def main():
     comments inside this function and the general HPOlib documentation."""
     experiment_dir = os.getcwd()
     check_before_start._check_zeroth(experiment_dir)
-    args = use_option_parser()
+    args, unknown = use_option_parser()
     optimizer = args.optimizer
 
     config_file = os.path.join(experiment_dir, "config.cfg")
     config = parse_config(config_file, allow_no_value=True, optimizer_module=optimizer)
+    # Override config values with command line values
+    config_overrides = parse_config_values_from_unknown_arguments(unknown,
+                                                                  config)
+    config = override_config_with_cli_arguments(config, config_overrides)
+    # Saving the config file is down further at the bottom, as soon as we get
+    # hold of the new optimizer directory
 
     # _check_runsolver, _check_modules()
     check_before_start._check_first(experiment_dir)
@@ -128,6 +194,10 @@ def main():
                                                           experiment_dir=
                                                           experiment_dir)
     cmd += optimizer_call
+
+    with open(os.path.join(optimizer_dir, "config.cfg"), "w") as f:
+        config.set("DEFAULT", "is_not_original_config_file", "True")
+        save_config_to_file(f, config)
 
     # _check_function
     check_before_start._check_second(experiment_dir, optimizer_dir)

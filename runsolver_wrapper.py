@@ -25,7 +25,6 @@ import sys
 import time
 import subprocess
 
-from config_parser.parse import parse_config
 import Experiment
 import wrapping_util
 
@@ -107,18 +106,6 @@ def read_run_instance_output(run_instance_output):
     return result_array, result_string
 
 
-def get_config():
-    cfg_filename = "config.cfg"
-    if not os.path.isfile(cfg_filename):
-        cfg_filename = "../config.cfg"
-        if not os.path.isfile(cfg_filename):
-            raise Exception('Could not find config.cfg in ./ or .// from %s\n'
-                            % os.getcwd())
-
-    cfg = parse_config(cfg_filename, allow_no_value=True)
-    return cfg, cfg_filename
-
-
 def main():
     # Parse options and arguments
     usage = "This script pickles the params and runs the runsolver with " +\
@@ -145,7 +132,8 @@ def main():
         del experiment
 
     # Again we need to find the config.cfg
-    cfg, cfg_filename = get_config()
+    cfg = cfg = wrapping_util.load_experiment_config_file()
+    cfg_filename = "config.cfg"
 
     # Ignore smac cutofftime
     time_limit = cfg.getint('DEFAULT', 'runsolver_time_limit')

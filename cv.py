@@ -28,10 +28,9 @@ from importlib import import_module
 
 import numpy as np
 
-from config_parser.parse import parse_config
 from Experiment import Experiment
-from run_instance import run_instance
 from wrapping_util import format_traceback
+from wrapping_util import load_experiment_config_file
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __license__ = "3-clause BSD License"
@@ -48,14 +47,7 @@ def doCV(params, folds=10):
     print "Starting Cross validation"
     sys.stdout.flush()
     optimizer = os.getcwd().split("/")[-1].split("_")[0]
-
-    # Load the config file, this holds information about data, black box fn etc.
-    try:
-        cfg_filename = "config.cfg"
-        cfg = parse_config(cfg_filename, allow_no_value=True)
-    except:
-        cfg_filename = "../config.cfg"
-        cfg = parse_config(cfg_filename, allow_no_value=True)
+    cfg = load_experiment_config_file()
 
     # Now evaluate $fold times
     if folds < 1: return np.NaN
@@ -202,13 +194,8 @@ def main(job_id, params):
     experiment.start_cv(cv_starttime)
     del experiment
 
-    # Load the config file, this holds information about data, black box fn etc.
-    try:
-        cfg_filename = "config.cfg"
-        cfg = parse_config(cfg_filename, allow_no_value=True)
-    except:
-        cfg_filename = "../config.cfg"
-        cfg = parse_config(cfg_filename, allow_no_value=True)
+    cfg_filename = "config.cfg"
+    cfg = load_experiment_config_file()
 
     # Load number of folds
     folds = cfg.getint('DEFAULT', 'numberCV')
