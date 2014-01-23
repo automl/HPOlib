@@ -86,8 +86,8 @@ def main(config, options, experiment_dir, **kwargs):
         version = SYSTEM_WIDE
     except ImportError:
         cmd += "export PYTHONPATH=$PYTHONPATH:" + os.path.dirname(os.path.abspath(__file__)) + \
-            "/optimizers/hyperopt_august2013_mod/hyperopt"
-        import optimizers.spearmint_april2013_mod.hyperopt as hyperopt
+            "/optimizers/hyperopt_august2013_mod\n"
+        import optimizers.hyperopt_august2013_mod.hyperopt as hyperopt
         version = AUGUST_2013_MOD
 
     path_to_optimizer = os.path.abspath(os.path.dirname(hyperopt.__file__))
