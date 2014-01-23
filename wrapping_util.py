@@ -19,6 +19,10 @@
 import datetime
 import math
 import traceback
+import os
+import sys
+
+from config_parser.parse import parse_config
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -70,4 +74,20 @@ def format_traceback(exc_info):
     # with sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]
 
     return "\n" + traceback.format_exc() + "\n\n" + traceback_template % traceback_details + "\n\n"
+
+
+def load_experiment_config_file():
+    # Load the config file, this holds information about data, black box fn etc.
+    try:
+        cfg_filename = "config.cfg"
+        cfg = parse_config(cfg_filename, allow_no_value=True)
+        if not cfg.has_option("DEFAULT", "is_not_original_config_file"):
+            print "Config file in directory %s seems to be an original config "\
+                "which was not created by wrapping.py. Please contact the " \
+                "HPOlib maintainer to solve this issue."
+            sys.exit(1)
+        return cfg
+    except IOError as e:
+        print "Could not open config file in directory %s" % os.getcwd()
+        sys.exit(1)
 

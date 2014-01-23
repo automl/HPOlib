@@ -29,7 +29,8 @@ import check_before_start
 from config_parser.parse import parse_config
 import Experiment
 import numpy as np
-from optparse import OptionParser
+import argparse
+from argparse import ArgumentParser
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -64,42 +65,52 @@ def calculate_optimizer_time(trials):
     optimizer_time.append(trials.endtime[time_idx] - trials.cv_endtime[-1])
     trials.optimizer_time = optimizer_time
     
-    return np.nansum(optimizer_time)    
+    return np.nansum(optimizer_time)
+
+
+def use_option_parser():
+    """Parse all options which can be handled by the wrapping script.
+    Unknown arguments are ignored and returned as a list. It is useful to
+    check this list in your program to handle typos etc.
+
+    Returns:
+        a tuple. The first element is an argparse.Namespace object,
+        the second a list with all unknown arguments.
+    """
+    parser = ArgumentParser(description="Perform an experiment with the "
+                                        "HPOlib")
+    parser.add_argument("-o", "--optimizer", action="store", type=str,
+                        help="Specify the optimizer name.", required=True)
+    parser.add_argument("-p", "--print", action="store_true", dest="printcmd",
+                      default=False,
+                      help="If set print the command instead of executing it")
+    parser.add_argument("-s", "--seed", dest="seed", default=1, type=int,
+                      help="Set the seed of the optimizer")
+    parser.add_argument("-t", "--title", dest="title", default=None,
+                      help="A title for the experiment")
+    restore_help_string = "Restore the state from a given directory"
+    parser.add_argument("--restore", default=None, dest="restore",
+                      help=restore_help_string)
+
+    args = parser.parse_args()
+    return args
 
 
 def main():
-    # Parse options and arguments
-    parser = OptionParser()
-    parser.set_usage("wrapping.py <optimizer> [-s seed] [-t title]" +
-                     "[--restore=/directory/]")
-    parser.add_option("-p", "--print", action="store_true", dest="printcmd",
-                      default=False,
-                      help="If set print the command instead of executing it")
-    parser.add_option("-s", "--seed", dest="seed", default=1, type=int,
-                      help="Set the seed of the optimizer")
-    parser.add_option("-t", "--title", dest="title", default=None,
-                      help="A title for the experiment")
-    restore_help_string = "Restore the state from a given directory"
-    parser.add_option("--restore", default=None, dest="restore",
-                      help=restore_help_string)
-
-    (options, args) = parser.parse_args()
-
-    # find out which optimizer we are supposed to use
-    if len(args) < 1:
-        parser.print_help(file=sys.stderr)
-        sys.exit(1)
-
-    optimizer = args[0]
-
+    """Start an optimization of the HPOlib. For documentation see the
+    comments inside this function and the general HPOlib documentation."""
     experiment_dir = os.getcwd()
+    check_before_start._check_zeroth(experiment_dir)
+    args = use_option_parser()
+    optimizer = args.optimizer
 
-    # _check_runsolver, _check_modules(), _check_config(experiment_dir)
+    config_file = os.path.join(experiment_dir, "config.cfg")
+    config = parse_config(config_file, allow_no_value=True, optimizer_module=optimizer)
+
+    # _check_runsolver, _check_modules()
     check_before_start._check_first(experiment_dir)
 
     # build call
-    config_file = os.path.join(experiment_dir, "config.cfg")
-    config = parse_config(config_file, allow_no_value=True, optimizer_module=optimizer)
     wrapping_dir = os.path.dirname(os.path.realpath(__file__))
     cmd = "export PYTHONPATH=$PYTHONPATH:" + wrapping_dir + "\n"
 
@@ -113,7 +124,7 @@ def main():
         print traceback.format_exc()
         sys.exit(1)
     optimizer_call, optimizer_dir = optimizer_module.main(config=config,
-                                                          options=options,
+                                                          options=args,
                                                           experiment_dir=
                                                           experiment_dir)
     cmd += optimizer_call
@@ -122,7 +133,7 @@ def main():
     check_before_start._check_second(experiment_dir, optimizer_dir)
 
     # initialize/reload pickle file
-    if options.restore:
+    if args.restore:
         try:
             os.remove(os.path.join(optimizer_dir, optimizer + ".pkl.lock"))
         except OSError:
@@ -131,10 +142,10 @@ def main():
     trials = Experiment.Experiment(optimizer_dir, optimizer, folds=folds,
                                    max_wallclock_time=config.get('DEFAULT',
                                                                  'cpu_limit'),
-                                   title=options.title)
+                                   title=args.title)
     trials.optimizer = optimizer
 
-    if options.restore:
+    if args.restore:
         # Old versions did store NaNs instead of the worst possible result for
         # crashed runs in the instance_results. In order to be able to load
         # these files, these NaNs are replaced
@@ -162,7 +173,7 @@ def main():
                                                      optimizer_dir=optimizer_dir,
                                                      cmd=cmd)
         except:
-            print "Could not restore runs for %s" % options.restore
+            print "Could not restore runs for %s" % args.restore
             import traceback
             print traceback.format_exc()
             sys.exit(1)
@@ -184,7 +195,7 @@ def main():
     sys.stdout.flush()
 
     # Run call
-    if options.printcmd:
+    if args.printcmd:
         print cmd
         return 0
     else:

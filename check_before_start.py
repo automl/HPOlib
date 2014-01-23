@@ -55,7 +55,7 @@ def _check_modules():
                 % scipy.__version__
     except:
         raise ImportError("Scipy cannot be imported. Are you sure that it's installed?")
-    import bson
+    #import bson
     import networkx
     import google.protobuf
 
@@ -65,7 +65,7 @@ def _check_modules():
         print "Theano not found"
 
     if 'cuda' not in os.environ['PATH']:
-        print "CUDA not in $PATH"
+        print "\tCUDA not in $PATH"
     # if 'cuda' not in os.environ['LD_LIBRARY_PATH']:
     #     print "CUDA not in $LD_LIBRARY_PATH"
 
@@ -117,12 +117,15 @@ def _check_function(experiment_dir, optimizer_dir):
     del fn
 
 
-def _check_first(experiment_dir):
-    """ Do some checks before optimizer is loaded """
-    main()
+def _check_zeroth(experiment_dir):
     print "\tconfig.cfg..",
     _check_config(experiment_dir)
     print "..passed"
+
+
+def _check_first(experiment_dir):
+    """ Do some checks before optimizer is loaded """
+    main()
 
 
 def _check_second(experiment_dir, optimizer_dir):
