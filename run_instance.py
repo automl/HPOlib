@@ -179,11 +179,13 @@ def main():
     fn_name, ext = os.path.splitext(os.path.basename(fn_path))
     try:
         fn = imp.load_source(fn_name, fn_path)
-    except (ImportError, IOError):
+    except (ImportError, IOError) as e:
+        print "Raised", e, "trying to recover..."
         try:
+            print os.path.exists(fn_path_parent)
             fn = imp.load_source(fn_name, fn_path_parent)
         except (ImportError, IOError):
-            print os.path.join(fn_path, "..")
+            print os.path.join(fn_path_parent)
             print(("Could not find\n%s\n\tin\n%s\n\tor its parent directory " +
                    "relative to\n%s")
                   % (fn_name, fn_path, os.getcwd()))
