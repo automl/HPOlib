@@ -29,7 +29,8 @@ def parse_config(config_fn, allow_no_value=True, optimizer_module=""):
     # Overwrites with default values from generalDefault.cfg
     # Loads optimizer specific parser, called 'optimizer_module'_parser.py, which can read its own default config
     if not os.path.isfile(config_fn):
-        raise Exception('%s is not a valid file\n' % config_fn)
+        raise Exception('%s is not a valid file\n' % os.path.join(
+                        os.getcwd(), config_fn))
 
     config = ConfigParser.SafeConfigParser(allow_no_value=allow_no_value)
     config.read(config_fn)
