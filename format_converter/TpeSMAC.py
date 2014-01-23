@@ -57,7 +57,7 @@ class Cond(object):
 EQ = partial(Cond, op='=')
 
 
-def expr_to_config(expr, conditions, hps):z
+def expr_to_config(expr, conditions, hps):
     if conditions is None:
         conditions = ()
     assert isinstance(expr, hyperopt.pyll.base.Apply)
