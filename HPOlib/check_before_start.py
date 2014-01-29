@@ -36,7 +36,8 @@ def _check_runsolver():
     if stdoutdata is not None and "runsolver" in stdoutdata:
         pass
     else:
-        raise Exception("Runsolver cannot not be found. Are you sure that it's installed?")
+        raise Exception("Runsolver cannot not be found. Are you sure that it's installed?\n"
+                        "Your $PATH is: " + os.environ['PATH'])
 
 
 def _check_modules():

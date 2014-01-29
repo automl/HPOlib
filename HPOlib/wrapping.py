@@ -172,12 +172,15 @@ def main():
     config = override_config_with_cli_arguments(config, config_overrides)
     # Saving the config file is down further at the bottom, as soon as we get
     # hold of the new optimizer directory
+    wrapping_dir = os.path.dirname(os.path.realpath(__file__))
+
+    # Try adding runsolver to path
+    os.putenv('PATH', os.environ['PATH'] + ":" + wrapping_dir + "/../runsolver/src/")
 
     # _check_runsolver, _check_modules()
     check_before_start._check_first(experiment_dir)
 
     # build call
-    wrapping_dir = os.path.dirname(os.path.realpath(__file__))
     cmd = "export PYTHONPATH=$PYTHONPATH:" + wrapping_dir + "\n"
 
     # Load optimizer
