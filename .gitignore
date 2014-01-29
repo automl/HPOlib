@@ -6,7 +6,7 @@ HPOlib/optimizers/spearmint_april2013_mod/*
 HPOlib/optimizers/hyperopt_august2013_mod/*
 
 # Runsolver
-HPOlib/runsolver/src/*
+runsolver/src/*
 
 # benchmark runs
 HPOlib/benchmarks/*/*_*/*
@@ -45,4 +45,9 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# pycharm
 .idea
+
+# Others
+*~

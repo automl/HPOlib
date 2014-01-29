@@ -18,19 +18,19 @@
 
 #!/usr/bin/env python
 
+from argparse import ArgumentParser
+from config_parser.parse import parse_config
 import imp
-import numpy as np
 import os
 import subprocess
 import sys
 import time
 
-import check_before_start
-from config_parser.parse import parse_config
-import Experiment
 import numpy as np
-import argparse
-from argparse import ArgumentParser
+
+import check_before_start
+import Experiment
+
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -82,15 +82,15 @@ def use_option_parser():
     parser.add_argument("-o", "--optimizer", action="store", type=str,
                         help="Specify the optimizer name.", required=True)
     parser.add_argument("-p", "--print", action="store_true", dest="printcmd",
-                      default=False,
-                      help="If set print the command instead of executing it")
+                        default=False,
+                        help="If set print the command instead of executing it")
     parser.add_argument("-s", "--seed", dest="seed", default=1, type=int,
-                      help="Set the seed of the optimizer")
+                        help="Set the seed of the optimizer")
     parser.add_argument("-t", "--title", dest="title", default=None,
-                      help="A title for the experiment")
+                        help="A title for the experiment")
     restore_help_string = "Restore the state from a given directory"
     parser.add_argument("--restore", default=None, dest="restore",
-                      help=restore_help_string)
+                        help=restore_help_string)
 
     args, unknown = parser.parse_known_args()
     return args, unknown
@@ -135,6 +135,11 @@ def override_config_with_cli_arguments(config, config_overrides):
                                  "of --SECTION:key. Please check that there "
                                  "is exactly one colon. You provided: %s" %
                                  key)
+            if split_key[0] == 'DEFAULT' and split_key[1] == "optimizer_version":
+                raise NotImplementedError("Overwriting the optimizer_version via a cli is a bad idea."
+                                          "Try to do something else!\n"
+                                          "You were trying to use %s instead of %s"
+                                          % (arg_dict[key], config.get("DEFAULT", "optimizer_version")))
             config.set(split_key[0], split_key[1], arg_dict[key])
 
     return config
@@ -145,15 +150,14 @@ def save_config_to_file(file, config):
         file.write("[DEFAULT]\n")
         for key in config.defaults():
             if config.get(section, key) is None or \
-              config.get(section, key) != "":
+               config.get(section, key) != "":
                 file.write(key + " = " + config.get("DEFAULT", key) + "\n")
 
         file.write("[" + section + "]\n")
         for key in config.options(section):
             if config.get(section, key) is None or \
-              config.get(section, key) != "":
+               config.get(section, key) != "":
                 file.write(key + " = " + config.get(section, key) + "\n")
-
 
 
 def main():
@@ -166,6 +170,14 @@ def main():
 
     config_file = os.path.join(experiment_dir, "config.cfg")
     config = parse_config(config_file, allow_no_value=True, optimizer_module=optimizer)
+
+    # Check whether we're calling a optimizer version, that links to another
+    # e.g. calling tpe, but running hyperopt_august2013_mod
+    if optimizer != config.get('DEFAULT', 'optimizer_version'):
+        print("[INFO] You called -o %s, but this is only a link to version %s" %
+              (optimizer, config.get('DEFAULT', 'optimizer_version')))
+        optimizer = config.get('DEFAULT', 'optimizer_version')
+
     # Override config values with command line values
     config_overrides = parse_config_values_from_unknown_arguments(unknown,
                                                                   config)
@@ -218,6 +230,7 @@ def main():
                                    title=args.title)
     trials.optimizer = optimizer
 
+    # TODO: We do not have any old runs anymore. DELETE this!
     if args.restore:
         # Old versions did store NaNs instead of the worst possible result for
         # crashed runs in the instance_results. In order to be able to load

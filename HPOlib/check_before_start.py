@@ -56,14 +56,20 @@ def _check_modules():
                 % scipy.__version__
     except:
         raise ImportError("Scipy cannot be imported. Are you sure that it's installed?")
-    #import bson
+
     import networkx
     import google.protobuf
 
     try:
         import theano
     except ImportError:
-        print "Theano not found"
+        print "Theano not found. You might need this to run some more complex benchmarks!"
+
+    try:
+        import pymongo
+        from bson.objectid import ObjectId
+    except ImportError:
+        raise ImportError("Pymongo cannot be imported. Are you sure it's installed?")
 
     if 'cuda' not in os.environ['PATH']:
         print "\tCUDA not in $PATH"

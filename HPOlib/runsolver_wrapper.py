@@ -32,8 +32,14 @@ __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 
-def load_experiment_file():
-    optimizer = os.getcwd().split("/")[-1].split("_")[0]
+# TODO: This should be in a util function sometime in the future
+#       Is duplicated in cv.py
+def get_optimizer():
+    return "_".join(os.getcwd().split("/")[-1].split("_")[0:-2])
+
+
+def load_experiment_file(seed):
+    optimizer = get_optimizer()
     experiment = Experiment.Experiment(".", optimizer)
     return experiment
 
@@ -121,13 +127,17 @@ def main():
     if len(sys.argv) < 7:
         sys.stdout.write(usage)
         exit(1)
-        
-    optimizer = os.getcwd().split("/")[-1].split("_")[0]
+
+    # Then get some information for run_instance
+    fold = int(sys.argv[1])
+    seed = int(sys.argv[5])
+
+    optimizer = get_optimizer()
     
     # This has to be done here for SMAC, since smac does not call cv.py
-    if optimizer == 'smac':
+    if 'smac' in optimizer:
         cv_starttime = time.time()
-        experiment = load_experiment_file()
+        experiment = load_experiment_file(seed)
         experiment.start_cv(cv_starttime)
         del experiment
 
@@ -139,10 +149,6 @@ def main():
     time_limit = cfg.getint('DEFAULT', 'runsolver_time_limit')
     memory_limit = cfg.getint('DEFAULT', 'memory_limit')
     cpu_limit = cfg.getint('DEFAULT', 'cpu_limit')
-
-    # Then get some information for run_instance
-    fold = int(sys.argv[1])
-    seed = int(sys.argv[5])
 
     # Now build param dict
     param_list = sys.argv[6:]
@@ -168,6 +174,7 @@ def main():
                      "run_instance.py") + \
         " --fold %d --config %s --seed %d --pkl %s" % \
         (fold, cfg_filename, seed, optimizer + ".pkl")
+
     # Do not write the actual task in quotes because runsolver will not work
     # then
     delay = 0
@@ -214,7 +221,7 @@ def main():
         result_float = float(result_array[6].strip(","))
         if not np.isfinite(result_float):
             replace_nan_in_last_trial()
-            experiment = load_experiment_file()
+            experiment = load_experiment_file(seed)
             last_experiment = experiment.instance_order[-1]
             assert last_experiment is not None
             experiment.instance_results[last_experiment[0]][last_experiment[1]]\
@@ -244,8 +251,8 @@ def main():
     #os.remove(run_instance_output)
     #os.remove(runsolver_output_file)
     #os.remove(params_filename)
-    if optimizer == 'smac':
-        experiment = load_experiment_file()
+    if 'smac' in optimizer:
+        experiment = load_experiment_file(seed)
         experiment.end_cv(time.time())
         del experiment
     return return_string

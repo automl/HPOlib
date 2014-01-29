@@ -37,8 +37,15 @@ __license__ = "3-clause BSD License"
 __contact__ = "automl.org"
 
 
+# TODO: This should be in a util function sometime in the future
+#       Is duplicated in runsolver_wrapper.py
+
+def get_optimizer():
+    return "_".join(os.getcwd().split("/")[-1].split("_")[0:-2])
+
+
 def loadExperimentFile():
-    optimizer = os.getcwd().split("/")[-1].split("_")[0]
+    optimizer = get_optimizer()
     experiment = Experiment(".", optimizer)
     return experiment
 
@@ -46,7 +53,7 @@ def loadExperimentFile():
 def doCV(params, folds=10):
     print "Starting Cross validation"
     sys.stdout.flush()
-    optimizer = os.getcwd().split("/")[-1].split("_")[0]
+    optimizer = get_optimizer()
     cfg = load_experiment_config_file()
 
     # Now evaluate $fold times
