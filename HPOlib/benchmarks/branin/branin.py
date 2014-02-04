@@ -19,6 +19,7 @@
 import sys
 from numpy import NaN, pi, cos, ndarray
 import benchmark_util
+import time
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -56,6 +57,9 @@ def main(params, **kwargs):
     return y
 
 if __name__ == "__main__":
+    starttime = time.time()
     args, params = benchmark_util.parse_cli()
     result = main(params, **args)
-    print "Result", result
+    duration = time.time() - starttime
+    print "Result for ParamILS: %s, %d, 1, %f, %d, %s" % \
+        ("SAT", abs(duration), result, -1, str(__file__))
