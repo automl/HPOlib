@@ -45,7 +45,8 @@ def add_default(config):
                    'testInstanceFile', 'p', 'rf_full_tree_bootstrap',
                    'rf_split_min', 'adaptiveCapping', 'maxIncumbentRuns',
                    'numIterations', 'runtimeLimit', 'deterministic',
-                   'retryTargetAlgorithmRunCount'):
+                   'retryTargetAlgorithmRunCount',
+                   'intensification_percentage'):
         if not config.has_option('SMAC', option):
             config.set('SMAC', option,
                        smac_config.get('SMAC', option))
