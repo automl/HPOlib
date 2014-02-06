@@ -87,6 +87,8 @@ def build_smac_call(config, options, optimizer_dir):
                     '--retryTargetAlgorithmRunCount',
                     config.get('SMAC', 'retryTargetAlgorithmRunCount'),
                     '--save-runs-every-iteration true',
+                    '--intensification-percentage',
+                    config.get('SMAC', 'intensification_percentage'),
                     '--rf-split-min', config.get('SMAC', 'rf_split_min')])
 
     if config.getboolean('SMAC', 'deterministic'):

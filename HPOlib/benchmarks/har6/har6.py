@@ -19,6 +19,8 @@
 from numpy import NaN, array, ndarray, exp
 
 import HPOlib.benchmark_util as benchmark_util
+import sys
+import time
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -86,6 +88,10 @@ def main(params, **kwargs):
 
 
 if __name__ == "__main__":
+    print sys.argv
+    starttime = time.time()
     args, params = benchmark_util.parse_cli()
     result = main(params, **args)
-    print "Result", result
+    duration = time.time() - starttime
+    print "Result for ParamILS: %s, %d, 1, %f, %d, %s" % \
+        ("SAT", abs(duration), result, -1, str(__file__))

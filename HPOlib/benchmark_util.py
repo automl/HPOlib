@@ -45,7 +45,8 @@ def parse_cli():
     cli_args = sys.argv
     found_params = False
     skip = True
-    for idx, arg in enumerate(cli_args):
+    iterator = enumerate(cli_args)
+    for idx, arg in iterator:
         if skip:
             skip = False
             continue
@@ -67,15 +68,12 @@ def parse_cli():
                              "--params argument. Please change the order.")
 
         elif arg[0] == "-" and arg[0:2] != "--" and found_params:
-            if cli_args[idx+1][0] == "-":
-                raise ValueError("Hyperparameter name is not allowed to have a "
-                                 "leading minus %s" % cli_args[idx + 1])
             parameters[cli_args[idx][1:]] = cli_args[idx+1]
 
         elif arg[0] == "-" and arg[0:2] != "--" and not found_params:
             raise ValueError("You either try to use arguments with only one lea"
                              "ding minus or try to specify a hyperparameter bef"
-                             "ore the --params argument.")
+                             "ore the --params argument. %s" % " ".join(cli_args))
 
         elif not found_params:
             raise ValueError("Illegal command line string, expected an argument"

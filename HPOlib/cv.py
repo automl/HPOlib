@@ -235,8 +235,8 @@ def read_params_from_command_line():
             key = key[1:]
 
         if value[0] != "'" or value[-1] != "'":
-            raise ValueError("Expected parameter value %d to be inside single"
-                             "quotation marks." % (idx*2 + 1))
+            raise ValueError("Expected parameter value %s to be inside single"
+                             "quotation marks." % value)
         else:
             value = value.strip("'")
         params[key] = value
