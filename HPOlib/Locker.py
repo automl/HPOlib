@@ -23,6 +23,7 @@ import os
 import sys
 import time
 
+
 def safe_delete(filename):
     cmd  = 'mv "%s" "%s.delete" && rm "%s.delete"' % (filename, filename, 
                                                       filename)

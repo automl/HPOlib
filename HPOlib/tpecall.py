@@ -23,7 +23,6 @@ from optparse import OptionParser
 from functools import partial
 from importlib import import_module
 import os
-import numpy as np
 
 import hyperopt
 

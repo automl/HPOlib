@@ -6,7 +6,6 @@ import re
 import sys
 
 from matplotlib.pyplot import tight_layout, figure, subplots_adjust, subplot, savefig, show
-from pylab import setp
 from matplotlib.gridspec import GridSpec
 
 import numpy as np

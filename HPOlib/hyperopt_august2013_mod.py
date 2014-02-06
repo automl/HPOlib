@@ -16,13 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#!/usr/bin/env python
-
 import cPickle
 import os
 import sys
 
-import wrapping_util
+import HPOlib.wrapping_util as wrapping_util
+
 
 
 version_info = ("# %76s #\n" % "https://github.com/hyperopt/hyperopt/tree/486aebec8a4170e4781d99bbd6cca09123b12717")
@@ -30,6 +29,7 @@ __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 optimizer_str = "hyperopt_august2013_mod"
+
 
 def build_tpe_call(config, options, optimizer_dir):
     #For TPE we have to cd to the exp_dir
@@ -86,9 +86,12 @@ def main(config, options, experiment_dir, **kwargs):
         import hyperopt
         version = SYSTEM_WIDE
     except ImportError:
-        cmd += "export PYTHONPATH=$PYTHONPATH:" + os.path.dirname(os.path.abspath(__file__)) + \
-            "/optimizers/hyperopt_august2013_mod\n"
-        import optimizers.hyperopt_august2013_mod.hyperopt as hyperopt
+        try:
+            cmd += "export PYTHONPATH=$PYTHONPATH:" + os.path.dirname(os.path.abspath(__file__)) + \
+                "/optimizers/hyperopt_august2013_mod\n"
+            import optimizers.hyperopt_august2013_mod.hyperopt as hyperopt
+        except ImportError, e:
+            import HPOlib.optimizers.hyperopt_august2013_mod.hyperopt as hyperopt
         version = AUGUST_2013_MOD
 
     path_to_optimizer = os.path.abspath(os.path.dirname(hyperopt.__file__))

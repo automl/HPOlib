@@ -24,7 +24,8 @@ import tempfile
 
 import numpy as np
 
-import Locker
+import HPOlib.Locker as Locker
+
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"

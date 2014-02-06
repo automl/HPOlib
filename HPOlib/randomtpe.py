@@ -21,8 +21,7 @@
 import cPickle
 import os
 
-from config_parser.parse import parse_config
-import wrapping_util
+import HPOlib.wrapping_util as wrapping_util
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"

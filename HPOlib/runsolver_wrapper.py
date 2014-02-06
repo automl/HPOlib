@@ -25,8 +25,8 @@ import subprocess
 import sys
 import time
 
-import Experiment
-import wrapping_util
+import HPOlib.Experiment as Experiment
+import HPOlib.wrapping_util as wrapping_util
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
