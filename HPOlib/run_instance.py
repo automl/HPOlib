@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#!/usr/bin/env python
 
 import cPickle
 import imp
@@ -29,8 +28,8 @@ import time
 import numpy as np
 
 from config_parser.parse import parse_config
-import Experiment
-import wrapping_util
+import HPOlib.Experiment as Experiment
+import HPOlib.wrapping_util as wrapping_util
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"

@@ -17,7 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from numpy import NaN, array, ndarray, exp
-import benchmark_util
+
+import HPOlib.benchmark_util as benchmark_util
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"

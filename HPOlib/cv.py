@@ -16,21 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#!/usr/bin/env python
-
-import cPickle
 import os
 import subprocess
 import sys
 import time
 
-from importlib import import_module
-
 import numpy as np
 
 from Experiment import Experiment
-from wrapping_util import format_traceback
-from wrapping_util import load_experiment_config_file
+
+from HPOlib.wrapping_util import format_traceback, load_experiment_config_file
+
+
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __license__ = "3-clause BSD License"

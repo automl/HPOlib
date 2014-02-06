@@ -18,20 +18,15 @@
 #!/usr/bin/env python
 
 import cPickle
-from importlib import import_module
 from optparse import OptionParser
 import os
-import re
 import subprocess
-import sys
-import time
 
-from gzip import GzipFile as gfile
 import numpy as np
 
 from config_parser.parse import parse_config
-from Experiment import Experiment
-import wrapping_util
+from HPOlib.Experiment import Experiment
+import HPOlib.wrapping_util as wrapping_util
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -41,6 +36,7 @@ def loadExperimentFile():
     optimizer = os.getcwd().split("/")[-1].split("_")[0]
     experiment = Experiment(".", optimizer)
     return experiment
+
 
 def main():
     # Parse options and arguments

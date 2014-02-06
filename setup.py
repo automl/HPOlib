@@ -3,9 +3,7 @@ from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 from setuptools.command.install import install as InstallCommand
 import io
-import codecs
 import os
-import sys
 
 import HPOlib
 
@@ -79,7 +77,6 @@ setup(
     author=HPOlib.__authors__,
     tests_require=['unittest'],
     install_requires=['argparse==1.2.1',
-                      'bson==0.3.3',
                       'matplotlib==1.3.1',
                       'networkx==1.8.1',
                       'numpy==1.8.0',

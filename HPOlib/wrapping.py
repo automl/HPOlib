@@ -16,10 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#!/usr/bin/env python
-
 from argparse import ArgumentParser
-from config_parser.parse import parse_config
 import imp
 import os
 import subprocess
@@ -28,9 +25,10 @@ import time
 
 import numpy as np
 
-import check_before_start
-import Experiment
+from config_parser.parse import parse_config
 
+import HPOlib.check_before_start as check_before_start
+import HPOlib.Experiment as Experiment
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
