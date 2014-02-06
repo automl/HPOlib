@@ -23,7 +23,7 @@ import time
 
 import numpy as np
 
-from Experiment import Experiment
+from HPOlib.Experiment import Experiment
 
 from HPOlib.wrapping_util import format_traceback, load_experiment_config_file
 
