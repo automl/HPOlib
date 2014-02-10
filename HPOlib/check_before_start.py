@@ -20,6 +20,7 @@ import os
 import subprocess
 import sys
 import imp
+
 from config_parser.parse import parse_config
 
 """This script checks whether all dependencies are installed"""
@@ -122,18 +123,19 @@ def _check_function(experiment_dir, optimizer_dir):
     del fn
 
 
-def _check_zeroth(experiment_dir):
+def check_zeroth(experiment_dir):
     print "\tconfig.cfg..",
+    _check_modules()
     _check_config(experiment_dir)
     print "..passed"
 
 
-def _check_first(experiment_dir):
+def check_first(experiment_dir):
     """ Do some checks before optimizer is loaded """
     main()
 
 
-def _check_second(experiment_dir, optimizer_dir):
+def check_second(experiment_dir, optimizer_dir):
     """ Do remaining tests """
     print "\talgorithm..",
     _check_function(experiment_dir, optimizer_dir)

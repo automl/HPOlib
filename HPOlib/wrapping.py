@@ -23,12 +23,9 @@ import subprocess
 import sys
 import time
 
-import numpy as np
-
 from config_parser.parse import parse_config
 
 import HPOlib.check_before_start as check_before_start
-import HPOlib.Experiment as Experiment
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -162,7 +159,12 @@ def main():
     """Start an optimization of the HPOlib. For documentation see the
     comments inside this function and the general HPOlib documentation."""
     experiment_dir = os.getcwd()
-    check_before_start._check_zeroth(experiment_dir)
+    check_before_start.check_zeroth(experiment_dir)
+
+    # Now we can safely import non standard things
+    import numpy as np
+    import HPOlib.Experiment as Experiment
+
     args, unknown = use_option_parser()
     optimizer = args.optimizer
 
@@ -188,7 +190,7 @@ def main():
     os.putenv('PATH', os.environ['PATH'] + ":" + wrapping_dir + "/../runsolver/src/")
 
     # _check_runsolver, _check_modules()
-    check_before_start._check_first(experiment_dir)
+    check_before_start.check_first(experiment_dir)
 
     # build call
     cmd = "export PYTHONPATH=$PYTHONPATH:" + wrapping_dir + "\n"
@@ -213,7 +215,7 @@ def main():
         save_config_to_file(f, config)
 
     # _check_function
-    check_before_start._check_second(experiment_dir, optimizer_dir)
+    check_before_start.check_second(experiment_dir, optimizer_dir)
 
     # initialize/reload pickle file
     if args.restore:
