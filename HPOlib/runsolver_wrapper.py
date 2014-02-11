@@ -269,7 +269,7 @@ def parse_output_files(cfg, run_instance_output, runsolver_output_file):
         os.remove(runsolver_output_file)
         rval = (cpu_time, wallclock_time, "SAT", float(result_array[6].strip(",")),
                 cfg.get("DEFAULT", "function"))
-        print result_string
+        #print result_string
 
     else:
         rval = (cpu_time, wallclock_time, "CRASHED", cfg.getfloat("DEFAULT",
