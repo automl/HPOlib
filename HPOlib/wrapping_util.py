@@ -36,8 +36,8 @@ def get_time_string():
     return time_string
 
 
-def float_eq( a, b, eps=0.0001 ):
-    return abs(math.log( a ) - math.log(b)) <=  eps
+def float_eq(a, b, eps=0.0001):
+    return abs(math.log(a+1) - math.log(b+1)) <= eps
 
 
 def format_traceback(exc_info):

@@ -108,9 +108,9 @@ def read_runsolver_output(runsolver_output_file):
                 limit_exceeded = "Memory exceeded"
             if "Solver just ended. Dumping a history of the last" in line:
                 solver_ended_section = True
-            if "Real time (s): " in line and solver_ended_section:
+            if re.search(r"Real time \(s\): ", line) and solver_ended_section:
                 wallclock_time = float(line.split()[3])
-            if "CPU time (s): " in line and solver_ended_section:
+            if re.search(r"^CPU time \(s\): ", line) and solver_ended_section:
                 cpu_time = float(line.split()[3])
     return cpu_time, wallclock_time, limit_exceeded
 
