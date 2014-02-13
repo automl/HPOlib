@@ -25,6 +25,7 @@ import tempfile
 import numpy as np
 
 import HPOlib.Locker as Locker
+import HPOlib.wrapping_util as wrapping_util
 
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
@@ -327,7 +328,8 @@ class Experiment:
             # Backwards compability with numpy 1.6
             wallclock_time = np.nansum(trial['instance_durations'])
             total_wallclock_time += wallclock_time if np.isfinite(wallclock_time) else 0
-        assert (total_wallclock_time == self.total_wallclock_time), \
+        assert (wrapping_util.float_eq(total_wallclock_time,
+                                       self.total_wallclock_time)), \
             (total_wallclock_time, self.total_wallclock_time)
 
     # Automatically loads this object from a pickle file
