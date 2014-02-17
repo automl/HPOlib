@@ -1,115 +1,139 @@
 #!/bin/sh
 
-echo "Looking for SMAC:"
-
-printf "%5s | %4s(%5s) | %5s | %10s | %10s\n" "Seed" "#run" "crash" "#iter" "Performance" "Test-Perf"
-for i in `seq 1000 1000 10000`
-do
-  directory=`ls | grep "^smac_${i}_"`
-  if [ -f "${directory}/smac.out" ]
-  then
-    it=`cat ${directory}/smac.out | grep "Model/Iteration used:" | tail -1`
-    it=`echo $it | cut -d' ' -f3`
-   
-    per=`cat ${directory}/smac.out | grep "Performance of the Incumbent:" | tail -1`
-    per=`echo $per | cut -d' ' -f5`
-
-    num=`cat ${directory}/smac.out | grep "Algorithm Runs used:" | tail -1`
-    num=`echo $num | cut -d' ' -f4`
-
-    numC=`ls ${directory}/ | grep 'instance.out$' | wc -l`
-    numC=$(($numC - 1))
-    
-    test_error=999
-    test_file=`ls "$directory/" | grep "_test_run.out"`
-    if [ -f "${directory}/$test_file" ]
+directory=`ls | grep "^smac_2_06_01-dev\>"`
+if [ -a "${directory}" ]
     then
-      test_error=`cat "$directory/$test_file" | grep "Result for ParamILS: SAT" | tail -1`
-      test_error=`echo "$test_error" | cut -d' ' -f7| cut -d',' -f1`
-    fi
-    printf "%5s | %4s(%5s) | %5s | %10f | %10f\n" "$i" "$num" "$numC" "$it" "$per" "$test_error"
-  fi
-  
-done
+    echo "Looking for SMAC (smac_2_06_01-dev):"
 
-echo "Looking for TPE:"
+    printf "%5s | %4s(%5s) | %5s | %10s | %10s\n" "Seed" "#run" "crash" "#iter" "Performance" "Test-Perf"
+    for i in `seq 1000 1000 10000`
+    do
+      directory=`ls | grep "^smac_2_06_01-dev_${i}_"`
+      if [ -f "${directory}/smac_2_06_01-dev.out" ]
+      then
+        it=`cat ${directory}/smac*.out | grep "Model/Iteration used:" | tail -1`
+        it=`echo $it | cut -d' ' -f3`
 
-printf "%5s | %4s(%5s) | %10s | %10s\n" "Seed" "#run" "crash" "Performance" "Test-Perf"
-for i in `seq 1000 1000 10000`
-do
-  directory=`ls | grep "^tpe_${i}_"`
-  if [ -a "${directory}/tpe.out" ]
-  then
-    num=`cat ${directory}/tpe.out | grep "Result:" | wc -l`
+        per=`cat ${directory}/smac*.out | grep "Performance of the Incumbent:" | tail -1`
+        per=`echo $per | cut -d' ' -f5`
 
-    per=`cat ${directory}/tpe.out | grep "Result:" | sort -r | tail -1`
-    per=`echo $per | cut -d' ' -f2`
+        num=`cat ${directory}/smac*.out | grep "Algorithm Runs used:" | tail -1`
+        num=`echo $num | cut -d' ' -f4`
 
-    numC=`ls ${directory}/ | grep 'instance.out$' | wc -l`
-    numC=$(($numC - 1))
-    
-    test_error=999
-    test_file=`ls -1 "$directory" | grep "_test_run.out"`
-    if [ -f "$directory/$test_file" ]
+        numC=`ls ${directory}/ | grep 'instance.out$' | wc -l`
+        numC=$(($numC - 1))
+
+        test_error=999
+        test_file=`ls "$directory/" | grep "_test_run.out"`
+        if [ -f "${directory}/$test_file" ]
+        then
+          test_error=`cat "$directory/$test_file" | grep "Result for ParamILS: SAT" | tail -1`
+          test_error=`echo "$test_error" | cut -d' ' -f7| cut -d',' -f1`
+        fi
+        printf "%5s | %4s(%5s) | %5s | %10f | %10f\n" "$i" "$num" "$numC" "$it" "$per" "$test_error"
+      fi
+
+    done
+fi
+
+
+directory=`ls | grep "^smac-v2_06_02-partial38\>"`
+if [ -a "${directory}" ]
+then
+
+    echo "Looking for SMAC (smac-v2_06_02-partial38):"
+
+    printf "%5s | %4s(%5s) | %5s | %10s | %10s\n" "Seed" "#run" "crash" "#iter" "Performance" "Test-Perf"
+    for i in `seq 1000 1000 10000`
+    do
+      directory=`ls | grep "^smac-v2_06_02-partial38_${i}_"`
+      if [ -f "${directory}/smac-v2_06_02-partial38.out" ]
+      then
+        it=`cat ${directory}/smac*.out | grep "Model/Iteration used:" | tail -1`
+        it=`echo $it | cut -d' ' -f3`
+
+        per=`cat ${directory}/smac*.out | grep "Performance of the Incumbent:" | tail -1`
+        per=`echo $per | cut -d' ' -f5`
+
+        num=`cat ${directory}/smac*.out | grep "Algorithm Runs used:" | tail -1`
+        num=`echo $num | cut -d' ' -f4`
+
+        numC=`ls ${directory}/ | grep 'instance.out$' | wc -l`
+        numC=$(($numC - 1))
+
+        test_error=999
+        test_file=`ls "$directory/" | grep "_test_run.out"`
+        if [ -f "${directory}/$test_file" ]
+        then
+          test_error=`cat "$directory/$test_file" | grep "Result for ParamILS: SAT" | tail -1`
+          test_error=`echo "$test_error" | cut -d' ' -f7| cut -d',' -f1`
+        fi
+        printf "%5s | %4s(%5s) | %5s | %10f | %10f\n" "$i" "$num" "$numC" "$it" "$per" "$test_error"
+      fi
+
+    done
+fi
+
+
+directory=`ls | grep "^hyperopt_august2013_mod\>"`
+if [ -a "${directory}" ]
+then
+    echo "Looking for TPE:"
+
+    printf "%5s | %4s(%5s) | %10s | %10s\n" "Seed" "#run" "crash" "Performance" "Test-Perf"
+    for i in `seq 1000 1000 10000`
+    do
+      directory=`ls | grep "^tpe_${i}_"`
+      if [ -a "${directory}/tpe.out" ]
+      then
+        num=`cat ${directory}/tpe.out | grep "Result:" | wc -l`
+
+        per=`cat ${directory}/tpe.out | grep "Result:" | sort -r | tail -1`
+        per=`echo $per | cut -d' ' -f2`
+
+        numC=`ls ${directory}/ | grep 'instance.out$' | wc -l`
+        numC=$(($numC - 1))
+
+        test_error=999
+        test_file=`ls -1 "$directory" | grep "_test_run.out"`
+        if [ -f "$directory/$test_file" ]
+        then
+          test_error=`cat "$directory/$test_file" | grep "Result for ParamILS: SAT" | tail -1`
+          test_error=`echo "$test_error" | cut -d' ' -f7| cut -d',' -f1`
+        fi
+        printf "%5s | %4s(%5s) | %10f | %10f\n" "$i" "$num" "$numC" "$per" "$test_error"
+      fi
+    done
+fi
+
+
+directory=`ls | grep "^spearmint_april2013_mod\>"`
+if [ -a "${directory}" ]
     then
-      test_error=`cat "$directory/$test_file" | grep "Result for ParamILS: SAT" | tail -1`
-      test_error=`echo "$test_error" | cut -d' ' -f7| cut -d',' -f1`
-    fi
-    printf "%5s | %4s(%5s) | %10f | %10f\n" "$i" "$num" "$numC" "$per" "$test_error"
-  fi
-done
+    echo "Looking for Spearmint:"
 
-echo "Looking for Spearmint:"
+    printf "%5s | %4s(%5s) | %10s | %10s\n" "Seed" "#run" "crash" "Performance" "Test-Perf"
+    for i in `seq 1000 1000 10000`
+    do
+      directory=`ls | grep "^spearmint_${i}_"`
+      if [ -a "${directory}/spearmint.out" ]
+      then
+        num=`cat ${directory}/spearmint.out | grep " pending   " | tail -1`
+        num=`echo $num | cut -d' ' -f5`
+        per=`cat ${directory}/spearmint.out | grep "best:" | tail -1`
+        per=`echo $per | cut -d' ' -f3`
 
-printf "%5s | %4s(%5s) | %10s | %10s\n" "Seed" "#run" "crash" "Performance" "Test-Perf"
-for i in `seq 1000 1000 10000`
-do
-  directory=`ls | grep "^spearmint_${i}_"`
-  if [ -a "${directory}/spearmint.out" ]
-  then
-    num=`cat ${directory}/spearmint.out | grep " pending   " | tail -1`
-    num=`echo $num | cut -d' ' -f5` 
-    per=`cat ${directory}/spearmint.out | grep "best:" | tail -1`
-    per=`echo $per | cut -d' ' -f3`
+        numC=`ls ${directory}/ | grep 'instance.out$' | wc -l`
+        numC=$(($numC - 1))
 
-    numC=`ls ${directory}/ | grep 'instance.out$' | wc -l`
-    numC=$(($numC - 1))
-    
-    test_error=999
-    test_file=`ls -1 "$directory" | grep "_test_run.out"`
-    if [ -f "$directory/$test_file" ]
-    then
-      test_error=`cat "$directory/$test_file" | grep "Result for ParamILS: SAT" | tail -1`
-      test_error=`echo "$test_error" | cut -d' ' -f7| cut -d',' -f1`
-    fi
-    printf "%5s | %4s(%5s) | %10f | %10f\n" "$i" "$num" "$numC" "$per" "$test_error"
-  fi
-done
-
-echo "Looking for Random:"
-
-printf "%5s | %4s(%5s) | %10s | %10s\n" "Seed" "#run" "crash" "Performance" "Test-Perf"
-for i in `seq 1000 1000 10000`
-do
-  directory=`ls | grep "^randomtpe_${i}_"`
-  if [ -a "${directory}/randomtpe.out" ]
-  then
-    num=`cat ${directory}/randomtpe.out | grep "Result:" | wc -l`
-
-    per=`cat ${directory}/randomtpe.out | grep "Result:" | sort -r | tail -1`
-    per=`echo $per | cut -d' ' -f2`
-
-    numC=`ls ${directory}/ | grep 'instance.out$' | wc -l`
-    numC=$(($numC - 1))
-    
-    test_error=999
-    test_file=`ls -1 "$directory" | grep "_test_run.out"`
-    if [ -f "$directory/$test_file" ]
-    then
-      test_error=`cat "$directory/$test_file" | grep "Result for ParamILS: SAT" | tail -1`
-      test_error=`echo "$test_error" | cut -d' ' -f7| cut -d',' -f1`
-    fi
-    printf "%5s | %4s(%5s) | %10f | %10f\n" "$i" "$num" "$numC" "$per" "$test_error"
-  fi
-done
-
+        test_error=999
+        test_file=`ls -1 "$directory" | grep "_test_run.out"`
+        if [ -f "$directory/$test_file" ]
+        then
+          test_error=`cat "$directory/$test_file" | grep "Result for ParamILS: SAT" | tail -1`
+          test_error=`echo "$test_error" | cut -d' ' -f7| cut -d',' -f1`
+        fi
+        printf "%5s | %4s(%5s) | %10f | %10f\n" "$i" "$num" "$numC" "$per" "$test_error"
+      fi
+    done
+fi

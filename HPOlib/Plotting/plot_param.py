@@ -109,6 +109,7 @@ def plot_params(value_list, result_list, name, save="", title="", jitter=0):
 
 
 def main():
+    usage = "python plot_param.py WhatIsThis <pathTo.pkl>* [options]"
     parser = optparse.OptionParser()
     parser.add_option("-s", "--save", dest="save", default="",
                       help="Where to save plot instead of showing it?")
