@@ -297,7 +297,6 @@ def main():
         #noinspection PyProtectedMember
         trials._save_jobs()
         # trials.finish_experiment()
-        print "Finished with return code: " + str(ret)
         total_time = 0
         print trials.get_best()
         #noinspection PyBroadException
@@ -311,9 +310,12 @@ def main():
                   (calculate_wrapping_overhead(trials))
             print "The algorithm itself took %f seconds" % \
                   trials.total_wallclock_time
-        except:
-            pass
+        except Exception, e:
+            print "Experiment itself went fine, " \
+                  "but calculating durations of optimization failed:\n%s" % e
         del trials
+        print "-----------------------END--------------------------------------"
+        print "Finished with return code: " + str(ret)
         return ret
 
 if __name__ == "__main__":

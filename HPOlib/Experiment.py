@@ -162,18 +162,20 @@ class Experiment:
 
     # Get the best value so far
     def get_best(self):
-        best = 0
+        best_idx = -1
+        best_value = sys.maxint
         for i, trial in enumerate(self.trials):
-            res = np.NaN
+            tmp_res = np.NaN
             if trial['result'] == trial['result']:
-                res = trial['result']
+                tmp_res = trial['result']
             elif np.isfinite(trial['instance_results']).any():
-                res = scipy.nanmean(trial['instance_results'])
+                tmp_res = scipy.nanmean(trial['instance_results'])
             else:
                 continue
-            if res < self.trials[best]:
-                best = i
-        return self.trials[best]
+            if tmp_res < best_value:
+                best_idx = i
+                best_value = tmp_res
+        return self.trials[best_idx]
 
     def get_trial_from_id(self, _id):
         return self.trials[_id]
