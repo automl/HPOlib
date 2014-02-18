@@ -83,7 +83,7 @@ def _check_config(experiment_dir):
         raise Exception("There is no config.cfg in %s" % experiment_dir)
 
 
-def _check_function(experiment_dir, optimizer_dir):
+def _check_function(experiment_dir):
     # Check whether function exists
     config_file = os.path.join(experiment_dir, "config.cfg")
     config = parse_config(config_file, allow_no_value=True)
@@ -96,30 +96,20 @@ def _check_function(experiment_dir, optimizer_dir):
             fn = imp.load_source(fn_name, fn_path)
         except (ImportError, IOError):
             print "Could not find algorithm in %s" % fn_path
-            import traceback
-            print traceback.format_exc()
+            import HPOlib.wrapping_util
+            print HPOlib.wrapping_util.format_traceback(sys.exc_info())
     else:
-        fn = config.get("DEFAULT", "function").replace("../..", "..", 1)
-        fn_path = os.path.join(optimizer_dir, fn)
-        fn_path_parent = os.path.join(optimizer_dir, "..", fn)
+        fn = config.get("DEFAULT", "function")
+        fn_path = os.path.join(experiment_dir, fn)
         fn_name, ext = os.path.splitext(os.path.basename(fn_path))
         try:
+            print fn_name, fn_path
             fn = imp.load_source(fn_name, fn_path)
         except (ImportError, IOError) as e:
-            print e
-            try:
-                fn = imp.load_source(fn_name, fn_path_parent)
-            except IOError as e:
-                print(("Could not find\n%s\n\tin\n%s\n\tor its parent directory " +
-                       "\n%s")
-                      % (fn_name, fn_path, fn_path_parent))
-                import traceback
-                print traceback.format_exc()
-                sys.exit(1)
-            except ImportError as e:
-                import traceback
-                print traceback.format_exc()
-                sys.exit(1)
+            print "Could not find %s in %s" % (fn_name, fn_path)
+            import HPOlib.wrapping_util
+            print HPOlib.wrapping_util.format_traceback(sys.exc_info())
+            sys.exit(1)
     del fn
 
 
@@ -135,10 +125,10 @@ def check_first(experiment_dir):
     main()
 
 
-def check_second(experiment_dir, optimizer_dir):
+def check_second(experiment_dir):
     """ Do remaining tests """
     print "\talgorithm..",
-    _check_function(experiment_dir, optimizer_dir)
+    _check_function(experiment_dir)
     print "..passed"
 
 

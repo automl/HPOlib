@@ -240,7 +240,7 @@ def main():
         save_config_to_file(f, config)
 
     # _check_function
-    check_before_start.check_second(experiment_dir, optimizer_dir)
+    check_before_start.check_second(experiment_dir)
 
     # initialize/reload pickle file
     if args.restore:
