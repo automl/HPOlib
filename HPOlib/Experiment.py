@@ -160,8 +160,13 @@ class Experiment:
     def get_broken_jobs(self):
         return np.nonzero(self.status_array() == BROKEN_STATE)[0]
 
-    # Get the best value so far
-    def get_best(self):
+    # Get the job id of the best value so far, if there is no result
+    # available, this method consults the instance_results. If there are more
+    #  than one trials with the same response value, the first trial is
+    # considered to be the best. If no trial with a better response value
+    # than sys.maxint is found, a ValueError is raised.
+    # TODO: add a method that incomplete jobs are not considered
+    def get_arg_best(self):
         best_idx = -1
         best_value = sys.maxint
         for i, trial in enumerate(self.trials):
@@ -175,6 +180,13 @@ class Experiment:
             if tmp_res < best_value:
                 best_idx = i
                 best_value = tmp_res
+        if best_idx == -1:
+            raise ValueError("No best value found.")
+        return best_idx
+
+    # Get the best value so far, for more documentation see get_arg_best
+    def get_best(self):
+        best_idx = self.get_arg_best()
         return self.trials[best_idx]
 
     def get_trial_from_id(self, _id):
@@ -258,13 +270,13 @@ class Experiment:
     # parameters. Useful to delete all unnecessary entries after a crash in order
     # to restart
     def remove_all_but_first_runs(self, restored_runs):
-        print "#########Restored runs", restored_runs
-        print self.instance_order, len(self.instance_order)
+        # print "#########Restored runs", restored_runs
+        # print self.instance_order, len(self.instance_order)
         if len(self.instance_order) == restored_runs:
             pass
         else:
             for _id, instance in self.instance_order[-1:restored_runs - 1:-1]:
-                print "Deleting", _id, instance
+                # print "Deleting", _id, instance
                 if np.isfinite(self.trials[_id]['instance_durations'][instance]):
                     self.total_wallclock_time -= \
                         self.trials[_id]['instance_durations'][instance]

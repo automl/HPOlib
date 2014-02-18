@@ -183,7 +183,7 @@ def flatten_parameter_dict(params):
                 new_dict[key] = value
 
         else:
-            raise Exception("Invalid params, cannot be flattened.")
+            raise Exception("Invalid params, cannot be flattened: \n%s." % params)
     params = new_dict
     return params
 
