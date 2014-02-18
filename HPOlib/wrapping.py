@@ -25,6 +25,7 @@ import time
 
 from config_parser.parse import parse_config
 
+import HPOlib
 import HPOlib.check_before_start as check_before_start
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
@@ -70,7 +71,7 @@ def calculate_optimizer_time(trials):
     return np.nansum(optimizer_time)
 
 
-def use_option_parser():
+def use_arg_parser():
     """Parse all options which can be handled by the wrapping script.
     Unknown arguments are ignored and returned as a list. It is useful to
     check this list in your program to handle typos etc.
@@ -79,25 +80,36 @@ def use_option_parser():
         a tuple. The first element is an argparse.Namespace object,
         the second a list with all unknown arguments.
     """
-    parser = ArgumentParser(description="Perform an experiment with the "
-                                        "HPOlib")
+    description = "Perform an experiment with HPOlib. " \
+                  "Call this script from experiment directory (containing 'config.cfg')"
+    epilog = "Your are using HPOlib " + HPOlib.__version__
+    prog = "path/from/Experiment/to/HPOlib/wrapping.py"
+
+    parser = ArgumentParser(description=description, prog=prog, epilog=epilog)
+
     parser.add_argument("-o", "--optimizer", action="store", type=str,
+                        dest="optimizer",
                         help="Specify the optimizer name.", required=True)
-    parser.add_argument("-p", "--print", action="store_true", dest="printcmd",
-                        default=False,
+    parser.add_argument("-p", "--print", action="store_true",
+                        dest="printcmd", default=False,
                         help="If set print the command instead of executing it")
-    parser.add_argument("-s", "--seed", dest="seed", default=1, type=int,
+    parser.add_argument("-s", "--seed", action="store", type=int,
+                        dest="seed", default=1,
                         help="Set the seed of the optimizer")
-    parser.add_argument("-t", "--title", dest="title", default=None,
+    parser.add_argument("-t", "--title", action="store", type=str,
+                        dest="title", default=None,
                         help="A title for the experiment")
-    restore_help_string = "Restore the state from a given directory"
-    parser.add_argument("--restore", default=None, dest="restore",
-                        help=restore_help_string)
-    parser.add_argument("--silent", default=False, action="store_true",
-                        dest="silent", help="Don't print the optimizer output")
-    parser.add_argument("--verbose", default=False, action="store_true",
-                        dest="verbose",
-                        help="Print stderr/stdout for optimizer well, overrides --silent")
+    parser.add_argument("-r", "--restore", action="store", type=str,
+                        dest="restore", default=None,
+                        help="Restore the state from a given directory")
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-q", "--silent", action="store_true",
+                       dest="silent", default=False,
+                       help="Don't print anything during optimization")
+    group.add_argument("-v", "--verbose", action="store_true",
+                       dest="verbose", default=False,
+                       help="Print stderr/stdout for optimizer")
 
     args, unknown = parser.parse_known_args()
     return args, unknown
@@ -152,24 +164,26 @@ def override_config_with_cli_arguments(config, config_overrides):
     return config
 
 
-def save_config_to_file(file, config):
+def save_config_to_file(fn_handle, config):
     for section in config.sections():
-        file.write("[DEFAULT]\n")
+        fn_handle.write("[DEFAULT]\n")
         for key in config.defaults():
             if config.get(section, key) is None or \
                config.get(section, key) != "":
-                file.write(key + " = " + config.get("DEFAULT", key) + "\n")
+                fn_handle.write(key + " = " + config.get("DEFAULT", key) + "\n")
 
-        file.write("[" + section + "]\n")
+        fn_handle.write("[" + section + "]\n")
         for key in config.options(section):
             if config.get(section, key) is None or \
                config.get(section, key) != "":
-                file.write(key + " = " + config.get(section, key) + "\n")
+                fn_handle.write(key + " = " + config.get(section, key) + "\n")
 
 
 def main():
     """Start an optimization of the HPOlib. For documentation see the
     comments inside this function and the general HPOlib documentation."""
+    args, unknown = use_arg_parser()
+
     experiment_dir = os.getcwd()
     check_before_start.check_zeroth(experiment_dir)
 
@@ -177,7 +191,6 @@ def main():
     import numpy as np
     import HPOlib.Experiment as Experiment
 
-    args, unknown = use_option_parser()
     optimizer = args.optimizer
 
     config_file = os.path.join(experiment_dir, "config.cfg")
