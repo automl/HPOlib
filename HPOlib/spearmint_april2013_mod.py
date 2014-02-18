@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import cPickle
+import logging
 import os
 import sys
 
@@ -27,6 +28,10 @@ import HPOlib.wrapping_util as wrapping_util
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
+
+
+logger = logging.getLogger("HPOlib.spearmint_april2013_mod")
+
 
 path_to_optimizer = "optimizers/spearmint_april2013_mod/"
 version_info = ("# %76s #\n" %
@@ -49,7 +54,7 @@ def build_spearmint_call(config, options, optimizer_dir):
                     '--grid-seed', str(options.seed)])
     if config.get('SPEARMINT', 'method') != "GPEIChooser" and \
             config.get('SPEARMINT', 'method') != "GPEIOptChooser":
-        sys.stdout.write('WARNING: This chooser might not work yet\n')
+        logger.warning('WARNING: This chooser might not work yet\n')
         call = ' '.join([call, config.get("SPEARMINT", 'method_args')])
     return call
 
@@ -62,10 +67,11 @@ def restore(config, optimizer_dir, **kwargs):
     """
     restore_file = os.path.join(optimizer_dir, "expt-grid.pkl")
     if not os.path.exists(restore_file):
-        print "Oups, this should have been checked before"
+        logger.error("Oups, this should have been checked before")
         raise Exception("%s does not exist" % (restore_file,))
     sys.path.append(os.path.join(
         os.path.dirname(os.path.realpath(__file__)), path_to_optimizer))
+    # We need the Grid because otherwise we cannot load the pickle file
     import ExperimentGrid
     # Assumes that all not valid states are marked as crashed
     fh = open(restore_file)
@@ -109,10 +115,10 @@ def main(config, options, experiment_dir, **kwargs):
         if not os.path.exists(os.path.join(optimizer_dir, configpb)):
             os.symlink(os.path.join(experiment_dir, optimizer_str, configpb),
                        os.path.join(optimizer_dir, configpb))
-    sys.stdout.write("### INFORMATION ################################################################\n")
-    sys.stdout.write("# You're running %40s                      #\n" % path_to_optimizer)
-    sys.stdout.write("%s" % version_info)
-    sys.stdout.write("# A newer version might be available, but not yet built in.                    #\n")
-    sys.stdout.write("# Please use this version only to reproduce our results on automl.org          #\n")
-    sys.stdout.write("################################################################################\n")
+    logger.info("### INFORMATION ################################################################")
+    logger.info("# You're running %40s                      #" % path_to_optimizer)
+    logger.info("%s" % version_info)
+    logger.info("# A newer version might be available, but not yet built in.                    #")
+    logger.info("# Please use this version only to reproduce our results on automl.org          #")
+    logger.info("################################################################################")
     return cmd, optimizer_dir

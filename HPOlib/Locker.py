@@ -19,13 +19,17 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import logging
 import os
 import sys
 import time
 
 
+logger = logging.getLogger("HPOlib.locker")
+
+
 def safe_delete(filename):
-    cmd  = 'mv "%s" "%s.delete" && rm "%s.delete"' % (filename, filename, 
+    cmd = 'mv "%s" "%s.delete" && rm "%s.delete"' % (filename, filename,
                                                       filename)
     fail = os.system(cmd)
     return not fail
@@ -53,13 +57,12 @@ class Locker:
 
     def unlock(self, filename):
         if not self.locks.has_key(filename):
-            sys.stderr.write("Trying to unlock not-locked file %s.\n" % 
-                             (filename))
+            logger.info("Trying to unlock not-locked file %s.\n" % filename)
             return True
         if self.locks[filename] == 1:
             success = safe_delete('%s.lock' % (filename))
             if not success:
-                sys.stderr.write("Could not unlock file: %s.\n" % (filename))
+                logger.log("Could not unlock file: %s.\n" % filename)
             del self.locks[filename]
             return success
         else:

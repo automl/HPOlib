@@ -16,12 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import subprocess
 import sys
 import imp
 
 from config_parser.parse import parse_config
+
+
+logger = logging.getLogger("HPOlib.check_before_start")
+
 
 """This script checks whether all dependencies are installed"""
 
@@ -43,16 +48,16 @@ def _check_modules():
     try:
         import numpy
         if numpy.__version__ < "1.6.0":
-            print "WARNING: You are using a numpy %s < 1.6.0. This might not work"\
-                % numpy.__version__
+            logger.warning("WARNING: You are using a numpy %s < 1.6.0. This "
+                            "might not work" % numpy.__version__)
     except:
         raise ImportError("Numpy cannot be imported. Are you sure that it's installed?")
 
     try:
         import scipy
         if scipy.__version__ < "0.12.0":
-            print "WARNING: You are using a scipy %s < 0.12.0. This might not work"\
-                % scipy.__version__
+            logger.warning("WARNING: You are using a scipy %s < 0.12.0. " \
+                             "This might not work" % scipy.__version__)
     except:
         raise ImportError("Scipy cannot be imported. Are you sure that it's installed?")
 
@@ -62,7 +67,8 @@ def _check_modules():
     try:
         import theano
     except ImportError:
-        print "Theano not found. You might need this to run some more complex benchmarks!"
+        logger.warning("Theano not found. You might need this to run some "
+                       "more complex benchmarks!")
 
     try:
         import pymongo
@@ -71,9 +77,7 @@ def _check_modules():
         raise ImportError("Pymongo cannot be imported. Are you sure it's installed?")
 
     if 'cuda' not in os.environ['PATH']:
-        print "\tCUDA not in $PATH"
-    # if 'cuda' not in os.environ['LD_LIBRARY_PATH']:
-    #     print "CUDA not in $LD_LIBRARY_PATH"
+        logger.warning("CUDA not in $PATH")
 
 
 def _check_config(experiment_dir):
@@ -95,9 +99,9 @@ def _check_function(experiment_dir, optimizer_dir):
         try:
             fn = imp.load_source(fn_name, fn_path)
         except (ImportError, IOError):
-            print "Could not find algorithm in %s" % fn_path
+            logger.error("Could not find algorithm in %s" % fn_path)
             import traceback
-            print traceback.format_exc()
+            logger.error(traceback.format_exc())
     else:
         fn = config.get("DEFAULT", "function").replace("../..", "..", 1)
         fn_path = os.path.join(optimizer_dir, fn)
@@ -106,28 +110,26 @@ def _check_function(experiment_dir, optimizer_dir):
         try:
             fn = imp.load_source(fn_name, fn_path)
         except (ImportError, IOError) as e:
-            print e
+            logger.error(e)
             try:
                 fn = imp.load_source(fn_name, fn_path_parent)
             except IOError as e:
-                print(("Could not find\n%s\n\tin\n%s\n\tor its parent directory " +
-                       "\n%s")
-                      % (fn_name, fn_path, fn_path_parent))
+                logger.error(("Could not find\n%s\n\tin\n%s\n\tor its parent "
+                              "directory \n%s") % (fn_name, fn_path, fn_path_parent))
                 import traceback
-                print traceback.format_exc()
+                logger.error(traceback.format_exc())
                 sys.exit(1)
             except ImportError as e:
                 import traceback
-                print traceback.format_exc()
+                logger.error(traceback.format_exc())
                 sys.exit(1)
     del fn
 
 
 def check_zeroth(experiment_dir):
-    print "\tconfig.cfg..",
-    _check_modules()
+    logger.info("Check config.cfg..",)
     _check_config(experiment_dir)
-    print "..passed"
+    logger.info("..passed")
 
 
 def check_first(experiment_dir):
@@ -137,19 +139,19 @@ def check_first(experiment_dir):
 
 def check_second(experiment_dir, optimizer_dir):
     """ Do remaining tests """
-    print "\talgorithm..",
+    logger.info("Check algorithm..",)
     _check_function(experiment_dir, optimizer_dir)
-    print "..passed"
+    logger.info("..passed")
 
 
 def main():
-    print "Checking dependencies:"
-    print "\tRunsolver..",
+    logger.info("Check dependencies:")
+    logger.info("Runsolver..")
     _check_runsolver()
-    print "..passed"
-    print "\tpython_modules..",
+    logger.info("..passed")
+    logger.info("Check python_modules..")
     _check_modules()
-    print "..passed"
+    logger.info("..passed")
 
 
 if __name__ == "__main__":

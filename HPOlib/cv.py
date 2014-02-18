@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import subprocess
 import sys
@@ -24,9 +25,7 @@ import time
 import numpy as np
 
 from HPOlib.Experiment import Experiment
-
 from HPOlib.wrapping_util import format_traceback, load_experiment_config_file
-
 
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
@@ -34,9 +33,11 @@ __license__ = "3-clause BSD License"
 __contact__ = "automl.org"
 
 
+logger = logging.getLogger("HPOlib.cv")
+
+
 # TODO: This should be in a util function sometime in the future
 #       Is duplicated in runsolver_wrapper.py
-
 def get_optimizer():
     return "_".join(os.getcwd().split("/")[-1].split("_")[0:-2])
 
@@ -48,7 +49,7 @@ def loadExperimentFile():
 
 
 def doCV(params, folds=10):
-    print "Starting Cross validation"
+    logger.info("Starting Cross validation")
     sys.stdout.flush()
     optimizer = get_optimizer()
     cfg = load_experiment_config_file()
@@ -60,7 +61,7 @@ def doCV(params, folds=10):
     results = []
 
     try:
-        print "###\n", params, "\n###\n"
+        logger.info("%s" % params)
         param_array = ["-" + str(param_name) + " " + str(params[param_name]) \
             for param_name in params]
         param_string = " ".join(param_array)
@@ -77,17 +78,16 @@ def doCV(params, folds=10):
             cmd = "%s %d %s %d %d %d %s" % \
                 (runsolver_wrapper_script, fold, optimizer, 0, 0, 0, \
                     param_string)
-            print "Calling command:\n", cmd
+            logger.info("Calling command:\n%s" % cmd)
 
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                      stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
-            print
-            print "----------------RUNNING RUNSOLVER_WRAPPER-------------------"
+            logger.info("--------------RUNNING RUNSOLVER_WRAPPER--------------")
             stdoutdata, stderrdata = process.communicate()
             if stdoutdata:
-                print stdoutdata
+                logger.info(stdoutdata)
             if stderrdata:
-                print stderrdata
+                logger.error(stderrdata)
 
             # Read the runsolver_wrapper output
             lines = stdoutdata.split("\n")
@@ -108,8 +108,8 @@ def doCV(params, folds=10):
             worst_possible = cfg.getfloat("DEFAULT", "result_on_terminate")
             crashed_runs = np.nansum([0 if res != worst_possible else 1 for res in results])
             if crashed_runs >= cfg.getint("DEFAULT", "max_crash_per_cv"):
-                print "Aborting CV because the number of crashes excceds the " \
-                      "configured max_crash_per_cv value"
+                logger.warning("Aborting CV because the number of crashes " \
+                            "excceds the configured max_crash_per_cv value")
                 return worst_possible
 
             # TODO: Error Handling
@@ -118,8 +118,8 @@ def doCV(params, folds=10):
         mean = np.mean(results)
 
     except Exception as e:
-        print format_traceback(sys.exc_info()) 
-        print "CV failed", sys.exc_info()[0], e
+        logger.error(format_traceback(sys.exc_info()))
+        logger.error("CV failed %s %s" % (sys.exc_info()[0], e))
         # status = "CRASHED"
         status = "SAT"
         mean = np.NaN
@@ -128,7 +128,7 @@ def doCV(params, folds=10):
     if not np.isfinite(mean):
         mean = float(cfg.get("DEFAULT", "result_on_terminate"))
 
-    print "Finished CV"
+    logger.info("Finished CV")
     return mean
 
 
@@ -207,7 +207,7 @@ def main(job_id, params):
     params = flatten_parameter_dict(params)
 
     res = doCV(params, folds=folds)
-    print "Result: ", res
+    logger.info("Result: %f" % res)
     
     # Load the experiment to do time-keeping
     experiment = loadExperimentFile()
@@ -245,4 +245,4 @@ def read_params_from_command_line():
 
 if __name__ == "__main__":
     params = read_params_from_command_line()
-    print main(42, params)
+    main(42, params)

@@ -19,12 +19,16 @@
 #!/usr/bin/env python
 
 import cPickle
+import logging
 import os
 
 import HPOlib.wrapping_util as wrapping_util
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
+
+
+logger = logging.getLogger("HPOlib.randomtpe")
 
 
 def buildRandomCall(config, options, optimizer_dir):
@@ -44,7 +48,7 @@ def buildRandomCall(config, options, optimizer_dir):
 def restore(config, optimizer_dir, **kwargs):
     restore_file = os.path.join(optimizer_dir, 'state.pkl')
     if not os.path.exists(restore_file):
-        print "Oups, this should have been checked before"
+        logger.error("Oups, this should have been checked before")
         raise Exception("%s does not exist" % (restore_file,))
         return -1
 

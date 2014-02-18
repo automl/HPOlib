@@ -18,6 +18,7 @@
 
 from collections import OrderedDict
 import imp
+import logging
 import numpy as np
 import os
 import re
@@ -30,6 +31,9 @@ import HPOlib.wrapping_util as wrapping_util
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
+
+
+logger = logging.getLogger("HPOlib.runsolver_wrapper")
 
 
 # TODO: This should be in a util function sometime in the future
@@ -192,18 +196,18 @@ def get_function_filename(cfg):
     try:
         fn = imp.load_source(fn_name, fn_path)
     except (ImportError, IOError) as e:
-        print "Raised", e, "trying to recover..."
+        logger.warning("Raised" + e.message + "trying to recover...")
         try:
-            print os.path.exists(fn_path_parent)
+            logger.info(os.path.exists(fn_path_parent))
             fn = imp.load_source(fn_name, fn_path_parent)
         except (ImportError, IOError):
-            print os.path.join(fn_path_parent)
-            print(("Could not find\n%s\n\tin\n%s\n\tor its parent directory " +
-                   "relative to\n%s")
-                  % (fn_name, fn_path, os.getcwd()))
+            logger.critical(os.path.join(fn_path_parent))
+            logger.critical(("Could not find\n%s\n\tin\n%s\n\tor its parent "
+                             "directory relative to\n%s")
+                             % (fn_name, fn_path, os.getcwd()))
             import traceback
 
-            print traceback.format_exc()
+            logger.critical(traceback.format_exc())
             sys.exit(1)
     fn_filename = os.path.realpath(fn.__file__)
     if fn_filename[-3:] == "pyc":
@@ -269,7 +273,6 @@ def parse_output_files(cfg, run_instance_output, runsolver_output_file):
         os.remove(runsolver_output_file)
         rval = (cpu_time, wallclock_time, "SAT", float(result_array[6].strip(",")),
                 cfg.get("DEFAULT", "function"))
-        #print result_string
 
     else:
         rval = (cpu_time, wallclock_time, "CRASHED", cfg.getfloat("DEFAULT",
@@ -323,9 +326,7 @@ def main():
     process = subprocess.Popen(cmd, stdout=fh,
                                stderr=fh, shell=True, executable="/bin/bash")
                                     
-    print
-    print cmd
-    print "-----------------------RUNNING RUNSOLVER----------------------------"
+    logger.info("-----------------------RUNNING RUNSOLVER----------------------------")
     process.wait()
     fh.close()
 
@@ -353,6 +354,7 @@ def main():
         experiment.end_cv(time.time())
         del experiment
 
+    logger.info(return_string)
     print return_string
     return return_string
         

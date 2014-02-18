@@ -18,6 +18,7 @@
 
 from argparse import ArgumentParser
 import imp
+import logging
 import os
 import subprocess
 import sys
@@ -29,6 +30,13 @@ import HPOlib.check_before_start as check_before_start
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
+
+
+logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
+                           'message)s', datefmt='%H:%M:%S')
+hpolib_logger = logging.getLogger("HPOlib")
+hpolib_logger.setLevel(logging.INFO)
+logger = logging.getLogger("HPOlib.wrapping")
 
 
 def calculate_wrapping_overhead(trials):
@@ -186,8 +194,8 @@ def main():
     # Check whether we're calling a optimizer version, that links to another
     # e.g. calling tpe, but running hyperopt_august2013_mod
     if optimizer != config.get('DEFAULT', 'optimizer_version'):
-        print("[INFO] You called -o %s, but this is only a link to version %s" %
-              (optimizer, config.get('DEFAULT', 'optimizer_version')))
+        logger.warning("You called -o %s, but this is only a link to "
+                       "version %s" % (optimizer, config.get('DEFAULT', 'optimizer_version')))
         optimizer = config.get('DEFAULT', 'optimizer_version')
 
     # Override config values with command line values
@@ -212,9 +220,9 @@ def main():
         optimizer_module = imp.load_source(optimizer, wrapping_dir + "/" +
                                            optimizer + ".py")
     except (ImportError, IOError):
-        print "Optimizer module", optimizer, "not found"
+        logger.critical("Optimizer module %s not found" % optimizer)
         import traceback
-        print traceback.format_exc()
+        logger.critical(traceback.format_exc())
         sys.exit(1)
     optimizer_call, optimizer_dir = optimizer_module.main(config=config,
                                                           options=args,
@@ -271,12 +279,12 @@ def main():
                                                      optimizer_dir=optimizer_dir,
                                                      cmd=cmd)
         except:
-            print "Could not restore runs for %s" % args.restore
+            logger.critical("Could not restore runs for %s" % args.restore)
             import traceback
-            print traceback.format_exc()
+            logger.critical(traceback.format_exc())
             sys.exit(1)
 
-        print "Restored %d runs" % restored_runs
+        logger.info("Restored %d runs" % restored_runs)
         trials.remove_all_but_first_runs(restored_runs)
         fh = open(os.path.join(optimizer_dir, optimizer + ".out"), "a")
         fh.write("#" * 80 + "\n" + "Restart! Restored %d runs.\n" % restored_runs)
@@ -294,22 +302,22 @@ def main():
 
     # Run call
     if args.printcmd:
-        print cmd
+        logger.info(cmd)
         return 0
     else:
-        print cmd
+        logger.info(cmd)
         output_file = os.path.join(optimizer_dir, optimizer + ".out")
         fh = open(output_file, "a")
         # process = subprocess.Popen(cmd, stdout=fh, stderr=fh, shell=True, executable="/bin/bash")
         # ret = process.wait()
 
-        print "-----------------------RUNNING----------------------------------"
+        logger.info("-----------------------RUNNING----------------------------------")
 
         if args.verbose:
             # Print std and err output for optimizer
             proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT)
-            print 'Optimizer runs with PID (+1):', proc.pid
+            logger.info('Optimizer runs with PID (+1): %d' % proc.pid)
 
             while proc.poll() is None:
                 next_line = proc.stdout.readline()
@@ -320,12 +328,12 @@ def main():
         elif args.silent:
             # Print nothing
             proc = subprocess.Popen(cmd, shell=True, stdin=fh, stdout=fh, stderr=fh)
-            print 'Optimizer runs with PID (+1):', proc.pid
+            logger.info('Optimizer runs with PID (+1): %d' % proc.pid)
 
         else:
             # Print only stderr
             proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=fh, stderr=subprocess.PIPE)
-            print 'Optimizer runs with PID (+1):', proc.pid
+            logger.info('Optimizer runs with PID (+1): %d' % proc.pid)
 
             while proc.poll() is None:
                 next_line = proc.stderr.readline()
@@ -335,7 +343,7 @@ def main():
 
         ret = proc.returncode
 
-        print "-----------------------END--------------------------------------"
+        logger.info("-----------------------END--------------------------------------")
 
         trials = Experiment.Experiment(optimizer_dir, optimizer)
         trials.endtime.append(time.time())
@@ -343,26 +351,27 @@ def main():
         trials._save_jobs()
         # trials.finish_experiment()
         total_time = 0
-        print "### Best result"
-        print trials.get_best()
-        print "###\n### Durations"
+        logger.info("Best result")
+        logger.info(trials.get_best())
+        logger.info("Durations")
         try:
             for starttime, endtime in zip(trials.starttime, trials.endtime):
                 total_time += endtime - starttime
-            print "Needed a total of %f seconds" % total_time
-            print "The optimizer %s took %10.5f seconds" %\
-                  (optimizer, float(calculate_optimizer_time(trials)))
-            print "The overhead of HPOlib is %f seconds" % \
-                  (calculate_wrapping_overhead(trials))
-            print "The benchmark itself took %f seconds" % \
-                  trials.total_wallclock_time
+            logger.info("Needed a total of %f seconds" % total_time)
+            logger.info("The optimizer %s took %10.5f seconds" %\
+                  (optimizer, float(calculate_optimizer_time(trials))))
+            logger.info("The overhead of HPOlib is %f seconds" % \
+                  (calculate_wrapping_overhead(trials)))
+            logger.info("The benchmark itself took %f seconds" % \
+                  trials.total_wallclock_time)
         except Exception as e:
             import HPOlib.wrapping_util
-            print HPOlib.wrapping_util.format_traceback(sys.exc_info())
-            print "Experiment itself went fine, " \
-                  "but calculating durations of optimization failed:", sys.exc_info()[0], e
+            logger.error(HPOlib.wrapping_util.format_traceback(sys.exc_info()))
+            logger.error("Experiment itself went fine, but calculating "
+                         "durations of optimization failed: %s %s" %
+                         sys.exc_info()[0], e)
         del trials
-        print "###\nFinished with return code: " + str(ret)
+        logger.info("Finished with return code: " + str(ret))
         return ret
 
 if __name__ == "__main__":

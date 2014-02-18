@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import cPickle
+import logging
 import os
 import scipy
 import sys
@@ -30,6 +31,10 @@ import HPOlib.wrapping_util as wrapping_util
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
+
+
+logger = logging.getLogger("HPOlib.experiment")
+
 
 CANDIDATE_STATE = 0
 INCOMPLETE_STATE = 1
@@ -50,10 +55,10 @@ class Experiment:
         self.locker = Locker.Locker()
 
         # Only one process at a time is allowed to have access to this.
-        sys.stderr.write("Waiting to lock experiments file " +
+        logger.info("Waiting to lock experiments file " +
                          self.jobs_pkl + "...")
         self.locker.lock_wait(self.jobs_pkl)
-        sys.stderr.write("...acquired\n")
+        logger.info("...acquired\n")
 
         # Does this exist already?
         if not os.path.exists(self.jobs_pkl):
@@ -219,8 +224,8 @@ class Experiment:
         self.trials[_id]['instance_status'][fold] = BROKEN_STATE
         self.trials[_id]['instance_durations'][fold] = duration
         self.trials[_id]['instance_results'][fold] = result
-        if (self.get_trial_from_id(_id)['instance_status'] != RUNNING_STATE).all():
-            self.get_trial_from_id(_id)['status'] = INCOMPLETE_STATE
+        if (self.trials[_id]['instance_status'] != RUNNING_STATE).all():
+            self.trials[_id]['status'] = INCOMPLETE_STATE
         self.check_cv_finished(_id)
         self.total_wallclock_time += duration
         self._sanity_check()
@@ -234,8 +239,8 @@ class Experiment:
         self.get_trial_from_id(_id)['instance_status'][fold] = COMPLETE_STATE
         self.get_trial_from_id(_id)['instance_durations'][fold] = duration
         # Set to incomplete if no job is running
-        if (self.get_trial_from_id(_id)['instance_status'] != RUNNING_STATE).all():
-            self.get_trial_from_id(_id)['status'] = INCOMPLETE_STATE
+        if (self.trials[_id]['instance_status'] != RUNNING_STATE).all():
+            self.trials[_id]['status'] = INCOMPLETE_STATE
         # Check if all runs are finished
         self.check_cv_finished(_id)
         self.total_wallclock_time += duration
@@ -259,9 +264,13 @@ class Experiment:
                 self.get_trial_from_id(_id)['status'] = BROKEN_STATE
             else:
                 self.get_trial_from_id(_id)['status'] = COMPLETE_STATE
-            self.get_trial_from_id(_id)['result'] = np.sum(self.get_trial_from_id(_id)['instance_results']) / self.folds
-            self.get_trial_from_id(_id)['std'] = np.std(self.get_trial_from_id(_id)['instance_results'])
-            self.get_trial_from_id(_id)['duration'] = np.sum(self.get_trial_from_id(_id)['instance_durations'])
+            self.get_trial_from_id(_id)['result'] = \
+                np.sum(self.get_trial_from_id(_id)['instance_results'])\
+                / self.folds
+            self.get_trial_from_id(_id)['std'] =\
+                np.std(self.get_trial_from_id(_id)['instance_results'])
+            self.get_trial_from_id(_id)['duration'] =\
+                np.sum(self.get_trial_from_id(_id)['instance_durations'])
             return True
         else:
             return False
@@ -270,13 +279,13 @@ class Experiment:
     # parameters. Useful to delete all unnecessary entries after a crash in order
     # to restart
     def remove_all_but_first_runs(self, restored_runs):
-        # print "#########Restored runs", restored_runs
-        # print self.instance_order, len(self.instance_order)
+        logger.info("Restored runs %d" % restored_runs)
+        logger.info("%s %s" % (self.instance_order, len(self.instance_order)))
         if len(self.instance_order) == restored_runs:
             pass
         else:
             for _id, instance in self.instance_order[-1:restored_runs - 1:-1]:
-                # print "Deleting", _id, instance
+                logger.info("Deleting %d %d" % (_id, instance))
                 if np.isfinite(self.trials[_id]['instance_durations'][instance]):
                     self.total_wallclock_time -= \
                         self.trials[_id]['instance_durations'][instance]
@@ -348,7 +357,7 @@ class Experiment:
 
     # Automatically loads this object from a pickle file
     def _load_jobs(self):
-        fh   = open(self.jobs_pkl, 'r')
+        fh = open(self.jobs_pkl, 'r')
         jobs = cPickle.load(fh)
         fh.close()
 

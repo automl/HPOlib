@@ -17,11 +17,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import cPickle
+import logging
 import os
 import sys
 
 import HPOlib.wrapping_util as wrapping_util
 
+
+logger = logging.getLogger("HPOlib.hyperopt_august2013_mod")
 
 
 version_info = ("# %76s #\n" % "https://github.com/hyperopt/hyperopt/tree/486aebec8a4170e4781d99bbd6cca09123b12717")
@@ -53,7 +56,7 @@ def restore(config, optimizer_dir, **kwargs):
     """
     restore_file = os.path.join(optimizer_dir, 'state.pkl')
     if not os.path.exists(restore_file):
-        print "Oups, this should have been checked before"
+        logger.error("Oups, this should have been checked before")
         raise Exception("%s does not exist" % (restore_file,))
 
     # Special settings for restoring
@@ -99,6 +102,8 @@ def main(config, options, experiment_dir, **kwargs):
     # Find experiment directory
     if options.restore:
         if not os.path.exists(options.restore):
+            logger.error("The restore directory %s does not exist." % options
+                         .restore)
             raise Exception("The restore directory does not exist")
         optimizer_dir = options.restore
     else:
@@ -117,13 +122,13 @@ def main(config, options, experiment_dir, **kwargs):
         if not os.path.exists(os.path.join(optimizer_dir, space)):
             os.symlink(os.path.join(experiment_dir, optimizer_str, space),
                        os.path.join(optimizer_dir, space))
-    sys.stdout.write("### INFORMATION ################################################################\n")
-    sys.stdout.write("# You're running %40s                      #\n" % path_to_optimizer)
+    logger.info("### INFORMATION ""################################################################")
+    logger.info("# You're running %40s                      #" % path_to_optimizer)
     if version == SYSTEM_WIDE:
         pass
     else:
-        sys.stdout.write("# To reproduce our results you need version 0.0.3.dev, which can be found here:#\n")
-        sys.stdout.write("%s" % version_info)
-        sys.stdout.write("# A newer version might be available, but not yet built in.                    #\n")
-    sys.stdout.write("################################################################################\n")
+        logger.info("# To reproduce our results you need version 0.0.3.dev, which can be found here:#")
+        logger.info("%s" % version_info)
+        logger.info("# A newer version might be available, but not yet built in.                    #")
+    logger.info("################################################################################")
     return cmd, optimizer_dir
