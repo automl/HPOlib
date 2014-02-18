@@ -36,7 +36,12 @@ def calculate_wrapping_overhead(trials):
     for times in zip(trials.cv_starttime, trials.cv_endtime):
         wrapping_time += times[1] - times[0]
 
-    wrapping_time = wrapping_time - np.nansum(trials.instance_durations)
+    # We need to import numpy again
+    import numpy as np
+    benchmark_time = 0
+    for t in trials.trials:
+        benchmark_time += np.nansum(t['instance_durations'])
+    wrapping_time = wrapping_time - benchmark_time
     return wrapping_time
 
 
@@ -59,7 +64,9 @@ def calculate_optimizer_time(trials):
                 
     optimizer_time.append(trials.endtime[time_idx] - trials.cv_endtime[-1])
     trials.optimizer_time = optimizer_time
-    
+
+    # We need to import numpy again
+    import numpy as np
     return np.nansum(optimizer_time)
 
 
@@ -86,6 +93,11 @@ def use_option_parser():
     restore_help_string = "Restore the state from a given directory"
     parser.add_argument("--restore", default=None, dest="restore",
                         help=restore_help_string)
+    parser.add_argument("--silent", default=False, action="store_true",
+                        dest="silent", help="Don't print the optimizer output")
+    parser.add_argument("--verbose", default=False, action="store_true",
+                        dest="verbose",
+                        help="Print stderr/stdout for optimizer well, overrides --silent")
 
     args, unknown = parser.parse_known_args()
     return args, unknown
@@ -288,34 +300,69 @@ def main():
         print cmd
         output_file = os.path.join(optimizer_dir, optimizer + ".out")
         fh = open(output_file, "a")
-        process = subprocess.Popen(cmd, stdout=fh, stderr=fh, shell=True,
-                                   executable="/bin/bash")
+        # process = subprocess.Popen(cmd, stdout=fh, stderr=fh, shell=True, executable="/bin/bash")
+        # ret = process.wait()
+
         print "-----------------------RUNNING----------------------------------"
-        ret = process.wait()
+
+        if args.verbose:
+            # Print std and err output for optimizer
+            proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT)
+            print 'Optimizer runs with PID (+1):', proc.pid
+
+            while proc.poll() is None:
+                next_line = proc.stdout.readline()
+                fh.write(next_line)
+                sys.stdout.write(next_line)
+                sys.stdout.flush()
+
+        elif args.silent:
+            # Print nothing
+            proc = subprocess.Popen(cmd, shell=True, stdin=fh, stdout=fh, stderr=fh)
+            print 'Optimizer runs with PID (+1):', proc.pid
+
+        else:
+            # Print only stderr
+            proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=fh, stderr=subprocess.PIPE)
+            print 'Optimizer runs with PID (+1):', proc.pid
+
+            while proc.poll() is None:
+                next_line = proc.stderr.readline()
+                fh.write(next_line)
+                sys.stdout.write("[ERR]:" + next_line)
+                sys.stdout.flush()
+
+        ret = proc.returncode
+
+        print "-----------------------END--------------------------------------"
+
         trials = Experiment.Experiment(optimizer_dir, optimizer)
         trials.endtime.append(time.time())
         #noinspection PyProtectedMember
         trials._save_jobs()
         # trials.finish_experiment()
         total_time = 0
+        print "### Best result"
         print trials.get_best()
-        #noinspection PyBroadException
+        print "###\n### Durations"
         try:
             for starttime, endtime in zip(trials.starttime, trials.endtime):
                 total_time += endtime - starttime
             print "Needed a total of %f seconds" % total_time
-            print "The optimizer %s took %f seconds" % \
-                  (optimizer, calculate_optimizer_time(trials))
-            print "The overhead of the wrapping software is %f seconds" % \
+            print "The optimizer %s took %10.5f seconds" %\
+                  (optimizer, float(calculate_optimizer_time(trials)))
+            print "The overhead of HPOlib is %f seconds" % \
                   (calculate_wrapping_overhead(trials))
-            print "The algorithm itself took %f seconds" % \
+            print "The benchmark itself took %f seconds" % \
                   trials.total_wallclock_time
-        except Exception, e:
+        except Exception as e:
+            import HPOlib.wrapping_util
+            print HPOlib.wrapping_util.format_traceback(sys.exc_info())
             print "Experiment itself went fine, " \
-                  "but calculating durations of optimization failed:\n%s" % e
+                  "but calculating durations of optimization failed:", sys.exc_info()[0], e
         del trials
-        print "-----------------------END--------------------------------------"
-        print "Finished with return code: " + str(ret)
+        print "###\nFinished with return code: " + str(ret)
         return ret
 
 if __name__ == "__main__":
