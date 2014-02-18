@@ -6,6 +6,7 @@ import shutil
 import urllib
 import os
 import subprocess
+import sys
 import tarfile
 
 import HPOlib
@@ -101,6 +102,11 @@ class InstallRunsolver(install_command):
         return True
 
     def run(self):
+
+        if sys.version_info < (2, 7, 0) or sys.version_info >= (2, 8, 0):
+            sys.stderr.write("HPOlib requires Python 2.7.0\n")
+            sys.exit(-1)
+
         downloaded, extracted, built = (False, False, False)
         runsolver_needs_to_be_installed = False
 
