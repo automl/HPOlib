@@ -84,33 +84,18 @@ def _check_config(experiment_dir):
 
 
 def _check_function(experiment_dir):
-    # Check whether function exists
+    # Check whether path function exists
     config_file = os.path.join(experiment_dir, "config.cfg")
     config = parse_config(config_file, allow_no_value=True)
 
-    fn = None
-    if os.path.isabs(config.get("DEFAULT", "function")):
-        fn_path = config.get("DEFAULT", "function")
-        fn_name, ext = os.path.splitext(os.path.basename(fn_path))
-        try:
-            fn = imp.load_source(fn_name, fn_path)
-        except (ImportError, IOError):
-            print "Could not find algorithm in %s" % fn_path
-            import HPOlib.wrapping_util
-            print HPOlib.wrapping_util.format_traceback(sys.exc_info())
-    else:
-        fn = config.get("DEFAULT", "function")
-        fn_path = os.path.join(experiment_dir, fn)
-        fn_name, ext = os.path.splitext(os.path.basename(fn_path))
-        try:
-            print fn_name, fn_path
-            fn = imp.load_source(fn_name, fn_path)
-        except (ImportError, IOError) as e:
-            print "Could not find %s in %s" % (fn_name, fn_path)
-            import HPOlib.wrapping_util
-            print HPOlib.wrapping_util.format_traceback(sys.exc_info())
-            sys.exit(1)
-    del fn
+    path = config.get("DEFAULT", "function")
+
+    if not os.path.isabs(path):
+        path = os.path.join(experiment_dir, path)
+
+    if not os.path.exists(path):
+        raise ValueError("Function: %s does not exist" % path)
+    return
 
 
 def check_zeroth(experiment_dir):
