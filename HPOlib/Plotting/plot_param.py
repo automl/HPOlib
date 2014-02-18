@@ -77,7 +77,9 @@ def plot_params(value_list, result_list, name, save="", title="", jitter=0):
     best_result = min(result_list)
 
     for idx in range(len(result_list)):
+        # noinspection PyArgumentList
         result_list[idx] += (np.random.rand(1) - 0.5) * jitter
+        # noinspection PyArgumentList
         value_list[idx] += (np.random.rand(1) - 0.5) * jitter
 
     # Plot
@@ -110,7 +112,7 @@ def plot_params(value_list, result_list, name, save="", title="", jitter=0):
 
 def main():
     usage = "python plot_param.py WhatIsThis <pathTo.pkl>* [options]"
-    parser = optparse.OptionParser()
+    parser = optparse.OptionParser(usage)
     parser.add_option("-s", "--save", dest="save", default="",
                       help="Where to save plot instead of showing it?")
     parser.add_option("-p", "--parameter", dest="param", default="",
