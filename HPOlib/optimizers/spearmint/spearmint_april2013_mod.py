@@ -23,7 +23,7 @@ import sys
 
 import numpy as np
 
-import HPOlib.wrapping_util as wrapping_util
+import HPOlib.wrapping_util
 
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
@@ -37,12 +37,10 @@ path_to_optimizer = "optimizers/spearmint_april2013_mod/"
 version_info = ("# %76s #\n" %
                 "https://github.com/JasperSnoek/spearmint/tree/613350f2f617de3af5f101b1dc5eccf60867f67e")
 
-optimizer_str = "spearmint_april2013_mod"
-
 
 def build_spearmint_call(config, options, optimizer_dir):
-    call = 'python ' + os.path.dirname(os.path.realpath(__file__)) + \
-           "/" + path_to_optimizer + '/spearmint_sync.py'
+    print
+    call = 'python ' + os.path.join(config.get('SPEARMINT', 'path_to_optimizer'), 'spearmint_sync.py')
     call = ' '.join([call, optimizer_dir,
                     '--config', config.get('SPEARMINT', 'config'),
                     '--max-concurrent', config.get('DEFAULT', 'numberOfConcurrentJobs'),
@@ -93,7 +91,8 @@ def main(config, options, experiment_dir, **kwargs):
     # experiment_dir:   Experiment directory/Benchmark_directory
     # **kwargs:         Nothing so far
 
-    time_string = wrapping_util.get_time_string()
+    time_string = HPOlib.wrapping_util.get_time_string()
+    optimizer_str = os.path.splitext(os.path.basename(__file__))[0]
 
     # Find experiment directory
     if options.restore:

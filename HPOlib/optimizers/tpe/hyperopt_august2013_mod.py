@@ -80,8 +80,10 @@ def main(config, options, experiment_dir, **kwargs):
     cmd = ""
 
     # Add path_to_optimizer to PYTHONPATH and to sys.path
+    # Only for HYPEROPT
     os.environ['PYTHONPATH'] = config.get('TPE', 'path_to_optimizer') + os.pathsep + os.environ['PYTHONPATH']
     sys.path.append(config.get('TPE', 'path_to_optimizer'))
+
     optimizer_str = os.path.splitext(os.path.basename(__file__))[0]
 
 # TODO: Check whether we might need this again
