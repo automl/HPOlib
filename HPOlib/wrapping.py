@@ -355,7 +355,7 @@ def main():
 
         ret = proc.returncode
 
-        logger.info("-----------------------END--------------------------------------")
+        logger.info("\n-----------------------END--------------------------------------")
 
         trials = Experiment.Experiment(optimizer_dir_in_experiment, optimizer)
         trials.endtime.append(time.time())

@@ -125,11 +125,10 @@ def main(config, options, experiment_dir, **kwargs):
     path_to_loaded_optimizer = os.path.abspath(os.path.dirname(os.path.dirname(hyperopt.__file__)))
 
     logger.info("### INFORMATION ################################################################")
-    #logger.info("# You're running %40s                      #\n" % path_to_optimizer)
+    logger.info("# You are running:                                                             #")
+    logger.info("# %76s #" % path_to_loaded_optimizer)
     if not os.path.samefile(path_to_loaded_optimizer, config.get('TPE', 'path_to_optimizer')):
-        logger.warning("# You are running:                                                             #")
-        logger.warning("# %76s #" % path_to_loaded_optimizer)
-        logger.warning("# but hyperopt_august2013_modDefault.cfg says:")
+        logger.warning("# BUT hyperopt_august2013_modDefault.cfg says:")
         logger.warning("# %76s #" % config.get('TPE', 'path_to_optimizer'))
         logger.warning("# Found a global hyperopt version. This installation will be used!             #")
     else:

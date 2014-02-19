@@ -16,9 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
+import sys
 
 import ConfigParser
+
+logger = logging.getLogger("HPOlib.optimizers.smac.smac_2_06_01-dev_parser")
 
 
 def add_default(config):
@@ -27,13 +31,14 @@ def add_default(config):
     assert isinstance(config, ConfigParser.RawConfigParser), \
         'config is not a valid instance'
 
-    config_fn = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                             "smacDefault.cfg")
-    if not os.path.isfile(config_fn):
-        raise Exception('%s is not a valid file\n' % config_fn)
+     # Find out name of .cfg, we are in anything_parser.py[c]
+    optimizer_config_fn = os.path.splitext(__file__)[0][:-7] + "Default.cfg"
+    if not os.path.exists(optimizer_config_fn):
+        logger.critical("No default config %s found" % optimizer_config_fn)
+        sys.exit(1)
 
     smac_config = ConfigParser.SafeConfigParser(allow_no_value=True)
-    smac_config.read(config_fn)
+    smac_config.read(optimizer_config_fn)
     # --------------------------------------------------------------------------
     # SMAC
     # --------------------------------------------------------------------------
@@ -66,7 +71,14 @@ def add_default(config):
         config.set('SMAC', 'numConcurrentAlgoExecs',
                    config.get('DEFAULT', 'numberOfConcurrentJobs'))
 
-    # Anyway set this
-    # Makes it possible to call, e.g. smac_2_06_01-dev via smac
-    config.set('DEFAULT', 'optimizer_version', smac_config.get('SMAC', 'version'))
+    path_to_optimizer = smac_config.get('SMAC', 'path_to_optimizer')
+    if not os.path.isabs(path_to_optimizer):
+        path_to_optimizer = os.path.join(os.path.dirname(os.path.realpath(__file__)), path_to_optimizer)
+
+    path_to_optimizer = os.path.normpath(path_to_optimizer)
+    if not os.path.exists(path_to_optimizer):
+        logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
+
+    config.set('SMAC', 'path_to_optimizer', path_to_optimizer)
+
     return config

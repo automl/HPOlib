@@ -34,12 +34,11 @@ logger = logging.getLogger("HPOlib.smac_2_06_01-dev")
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
-path_to_optimizer = "optimizers/smac_2_06_01-dev"
 version_info = ["Automatic Configurator Library ==> v2.06.01-development-643 (a1f71813a262)",
                 "Random Forest Library ==> v1.05.01-development-95 (4a8077e95b21)",
                 "SMAC ==> v2.06.01-development-620 (9380d2c6bab9)"]
 
-optimizer_str = "smac_2_06_01-dev"
+#optimizer_str = "smac_2_06_01-dev"
 
 
 def _get_state_run(optimizer_dir):
@@ -64,7 +63,10 @@ def _get_state_run(optimizer_dir):
 
 
 def build_smac_call(config, options, optimizer_dir):
-    call = os.path.dirname(os.path.realpath(__file__)) + "/" + path_to_optimizer + "/smac"
+    import HPOlib
+    algo_exec_dir = os.path.dirname(HPOlib.__file__)
+
+    call = config.get('SMAC', 'path_to_optimizer') + "/smac"
     call = " ".join([call, '--numRun', str(options.seed),
                     '--scenario-file', os.path.join(optimizer_dir, 'scenario.txt'),
                     '--cutoffTime', config.get('SMAC', 'cutoffTime'),
@@ -74,8 +76,7 @@ def build_smac_call(config, options, optimizer_dir):
                     '--intraInstanceObj', config.get('SMAC', 'intraInstanceObj'),
                     '--runObj', config.get('SMAC', 'runObj'),
                     # '--testInstanceFile', config.get('SMAC', 'testInstanceFile'),
-                    '--algoExec',  '"python', os.path.dirname(os.path.realpath(__file__)) + "/" +
-                    config.get('SMAC', 'algoExec') + '"',
+                    '--algoExec',  '"python', os.path.join(algo_exec_dir, config.get('SMAC', 'algoExec')) + '"',
                     '--execDir', optimizer_dir,
                     '-p', config.get('SMAC', 'p'),
                     # The experiment dir MUST not be specified when restarting, it is set
@@ -187,6 +188,8 @@ def main(config, options, experiment_dir, **kwargs):
     # **kwargs:         Nothing so far
     time_string = wrapping_util.get_time_string()
 
+    optimizer_str = os.path.splitext(os.path.basename(__file__))[0]
+
     # Find experiment directory
     if options.restore:
         if not os.path.exists(options.restore):
@@ -223,7 +226,7 @@ def main(config, options, experiment_dir, **kwargs):
             os.symlink(os.path.join(experiment_dir, optimizer_str, params),
                        os.path.join(optimizer_dir, params))
     logger.info("### INFORMATION ################################################################")
-    logger.info("# You're running %40s                      #" % path_to_optimizer)
+    logger.info("# You're running %40s                      #" % config.get('SMAC', 'path_to_optimizer'))
     for v in version_info:
         logger.info("# %76s #" % v)
     logger.info("# A newer version might be available, but not yet built in.                    #")
