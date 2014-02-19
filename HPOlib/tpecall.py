@@ -19,15 +19,20 @@
 #!/usr/bin/env python
 
 import cPickle
-from optparse import OptionParser
 from functools import partial
 from importlib import import_module
+import logging
+from optparse import OptionParser
 import os
 
 import hyperopt
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
+
+
+logger = logging.getLogger("HPOlib.tpecall")
+
 
 """
 def pyll_replace_list_with_dict(search_space, indent = 0):
@@ -90,7 +95,7 @@ def main():
     import sys
     sys.path.append("./")
     sys.path.append("")
-    print os.getcwd()
+    logger.info(os.getcwd())
     module = import_module(space)
     search_space = module.space
     fn = import_module(algo)
@@ -130,7 +135,7 @@ def main():
         fh.close()
 
     best = trials.argmin
-    print "Best Value found for params:", best
+    logger.info("Best Value found for params: " + str(best))
 
 if __name__ == "__main__":
     main()

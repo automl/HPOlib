@@ -18,12 +18,16 @@
 
 import cPickle
 from gzip import GzipFile as gfile
-import numpy as np
+import logging
 import os
-import sys
+
+import numpy as np
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
+
+
+logger = logging.getLogger("HPOlib.data_util")
 
 
 def load_file(filename, file_format, use_percentage):
@@ -31,7 +35,7 @@ def load_file(filename, file_format, use_percentage):
         raise IOError("File %s not found", filename)
 
     if file_format == "gfile":
-        print "Loading file:", filename
+        logger.info("Loading file: %s" % filename)
         fh = gfile(filename, "rb")
         data = cPickle.load(fh)
         if use_percentage >= 100.:
@@ -40,11 +44,10 @@ def load_file(filename, file_format, use_percentage):
             max_data = int(len(data) / 100. * use_percentage)
             data = data[:max_data]
         fh.close()
-        print "Done loading file:", filename, "has", len(data), "datapoints"
-        sys.stdout.flush()
+        logger.info("Done loading file: %s has %d datapoints" % (filename, len(data)))
 
     elif file_format == "pickle":
-        print "Loading file:", filename
+        logger.info("Loading file: %s" % filename)
         fh = open(filename, "r")
         data = cPickle.load(fh)
         if use_percentage >= 100.:
@@ -52,10 +55,10 @@ def load_file(filename, file_format, use_percentage):
         else:
             data = data[:len(data) / 100. * use_percentage]
         fh.close()
-        print "Done loading file:", filename, "has", len(data), "datapoints"
+        logger.info("Done loading file: %s has %d datapoints" % (filename, len(data)))
 
     elif file_format == "numpy":
-        print "Loading file:", filename
+        logger.info("Loading file: %s" % filename)
         fh = open(filename, "r")
         data = np.load(fh)
         if use_percentage >= 100.:
@@ -63,7 +66,7 @@ def load_file(filename, file_format, use_percentage):
         else:
             data = data[:len(data) / 100. * use_percentage]
         fh.close()
-        print "Done loading file:", filename, "has", len(data), "datapoints"
+        logger.info("Done loading file: %s has %d datapoints" % (filename, len(data)))
 
     else:
         raise ValueError("%s is an unknown training_data_format", file_format)
@@ -85,9 +88,6 @@ def custom_split(data, n_train, n_valid):
         "data (%d)") % (n_train, n_valid, len(data))
     train = data[0:n_train]
     valid = data[n_train:]
-    print type(train)
-    print type(valid)
-
     return train, valid
 
 
@@ -107,7 +107,8 @@ def prepare_cv_for_fold(data, fold, folds):
     In case no data is handed over to the function, None is returned.
 
     """
-    print "Fold", fold, "of ", folds, "folds"
+    logger.info("Splitting data:")
+    logger.info("Fold %s of %s folds" % (fold, folds))
     # Create an array with the split points
     if data is not None:
         data_len = len(data)
@@ -125,7 +126,7 @@ def prepare_cv_for_fold(data, fold, folds):
             data = np.array(data)
 
     if isinstance(data, np.ndarray):
-        cv_split_mask = np.empty((data_len), dtype = np.bool)
+        cv_split_mask = np.empty((data_len), dtype=np.bool)
         for i in range(folds):
             if i != fold:
                 cv_split_mask[splits[i]:splits[i+1]] = 1
@@ -133,7 +134,8 @@ def prepare_cv_for_fold(data, fold, folds):
                 cv_split_mask[splits[i]:splits[i+1]] = 0
         train = data[cv_split_mask]
         valid = data[~cv_split_mask]
-        print data.shape, train.shape, valid.shape, train.itemsize
+        logger.info("%d, %d, %d, %d" % (data.shape, train.shape, valid.shape,
+                                        train.itemsize))
     else:
         train = []
         valid = []

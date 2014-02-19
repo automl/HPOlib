@@ -1,0 +1,89 @@
+runsolver Copyright (C) 2010-2013 Olivier ROUSSEL
+
+This is runsolver version 3.3.2 (svn: 1389)
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+command line: runsolver -o /home/feurerm/HPOlib/Software/HPOlib/HPOlib/benchmarks/branin/smac_2_06_01-dev_1_2014-2-4--13-34-14-689426/2014-2-4--13-59-11-643481_run_instance.out --timestamp --use-pty -W 3600 -C 14400 -M 10 -d 0 python /home/feurerm/HPOlib/Software/HPOlib/HPOlib/benchmarks/branin/branin.py --fold 0 --folds 1 --params -x2.5 -y7.5
+
+running on 4 cores: 0-3
+
+Enforcing wall clock limit (soft limit, will send SIGTERM then SIGKILL): 3600 seconds
+Enforcing CPUTime limit (soft limit, will send SIGTERM then SIGKILL): 14400 seconds
+Enforcing CPUTime limit (hard limit, will send SIGXCPU): 14430 seconds
+Enforcing VSIZE limit (soft limit, will send SIGTERM then SIGKILL): 10240 KiB
+Enforcing VSIZE limit (hard limit, stack expansion will fail with SIGSEGV, brk() and mmap() will return ENOMEM): 61440 KiB
+Using a pseudo terminal to collect output from the solver
+Current StackSize limit: 8192 KiB
+
+
+[startup+0 s]
+/proc/loadavg: 0.24 0.23 0.28 2/498 27516
+/proc/meminfo: memFree=4949692/8174740 swapFree=0/0
+[pid=27516] ppid=27514 vsize=7764 CPUtime=0 cores=0-3
+/proc/27516/stat : 27516 (python) D 27514 27516 19549 34817 27493 1077944320 720 0 0 0 0 0 0 0 20 0 1 0 60305913 7950336 527 4294967295 134512640 136958856 3213014688 3213000872 3078476836 0 0 16781312 2 4177571357 0 0 17 0 0 0 0 0 0 136965844 137310660 142368768 3213015121 3213015240 3213015240 3213017033 0
+/proc/27516/statm: 1941 527 369 598 0 159 0
+
+
+
+Maximum VSize exceeded: sending SIGTERM then SIGKILL
+
+[startup+0.031982 s]
+/proc/loadavg: 0.24 0.23 0.28 3/499 27517
+/proc/meminfo: memFree=4947708/8174740 swapFree=0/0
+[pid=27516] ppid=27514 vsize=14492 CPUtime=0.01 cores=0-3
+/proc/27516/stat : 27516 (python) D 27514 27516 19549 34817 27493 1077944320 1471 0 0 0 1 0 0 0 20 0 1 0 60305913 14839808 1138 4294967295 134512640 136958856 3213014688 3212920840 3078476836 0 0 16781312 2 4177571357 0 0 17 0 0 0 0 0 0 136965844 137310660 142368768 3213015121 3213015240 3213015240 3213017033 0
+/proc/27516/statm: 3623 1138 632 598 0 495 0
+Current children cumulated CPU time (s) 0.01
+Current children cumulated vsize (KiB) 14492
+
+Sending SIGTERM to process tree (bottom up)
+
+[startup+0.031982 s]
+/proc/loadavg: 0.24 0.23 0.28 3/499 27517
+/proc/meminfo: memFree=4947708/8174740 swapFree=0/0
+[pid=27516] ppid=27514 vsize=14492 CPUtime=0.01 cores=0-3
+/proc/27516/stat : 27516 (python) D 27514 27516 19549 34817 27493 1077944320 1471 0 0 0 1 0 0 0 20 0 1 0 60305913 14839808 1138 4294967295 134512640 136958856 3213014688 3212920840 3078476836 0 0 16781312 2 4177571357 0 0 17 0 0 0 0 0 0 136965844 137310660 142368768 3213015121 3213015240 3213015240 3213017033 0
+/proc/27516/statm: 3623 1138 632 598 0 495 0
+Current children cumulated CPU time (s) 0.01
+Current children cumulated vsize (KiB) 14492
+Sleeping 0 seconds
+
+Sending SIGKILL to process tree (bottom up)
+
+Sending SIGKILL to -27516
+
+Solver just ended. Dumping a history of the last processes samples
+
+Child ended because it received signal 15 (SIGTERM)
+Real time (s): 0.039276
+CPU time (s): 0.016
+CPU user time (s): 0.012
+CPU system time (s): 0.004
+CPU usage (%): 40.7373
+Max. virtual memory (cumulated for all children) (KiB): 14492
+
+getrusage(RUSAGE_CHILDREN,...) data:
+user time used= 0.012
+system time used= 0.004
+maximum resident set size= 4708
+integral shared memory size= 0
+integral unshared data size= 0
+integral unshared stack size= 0
+page reclaims= 1479
+page faults= 0
+swaps= 0
+block input operations= 0
+block output operations= 8
+messages sent= 0
+messages received= 0
+signals received= 0
+voluntary context switches= 62
+involuntary context switches= 4
+
+runsolver used 0.004 second user time and 0.020001 second system time
+
+The end

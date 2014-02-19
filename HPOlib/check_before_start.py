@@ -16,12 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import subprocess
-import sys
-import imp
 
 from config_parser.parse import parse_config
+
+
+logger = logging.getLogger("HPOlib.check_before_start")
+
 
 """This script checks whether all dependencies are installed"""
 
@@ -39,20 +42,21 @@ def _check_runsolver():
                         "Your $PATH is: " + os.environ['PATH'])
 
 
+# noinspection PyUnresolvedReferences
 def _check_modules():
     try:
         import numpy
         if numpy.__version__ < "1.6.0":
-            print "WARNING: You are using a numpy %s < 1.6.0. This might not work"\
-                % numpy.__version__
+            logger.warning("WARNING: You are using a numpy %s < 1.6.0. This "
+                           "might not work" % numpy.__version__)
     except:
         raise ImportError("Numpy cannot be imported. Are you sure that it's installed?")
 
     try:
         import scipy
         if scipy.__version__ < "0.12.0":
-            print "WARNING: You are using a scipy %s < 0.12.0. This might not work"\
-                % scipy.__version__
+            logger.warning("WARNING: You are using a scipy %s < 0.12.0. "
+                           "This might not work" % scipy.__version__)
     except:
         raise ImportError("Scipy cannot be imported. Are you sure that it's installed?")
 
@@ -62,7 +66,8 @@ def _check_modules():
     try:
         import theano
     except ImportError:
-        print "Theano not found. You might need this to run some more complex benchmarks!"
+        logger.warning("Theano not found. You might need this to run some "
+                       "more complex benchmarks!")
 
     try:
         import pymongo
@@ -71,9 +76,7 @@ def _check_modules():
         raise ImportError("Pymongo cannot be imported. Are you sure it's installed?")
 
     if 'cuda' not in os.environ['PATH']:
-        print "\tCUDA not in $PATH"
-    # if 'cuda' not in os.environ['LD_LIBRARY_PATH']:
-    #     print "CUDA not in $LD_LIBRARY_PATH"
+        logger.warning("CUDA not in $PATH")
 
 
 def _check_config(experiment_dir):
@@ -99,12 +102,12 @@ def _check_function(experiment_dir):
 
 
 def check_zeroth(experiment_dir):
-    print "\tconfig.cfg..",
-    _check_modules()
+    logger.info("Check config.cfg..",)
     _check_config(experiment_dir)
-    print "..passed"
+    logger.info("..passed")
 
 
+# noinspection PyUnusedLocal
 def check_first(experiment_dir):
     """ Do some checks before optimizer is loaded """
     main()
@@ -112,19 +115,19 @@ def check_first(experiment_dir):
 
 def check_second(experiment_dir):
     """ Do remaining tests """
-    print "\talgorithm..",
+    logger.info("Check algorithm..",)
     _check_function(experiment_dir)
-    print "..passed"
+    logger.info("..passed")
 
 
 def main():
-    print "Checking dependencies:"
-    print "\tRunsolver..",
+    logger.info("Check dependencies:")
+    logger.info("Runsolver..")
     _check_runsolver()
-    print "..passed"
-    print "\tpython_modules..",
+    logger.info("..passed")
+    logger.info("Check python_modules..")
     _check_modules()
-    print "..passed"
+    logger.info("..passed")
 
 
 if __name__ == "__main__":

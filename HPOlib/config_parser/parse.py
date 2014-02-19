@@ -17,9 +17,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import logging
 import imp
 import sys
 import ConfigParser
+
+
+logger = logging.getLogger("HPOlib.config_parser.parse")
 
 
 def parse_config(config_fn, allow_no_value=True, optimizer_module=""):
@@ -74,10 +78,10 @@ def parse_config(config_fn, allow_no_value=True, optimizer_module=""):
     try:
         optimizer_module_loaded = imp.load_source(optimizer_module_name, optimizer_module_path)
     except Exception, e:
-        print('Could not find\n%s\n\tin\n%s\n\t relative to\n%s'
+        logger.critical('Could not find\n%s\n\tin\n%s\n\t relative to\n%s'
               % (optimizer_module_name, optimizer_module_path, os.getcwd()))
         import traceback
-        print(traceback.format_exc())
+        logger.critical(traceback.format_exc())
         sys.exit(1)
     # Add optimizer specific defaults
     config = optimizer_module_loaded.add_default(config)
@@ -87,14 +91,17 @@ def parse_config(config_fn, allow_no_value=True, optimizer_module=""):
 
 def main():
     config_fn = sys.argv[1]
-    print 'Read config from %s..' % config_fn
-    print '\twith spearmint..',
+    logger.info('Read config from %s..' % config_fn)
+    logger.info('\twith spearmint..',)
     parse_config(config_fn, optimizer_module="spearmint")
-    print '..finished\n\twith smac..',
+    logger.info('\t..finished')
+    logger.info('\twith smac..')
     parse_config(config_fn, optimizer_module="smac")
-    print '..finished\n\twith tpe..',
+    logger.info('\t..finished')
+    logger.info('\twith tpe..')
     parse_config(config_fn, optimizer_module="tpe")
-    print '..finished\n..finished'
+    logger.info('\t..finished')
+    logger.info('..finished')
 
 if __name__ == "__main__":
     main()

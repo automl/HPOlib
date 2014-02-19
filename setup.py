@@ -169,7 +169,7 @@ setup(
     license='LGPLv3',
     platforms=['Linux'],
     author=HPOlib.__authors__,
-    tests_require=['unittest'],
+    test_suite="tests.testsuite.suite",
     install_requires=['argparse==1.2.1',
                       'matplotlib==1.3.1',
                       'networkx==1.8.1',
@@ -189,7 +189,6 @@ setup(
     scripts=scripts,
     cmdclass={
         'install': InstallRunsolver,
-        'test': PyTest
     },
     classifiers=[
         'Programming Language :: Python :: 2.7',

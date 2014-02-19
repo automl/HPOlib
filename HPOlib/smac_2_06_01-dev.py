@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import glob
+import logging
 import os
 import re
 import subprocess
@@ -27,14 +28,16 @@ import numpy as np
 import HPOlib.wrapping_util as wrapping_util
 
 
+logger = logging.getLogger("HPOlib.smac_2_06_01-dev")
+
+
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 path_to_optimizer = "optimizers/smac_2_06_01-dev"
-version_info = ("# %76s #\n# %76s #\n# %76s #\n" %
-               ("Automatic Configurator Library ==> v2.06.01-development-643 (a1f71813a262)",
+version_info = ["Automatic Configurator Library ==> v2.06.01-development-643 (a1f71813a262)",
                 "Random Forest Library ==> v1.05.01-development-95 (4a8077e95b21)",
-                "SMAC ==> v2.06.01-development-620 (9380d2c6bab9)"))
+                "SMAC ==> v2.06.01-development-620 (9380d2c6bab9)"]
 
 optimizer_str = "smac_2_06_01-dev"
 
@@ -44,13 +47,13 @@ def _get_state_run(optimizer_dir):
     if len(rungroups) == 1:
         rungroup = rungroups[0]
     else:
-        print "Found multiple rungroups, take the newest one."
+        logger.warning("Found multiple rungroups, take the newest one.")
         creation_times = []
         for i, filename in enumerate(rungroups):
             creation_times.append(float(os.path.getctime(filename)))
         newest = np.argmax(creation_times)
         rungroup = rungroups[newest]
-        print creation_times, newest, rungroup
+        logger.info(creation_times, newest, rungroup)
     state_runs = glob.glob(rungroup + "/state-run*")
 
     if len(state_runs) != 1:
@@ -128,13 +131,13 @@ def restore(config, optimizer_dir, **kwargs):
                       kwargs['cmd'])
     smac_cmd = re.sub('--outputDirectory ' + optimizer_dir, '--outputDirectory '
                       + optimizer_dir + "restart_rungroups", smac_cmd)
-    print smac_cmd
+    logger.info(smac_cmd)
     process = subprocess.Popen(smac_cmd, stdout=fh, stderr=fh, shell=True,
                                executable="/bin/bash")
-    print "-----------------------RUNNING----------------------------------"
+    logger.info("----------------------RUNNING--------------------------------")
     ret = process.wait()
     fh.close()
-    print "Finished with return code: " + str(ret)
+    logger.info("Finished with return code: " + str(ret))
     # os.remove("smac_restart.out")
 
     # read smac.out and look how many states are restored
@@ -144,7 +147,6 @@ def restore(config, optimizer_dir, **kwargs):
     for line in fh.readlines():
         match = prog.search(line)
         if match:
-            # print "###########Match", match.group(0), match.group(2)
             restored_runs = int(match.group(2))
 
     # Find out all rungroups and state-runs
@@ -154,18 +156,13 @@ def restore(config, optimizer_dir, **kwargs):
     state_run_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                   os.getcwd(), state_run)
     state_runs = glob.glob(state_run_path + "/runs_and_results-it*.csv")
-    # print state_run_path + "/runs_and_results-it*.csv"
-    # print state_runs
     state_run_iterations = []
     for state_run in state_runs:
         match = re.search(r"(runs_and_results-it)([0-9]{1,100})(.csv)",
                           state_run)
-        # print state_run
         if match:
             state_run_iterations.append(float(match.group(2)))
-    # print state_run_iterations
     run_and_results_fn = state_runs[np.argmax(state_run_iterations)]
-    # print run_and_results_fn
 
     runs_and_results = open(run_and_results_fn)
     lines = runs_and_results.readlines()
@@ -225,10 +222,11 @@ def main(config, options, experiment_dir, **kwargs):
         if not os.path.exists(os.path.join(optimizer_dir, params)):
             os.symlink(os.path.join(experiment_dir, optimizer_str, params),
                        os.path.join(optimizer_dir, params))
-    sys.stdout.write("### INFORMATION ################################################################\n")
-    sys.stdout.write("# You're running %40s                      #\n" % path_to_optimizer)
-    sys.stdout.write("%s" % version_info)
-    sys.stdout.write("# A newer version might be available, but not yet built in.                    #\n")
-    sys.stdout.write("# Please use this version only to reproduce our results on automl.org          #\n")
-    sys.stdout.write("################################################################################\n")
+    logger.info("### INFORMATION ################################################################")
+    logger.info("# You're running %40s                      #" % path_to_optimizer)
+    for v in version_info:
+        logger.info("# %76s #" % v)
+    logger.info("# A newer version might be available, but not yet built in.                    #")
+    logger.info("# Please use this version only to reproduce our results on automl.org          #")
+    logger.info("################################################################################")
     return cmd, optimizer_dir

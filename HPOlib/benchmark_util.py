@@ -16,7 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import sys
+
+
+logger = logging.getLogger("HPOlib.benchmark_util")
 
 
 def parse_cli():
@@ -73,7 +77,8 @@ def parse_cli():
         elif arg[0] == "-" and arg[0:2] != "--" and not found_params:
             raise ValueError("You either try to use arguments with only one lea"
                              "ding minus or try to specify a hyperparameter bef"
-                             "ore the --params argument. %s" % " ".join(cli_args))
+                             "ore the --params argument. %s" %
+                             " ".join(cli_args))
 
         elif not found_params:
             raise ValueError("Illegal command line string, expected an argument"
