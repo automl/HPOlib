@@ -22,9 +22,12 @@ import cPickle
 from optparse import OptionParser
 from functools import partial
 from importlib import import_module
+import logging
 import os
 
 import hyperopt
+
+logger = logging.getLogger("HPOlib.optimizers.tpe.tpecall")
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -82,6 +85,10 @@ def main():
                       help="Use a random search")
     (options, args) = parser.parse_args()
 
+    if not os.path.exists(options.spaceFile):
+        logger.critical("Search space not found: %s" % options.spaceFile)
+        sys.exit(1)
+
     # First remove ".py"
     algo, ext = os.path.splitext(os.path.basename(options.algoExec))
     space, ext = os.path.splitext(os.path.basename(options.spaceFile))
@@ -91,6 +98,7 @@ def main():
     sys.path.append("./")
     sys.path.append("")
     print os.getcwd()
+
     module = import_module(space)
     search_space = module.space
     fn = import_module(algo)
@@ -99,6 +107,7 @@ def main():
     if options.random:
         # We use a random search
         tpe_with_seed = partial(hyperopt.tpe.rand.suggest, seed=int(options.seed))
+        logger.info("Using Random Search")
     else:
         tpe_with_seed = partial(hyperopt.tpe.suggest, seed=int(options.seed))
     

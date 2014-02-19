@@ -29,8 +29,6 @@ version_info = ("# %76s #" % "https://github.com/hyperopt/hyperopt/tree/486aebec
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
-optimizer_str = "hyperopt_august2013_mod"
-
 
 def build_tpe_call(config, options, optimizer_dir):
     # For TPE we have to cd to the exp_dir
@@ -84,11 +82,11 @@ def main(config, options, experiment_dir, **kwargs):
     # Add path_to_optimizer to PYTHONPATH and to sys.path
     os.environ['PYTHONPATH'] = config.get('TPE', 'path_to_optimizer') + os.pathsep + os.environ['PYTHONPATH']
     sys.path.append(config.get('TPE', 'path_to_optimizer'))
+    optimizer_str = os.path.splitext(os.path.basename(__file__))[0]
 
 # TODO: Check whether we might need this again
 #    SYSTEM_WIDE = 0
 #    AUGUST_2013_MOD = 1
-
 #    try:
 #        import hyperopt
 #        version = SYSTEM_WIDE
