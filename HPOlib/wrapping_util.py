@@ -95,4 +95,3 @@ def load_experiment_config_file():
         logger.critical("Could not open config file in directory %s" %
                         os.getcwd())
         sys.exit(1)
-

@@ -198,52 +198,51 @@ def main():
     # Now we can safely import non standard things
     import numpy as np
     import HPOlib.Experiment as Experiment
+    import HPOlib.wrapping_util
 
     optimizer = args.optimizer
+    # Check how many optimizer versions are present
+    optimizer_version = check_before_start.check_optimizer(optimizer)
+
+    logger.warning("You called -o %s, I am using optimizer defined in %sDefault.cfg" % (optimizer, optimizer_version))
+    optimizer = os.path.basename(optimizer_version)
 
     config_file = os.path.join(experiment_dir, "config.cfg")
-    config = parse_config(config_file, allow_no_value=True, optimizer_module=optimizer)
-
-    # Check whether we're calling a optimizer version, that links to another
-    # e.g. calling tpe, but running hyperopt_august2013_mod
-    if optimizer != config.get('DEFAULT', 'optimizer_version'):
-        logger.warning("You called -o %s, but this is only a link to "
-                       "version %s" % (optimizer, config.get('DEFAULT', 'optimizer_version')))
-        optimizer = config.get('DEFAULT', 'optimizer_version')
+    config = parse_config(config_file, allow_no_value=True, optimizer_version=optimizer_version)
 
     # Override config values with command line values
-    config_overrides = parse_config_values_from_unknown_arguments(unknown,
-                                                                  config)
+    config_overrides = parse_config_values_from_unknown_arguments(unknown, config)
     config = override_config_with_cli_arguments(config, config_overrides)
     # Saving the config file is down further at the bottom, as soon as we get
     # hold of the new optimizer directory
     wrapping_dir = os.path.dirname(os.path.realpath(__file__))
 
+    # TODO: We don't need this anymore, if we install HPOlib
     # Try adding runsolver to path
     os.putenv('PATH', os.environ['PATH'] + ":" + wrapping_dir + "/../runsolver/src/")
 
     # _check_runsolver, _check_modules()
     check_before_start.check_first(experiment_dir)
 
+    # TODO: We also don't need this
     # build call
     cmd = "export PYTHONPATH=$PYTHONPATH:" + wrapping_dir + "\n"
 
     # Load optimizer
     try:
-        optimizer_module = imp.load_source(optimizer, wrapping_dir + "/" +
-                                           optimizer + ".py")
+        optimizer_dir = os.path.dirname(os.path.realpath(optimizer_version))
+        optimizer_module = imp.load_source(optimizer_dir, optimizer_version + ".py")
     except (ImportError, IOError):
         logger.critical("Optimizer module %s not found" % optimizer)
         import traceback
         logger.critical(traceback.format_exc())
         sys.exit(1)
-    optimizer_call, optimizer_dir = optimizer_module.main(config=config,
+    optimizer_call, optimizer_dir_in_experiment = optimizer_module.main(config=config,
                                                           options=args,
-                                                          experiment_dir=
-                                                          experiment_dir)
+                                                          experiment_dir=experiment_dir)
     cmd += optimizer_call
 
-    with open(os.path.join(optimizer_dir, "config.cfg"), "w") as f:
+    with open(os.path.join(optimizer_dir_in_experiment, "config.cfg"), "w") as f:
         config.set("DEFAULT", "is_not_original_config_file", "True")
         save_config_to_file(f, config)
 
@@ -253,15 +252,15 @@ def main():
     # initialize/reload pickle file
     if args.restore:
         try:
-            os.remove(os.path.join(optimizer_dir, optimizer + ".pkl.lock"))
+            os.remove(os.path.join(optimizer_dir_in_experiment, optimizer + ".pkl.lock"))
         except OSError:
             pass
     folds = config.getint('DEFAULT', 'numberCV')
-    trials = Experiment.Experiment(optimizer_dir, optimizer, folds=folds,
+    trials = Experiment.Experiment(optimizer_dir_in_experiment, optimizer, folds=folds,
                                    max_wallclock_time=config.get('DEFAULT',
                                                                  'cpu_limit'),
                                    title=args.title)
-    trials.optimizer = optimizer
+    trials.optimizer = optimizer_version
 
     # TODO: We do not have any old runs anymore. DELETE this!
     if args.restore:
@@ -289,7 +288,7 @@ def main():
         #noinspection PyBroadException
         try:
             restored_runs = optimizer_module.restore(config=config,
-                                                     optimizer_dir=optimizer_dir,
+                                                     optimizer_dir=optimizer_dir_in_experiment,
                                                      cmd=cmd)
         except:
             logger.critical("Could not restore runs for %s" % args.restore)
@@ -299,7 +298,7 @@ def main():
 
         logger.info("Restored %d runs" % restored_runs)
         trials.remove_all_but_first_runs(restored_runs)
-        fh = open(os.path.join(optimizer_dir, optimizer + ".out"), "a")
+        fh = open(os.path.join(optimizer_dir_in_experiment, optimizer + ".out"), "a")
         fh.write("#" * 80 + "\n" + "Restart! Restored %d runs.\n" % restored_runs)
         fh.close()
 
@@ -319,7 +318,7 @@ def main():
         return 0
     else:
         logger.info(cmd)
-        output_file = os.path.join(optimizer_dir, optimizer + ".out")
+        output_file = os.path.join(optimizer_dir_in_experiment, optimizer + ".out")
         fh = open(output_file, "a")
         # process = subprocess.Popen(cmd, stdout=fh, stderr=fh, shell=True, executable="/bin/bash")
         # ret = process.wait()
@@ -358,7 +357,7 @@ def main():
 
         logger.info("-----------------------END--------------------------------------")
 
-        trials = Experiment.Experiment(optimizer_dir, optimizer)
+        trials = Experiment.Experiment(optimizer_dir_in_experiment, optimizer)
         trials.endtime.append(time.time())
         #noinspection PyProtectedMember
         trials._save_jobs()
@@ -378,7 +377,6 @@ def main():
             logger.info("The benchmark itself took %f seconds" % \
                   trials.total_wallclock_time)
         except Exception as e:
-            import HPOlib.wrapping_util
             logger.error(HPOlib.wrapping_util.format_traceback(sys.exc_info()))
             logger.error("Experiment itself went fine, but calculating "
                          "durations of optimization failed: %s %s" %

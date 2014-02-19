@@ -23,11 +23,9 @@ import sys
 
 import HPOlib.wrapping_util as wrapping_util
 
+logger = logging.getLogger("HPOlib.optimizers.tpe.hyperopt_august2013_mod")
 
-logger = logging.getLogger("HPOlib.hyperopt_august2013_mod")
-
-
-version_info = ("# %76s #\n" % "https://github.com/hyperopt/hyperopt/tree/486aebec8a4170e4781d99bbd6cca09123b12717")
+version_info = ("# %76s #" % "https://github.com/hyperopt/hyperopt/tree/486aebec8a4170e4781d99bbd6cca09123b12717")
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
@@ -35,7 +33,7 @@ optimizer_str = "hyperopt_august2013_mod"
 
 
 def build_tpe_call(config, options, optimizer_dir):
-    #For TPE we have to cd to the exp_dir
+    # For TPE we have to cd to the exp_dir
     call = "cd " + optimizer_dir + "\n" + \
            "python " + os.path.dirname(os.path.realpath(__file__)) + \
            "/tpecall.py"
@@ -56,7 +54,7 @@ def restore(config, optimizer_dir, **kwargs):
     """
     restore_file = os.path.join(optimizer_dir, 'state.pkl')
     if not os.path.exists(restore_file):
-        logger.error("Oups, this should have been checked before")
+        print "Oups, this should have been checked before"
         raise Exception("%s does not exist" % (restore_file,))
 
     # Special settings for restoring
@@ -82,28 +80,30 @@ def main(config, options, experiment_dir, **kwargs):
     # **kwargs:         Nothing so far
     time_string = wrapping_util.get_time_string()
     cmd = ""
-    SYSTEM_WIDE = 0
-    AUGUST_2013_MOD = 1
 
-    try:
-        import hyperopt
-        version = SYSTEM_WIDE
-    except ImportError:
-        try:
-            cmd += "export PYTHONPATH=$PYTHONPATH:" + os.path.dirname(os.path.abspath(__file__)) + \
-                "/optimizers/hyperopt_august2013_mod\n"
-            import optimizers.hyperopt_august2013_mod.hyperopt as hyperopt
-        except ImportError, e:
-            import HPOlib.optimizers.hyperopt_august2013_mod.hyperopt as hyperopt
-        version = AUGUST_2013_MOD
+    # Add path_to_optimizer to PYTHONPATH and to sys.path
+    os.environ['PYTHONPATH'] = config.get('TPE', 'path_to_optimizer') + os.pathsep + os.environ['PYTHONPATH']
+    sys.path.append(config.get('TPE', 'path_to_optimizer'))
 
-    path_to_optimizer = os.path.abspath(os.path.dirname(hyperopt.__file__))
+# TODO: Check whether we might need this again
+#    SYSTEM_WIDE = 0
+#    AUGUST_2013_MOD = 1
+
+#    try:
+#        import hyperopt
+#        version = SYSTEM_WIDE
+#    except ImportError:
+#        try:
+#            cmd += "export PYTHONPATH=$PYTHONPATH:" + os.path.dirname(os.path.abspath(__file__)) + \
+#                "/optimizers/hyperopt_august2013_mod\n"
+#            import optimizers.hyperopt_august2013_mod.hyperopt as hyperopt
+#        except ImportError, e:
+#            import HPOlib.optimizers.hyperopt_august2013_mod.hyperopt as hyperopt
+#        version = AUGUST_2013_MOD
 
     # Find experiment directory
     if options.restore:
         if not os.path.exists(options.restore):
-            logger.error("The restore directory %s does not exist." % options
-                         .restore)
             raise Exception("The restore directory does not exist")
         optimizer_dir = options.restore
     else:
@@ -122,10 +122,18 @@ def main(config, options, experiment_dir, **kwargs):
         if not os.path.exists(os.path.join(optimizer_dir, space)):
             os.symlink(os.path.join(experiment_dir, optimizer_str, space),
                        os.path.join(optimizer_dir, space))
-    logger.info("### INFORMATION ""################################################################")
-    logger.info("# You're running %40s                      #" % path_to_optimizer)
-    if version == SYSTEM_WIDE:
-        pass
+
+    import hyperopt
+    path_to_loaded_optimizer = os.path.abspath(os.path.dirname(os.path.dirname(hyperopt.__file__)))
+
+    logger.info("### INFORMATION ################################################################")
+    #logger.info("# You're running %40s                      #\n" % path_to_optimizer)
+    if not os.path.samefile(path_to_loaded_optimizer, config.get('TPE', 'path_to_optimizer')):
+        logger.warning("# You are running:                                                             #")
+        logger.warning("# %76s #" % path_to_loaded_optimizer)
+        logger.warning("# but hyperopt_august2013_modDefault.cfg says:")
+        logger.warning("# %76s #" % config.get('TPE', 'path_to_optimizer'))
+        logger.warning("# Found a global hyperopt version. This installation will be used!             #")
     else:
         logger.info("# To reproduce our results you need version 0.0.3.dev, which can be found here:#")
         logger.info("%s" % version_info)

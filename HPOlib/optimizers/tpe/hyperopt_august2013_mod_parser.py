@@ -16,23 +16,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
+import sys
 
 import ConfigParser
 
+logger = logging.getLogger("HPOlib.optimizers.tpe.hyperopt_august2013_mod_parser")
+
 
 def add_default(config):
-    # This module reads tpeDefault.cfg and adds this defaults to a given config
+    # This module reads __file__Default.cfg and adds this defaults to a given config
     assert isinstance(config, ConfigParser.RawConfigParser), \
         "config is not a valid instance"
 
-    config_fn = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                             "tpeDefault.cfg")
-    if not os.path.isfile(config_fn):
-        raise Exception('%s is not a valid file\n' % config_fn)
+    # Find out name of .cfg, we are in anything_parser.py[c]
+    optimizer_config_fn = os.path.splitext(__file__)[0][:-7] + "Default.cfg"
+    if not os.path.exists(optimizer_config_fn):
+        logger.critical("No default config %s found" % optimizer_config_fn)
+        sys.exit(1)
 
     tpe_config = ConfigParser.SafeConfigParser(allow_no_value=True)
-    tpe_config.read(config_fn)
+    tpe_config.read(optimizer_config_fn)
     # --------------------------------------------------------------------------
     # TPE
     # --------------------------------------------------------------------------
@@ -49,8 +54,19 @@ def add_default(config):
             config.set('TPE', 'numberEvals',
                        config.get('DEFAULT', 'numberOfJobs'))
 
+    path_to_optimizer = tpe_config.get('TPE', 'path_to_optimizer')
+    if not os.path.isabs(path_to_optimizer):
+        path_to_optimizer = os.path.join(os.path.dirname(os.path.realpath(__file__)), path_to_optimizer)
+
+    path_to_optimizer = os.path.normpath(path_to_optimizer)
+    if not os.path.exists(path_to_optimizer):
+        logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
+
+    config.set('TPE', 'path_to_optimizer', path_to_optimizer)
+
+    # TODO: I don't think we need this anymore
     # Anyway set this
     # Makes it possible to call, e.g. hyperopt_august2013_mod via simply tpe
-    config.set('DEFAULT', 'optimizer_version', tpe_config.get('TPE', 'version'))
+    # config.set('DEFAULT', 'optimizer_version', tpe_config.get('TPE', 'version'))
 
     return config

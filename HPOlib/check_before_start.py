@@ -16,9 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import glob
 import logging
 import os
 import subprocess
+import sys
 
 from config_parser.parse import parse_config
 
@@ -99,6 +101,39 @@ def _check_function(experiment_dir):
     if not os.path.exists(path):
         raise ValueError("Function: %s does not exist" % path)
     return
+
+
+def check_optimizer(optimizer):
+    path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "optimizers", optimizer)
+    if os.path.isdir(path):
+        # User told us, e.g. "tpe"
+        # Optimizer is in our optimizer directory
+        # Now check how many versions are present
+        parser = glob.glob(os.path.join(path, '*_parser.py'))
+        if len(parser) > 1:
+            logger.critical("Sorry I don't know which optimizer to use: %s" % parser)
+            sys.exit(1)
+        version = parser[0][:-10]
+    elif len(glob.glob(path + '*_parser.py')) == 1:
+        parser = glob.glob(path + '*_parser.py')
+        version = parser[0][:-10]
+    elif len(glob.glob(path + '*_parser.py')) > 1:
+        # Note this is a different case
+        # User told us e.g. "tpe/hyperopt_august" but this was not specific enough
+        logger.critical("Sorry I don't know which optimizer to use: %s" % glob.glob(path + '*_parser.py'))
+        sys.exit(1)
+    else:
+        logger.critical("We cannot find: %s" % path)
+        sys.exit(1)
+
+    # Now check the other stuff
+    if not os.path.exists(version + "Default.cfg"):
+        logger.critical("Sorry I cannot find the default config for your optimizer: %sDefault.cfg" % version)
+        sys.exit(1)
+    if not os.path.exists(version + ".py"):
+        logger.critical("Sorry I cannot find the script to call your optimizer: %s.py" % version)
+    else:
+        return version
 
 
 def check_zeroth(experiment_dir):

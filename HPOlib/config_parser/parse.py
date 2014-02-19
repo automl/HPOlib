@@ -26,10 +26,10 @@ import ConfigParser
 logger = logging.getLogger("HPOlib.config_parser.parse")
 
 
-def parse_config(config_fn, allow_no_value=True, optimizer_module=""):
+def parse_config(config_fn, allow_no_value=True, optimizer_version=""):
     # Reads config_fn
     # Overwrites with default values from generalDefault.cfg
-    # Loads optimizer specific parser, called 'optimizer_module'_parser.py, which can read its own default config
+    # Loads optimizer specific parser, called 'optimizer_version'_parser.py, which can read its own default config
     if not os.path.isfile(config_fn):
         raise Exception('%s is not a valid file\n' % os.path.join(
                         os.getcwd(), config_fn))
@@ -71,39 +71,42 @@ def parse_config(config_fn, allow_no_value=True, optimizer_module=""):
         raise Exception('No function specified in .cfg')
 
     # Load optimizer parsing module
-    if optimizer_module == "":
+    if optimizer_version == "":
         return config
-    optimizer_module_name = optimizer_module + "_parser"
-    optimizer_module_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), optimizer_module_name + ".py")
+    optimizer_version_parser = optimizer_version + "_parser"
+    optimizer_version_parser_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                                 optimizer_version_parser + ".py")
+    # noinspection PyBroadException,PyUnusedLocal
     try:
-        optimizer_module_loaded = imp.load_source(optimizer_module_name, optimizer_module_path)
-    except Exception, e:
-        logger.critical('Could not find\n%s\n\tin\n%s\n\t relative to\n%s'
-              % (optimizer_module_name, optimizer_module_path, os.getcwd()))
+        optimizer_module_loaded = imp.load_source(optimizer_version_parser, optimizer_version_parser_path)
+    except Exception as e:
+        logger.critical('Could not find\n%s\n\tin\n%s\n\t relative to\n%s' %
+                        (optimizer_version_parser, optimizer_version_parser_path, os.getcwd()))
         import traceback
         logger.critical(traceback.format_exc())
         sys.exit(1)
+
     # Add optimizer specific defaults
     config = optimizer_module_loaded.add_default(config)
 
     return config
 
-
-def main():
-    config_fn = sys.argv[1]
-    logger.info('Read config from %s..' % config_fn)
-    logger.info('\twith spearmint..',)
-    parse_config(config_fn, optimizer_module="spearmint")
-    logger.info('\t..finished')
-    logger.info('\twith smac..')
-    parse_config(config_fn, optimizer_module="smac")
-    logger.info('\t..finished')
-    logger.info('\twith tpe..')
-    parse_config(config_fn, optimizer_module="tpe")
-    logger.info('\t..finished')
-    logger.info('..finished')
-
-if __name__ == "__main__":
-    main()
+# TODO: remove, does not seem to be useful anymore
+# def main():
+#     config_fn = sys.argv[1]
+#     logger.info('Read config from %s..' % config_fn)
+#     logger.info('\twith spearmint..',)
+#     parse_config(config_fn, optimizer_module="spearmint")
+#     logger.info('\t..finished')
+#     logger.info('\twith smac..')
+#     parse_config(config_fn, optimizer_module="smac")
+#     logger.info('\t..finished')
+#     logger.info('\twith tpe..')
+#     parse_config(config_fn, optimizer_module="tpe")
+#     logger.info('\t..finished')
+#     logger.info('..finished')
+#
+# if __name__ == "__main__":
+#     main()
 
 
