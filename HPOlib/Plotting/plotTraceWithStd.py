@@ -27,6 +27,8 @@ from matplotlib.pyplot import tight_layout, figure, subplots_adjust, subplot, sa
 import matplotlib.gridspec
 import numpy as np
 
+from HPOlib.Plotting import plot_util
+
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
@@ -148,60 +150,33 @@ def main():
     optimum = args.optimum
     title = args.title
 
-    sys.stdout.write("\nFound " + str(len(unknown)) + " arguments...")
-    name_list = list()
+    sys.stdout.write("\nFound " + str(len(unknown)) + " arguments\n")
+
     trial_list = list()
-    len_list = list()
-    now_data = False
-    for i in range(len(unknown)):
-        if not ".pkl" in unknown[i] and now_data:
-            raise ValueError("You need at least on .pkl file per Experiment, %s has none" % name_list[-1])
-        elif not ".pkl" in unknown[i] and not now_data:
-            print "Adding", unknown[i]
-            name_list.append([unknown[i], 0])
-            trial_list.append(list())
-            len_list.append(0)
-            now_data = True
-            continue
-        else:
-            now_data = False
-            name_list[-1][1] += 1
 
-        result_file = unknown[i]
-        fh = open(result_file, "r")
-        trials = cPickle.load(fh)
-        fh.close()
+    pkl_list, name_list = plot_util.get_pkl_and_name_list(unknown)
 
-        trace = list()
-        currentbest = np.nanmax(np.array([trial["result"] for trial in trials['trials']]))
+    for i in range(len(pkl_list)):
+        trial_list.append(list())
+        for pkl in pkl_list[i]:
+            fh = open(pkl, "r")
+            trials = cPickle.load(fh)
+            fh.close()
 
-        for result in [trial["result"] for trial in trials['trials']]:
-            if result < currentbest:
-                currentbest = result
-            trace.append(currentbest)
-        if len(trace) > len_list[-1]:
-            len_list[-1] = len(trace)
-        trial_list[-1].append(np.array(trace))
+            trace = plot_util.extract_trajectory(trials)
+            trial_list[-1].append(np.array(trace))
 
-    if now_data:
-        raise ValueError("You need at least on .pkl file per Experiment, %s has none" % name_list[-1])
+    for i in range(len(trial_list)):
+        max_len = max([len(ls) for ls in trial_list[i]])
+        for t in range(len(trial_list[i])):
+            if len(trial_list[i][t]) < max_len and args.autofill:
+                diff = max_len - len(trial_list[i][t])
+                # noinspection PyUnusedLocal
+                trial_list[i][t] = np.append(trial_list[i][t], [trial_list[i][t][-1] for x in range(diff)])
+            elif len(trial_list[i][t]) < max_len and not args.autofill:
+                raise ValueError("(%s != %s), Traces do not have the same length, please use -a" %
+                                 (str(max_len), str(len(trial_list[i][t]))))
 
-    if args.autofill:
-        assert(len(trial_list) == len(len_list))
-        for i in range(len(trial_list)):
-            for t in range(len(trial_list[i])):
-                if len(trial_list[i][t]) < len_list[i]:
-                    diff = len_list[i] - len(trial_list[i][t])
-                    # noinspection PyUnusedLocal
-                    trial_list[i][t] = np.append(trial_list[i][t], [trial_list[i][t][-1] for x in range(diff)])
-                assert len(trial_list[i][t]) == len_list[i], \
-                    "%s, %s" % (len(trial_list[i][t]), len_list[i])
-    else:
-        for i in range(len(trial_list)):
-            len_trials = len(trial_list[i][0])
-            for t in trial_list[i]:
-                if len(t) != len_trials:
-                    raise ValueError("(%s != %s), Traces do not have the same length, please use -a" % (str(len(t)), str(len_trials)))
     plot_optimization_trace(trial_list, name_list, optimum, title=title, log=not args.log,
                             save=args.save, y_min=args.min, y_max=args.max, scale_std=args.scale)
 
