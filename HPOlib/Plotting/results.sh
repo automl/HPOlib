@@ -37,7 +37,7 @@ if [ -a "${directory}" ]
 fi
 
 
-directory=`ls | grep "^smac-v2_06_02-partial38\>"`
+directory=`ls | grep "^partial_smac\>"`
 if [ -a "${directory}" ]
 then
 
@@ -46,16 +46,16 @@ then
     printf "%5s | %4s(%5s) | %5s | %10s | %10s\n" "Seed" "#run" "crash" "#iter" "Performance" "Test-Perf"
     for i in `seq 1000 1000 10000`
     do
-      directory=`ls | grep "^smac-v2_06_02-partial38_${i}_"`
-      if [ -f "${directory}/smac-v2_06_02-partial38.out" ]
+      directory=`ls | grep "^partial_smac_${i}_"`
+      if [ -f "${directory}/partial_smac.out" ]
       then
-        it=`cat ${directory}/smac*.out | grep "Model/Iteration used:" | tail -1`
+        it=`cat ${directory}/partial_*.out | grep "Model/Iteration used:" | tail -1`
         it=`echo $it | cut -d' ' -f3`
 
-        per=`cat ${directory}/smac*.out | grep "Performance of the Incumbent:" | tail -1`
+        per=`cat ${directory}/partial_*.out | grep "Performance of the Incumbent:" | tail -1`
         per=`echo $per | cut -d' ' -f5`
 
-        num=`cat ${directory}/smac*.out | grep "Algorithm Runs used:" | tail -1`
+        num=`cat ${directory}/partial_*.out | grep "Algorithm Runs used:" | tail -1`
         num=`echo $num | cut -d' ' -f4`
 
         numC=`ls ${directory}/ | grep 'instance.out$' | wc -l`
@@ -83,12 +83,12 @@ then
     printf "%5s | %4s(%5s) | %10s | %10s\n" "Seed" "#run" "crash" "Performance" "Test-Perf"
     for i in `seq 1000 1000 10000`
     do
-      directory=`ls | grep "^tpe_${i}_"`
-      if [ -a "${directory}/tpe.out" ]
+      directory=`ls | grep "^hyperopt_august2013_mod_${i}_"`
+      if [ -a "${directory}/hyperopt_august2013_mod.out" ]
       then
-        num=`cat ${directory}/tpe.out | grep "Result:" | wc -l`
+        num=`cat ${directory}/hyperopt_august2013_mod.out | grep "Result:" | wc -l`
 
-        per=`cat ${directory}/tpe.out | grep "Result:" | sort -r | tail -1`
+        per=`cat ${directory}/hyperopt_august2013_mod.out | grep "Result:" | sort -r | tail -1`
         per=`echo $per | cut -d' ' -f2`
 
         numC=`ls ${directory}/ | grep 'instance.out$' | wc -l`
@@ -115,12 +115,12 @@ if [ -a "${directory}" ]
     printf "%5s | %4s(%5s) | %10s | %10s\n" "Seed" "#run" "crash" "Performance" "Test-Perf"
     for i in `seq 1000 1000 10000`
     do
-      directory=`ls | grep "^spearmint_${i}_"`
-      if [ -a "${directory}/spearmint.out" ]
+      directory=`ls | grep "^spearmint_april2013_mod_${i}_"`
+      if [ -a "${directory}/spearmint_april2013_mod.out" ]
       then
-        num=`cat ${directory}/spearmint.out | grep " pending   " | tail -1`
+        num=`cat ${directory}/spearmint_april2013_mod.out | grep " pending   " | tail -1`
         num=`echo $num | cut -d' ' -f5`
-        per=`cat ${directory}/spearmint.out | grep "best:" | tail -1`
+        per=`cat ${directory}/spearmint_april2013_mod.out | grep "best:" | tail -1`
         per=`echo $per | cut -d' ' -f3`
 
         numC=`ls ${directory}/ | grep 'instance.out$' | wc -l`
