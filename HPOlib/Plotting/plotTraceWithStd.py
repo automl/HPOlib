@@ -118,7 +118,7 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="",
 
 
 def main():
-    prog = "%proc WhatIsThis <oneOrMorePickles> [WhatIsThis <oneOrMorePickles>]"
+    prog = "python plotTraceWithStd.py WhatIsThis <oneOrMorePickles> [WhatIsThis <oneOrMorePickles>]"
     description = "Plot a Trace with std for multiple experiments"
 
     parser = ArgumentParser(description=description, prog=prog)
