@@ -86,7 +86,10 @@ def plot_time_trace(time_dict, name_list, title="", log=True, save="", y_max=0, 
     fig.suptitle(title, fontsize=16)
     leg = ax1.legend(loc='best', fancybox=True)
     leg.get_frame().set_alpha(0.5)
-    ax1.set_ylabel("Optimizer time in [sec]")
+    if log:
+        ax1.set_ylabel("log10(Optimizer time in [sec])")
+    else:
+        ax1.set_ylabel("Optimizer time in [sec]")
     if y_max == y_min:
         ax1.set_ylim([min_val-2, max_val+2])
     else:

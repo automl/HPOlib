@@ -78,9 +78,9 @@ def plot_params(value_list, result_list, name, save="", title="", jitter=0):
 
     for idx in range(len(result_list)):
         # noinspection PyArgumentList
-        result_list[idx] += (np.random.rand(1) - 0.5) * jitter
+        result_list[idx] += float((np.random.rand(1) - 0.5) * jitter)
         # noinspection PyArgumentList
-        value_list[idx] += (np.random.rand(1) - 0.5) * jitter
+        value_list[idx] += float((np.random.rand(1) - 0.5) * jitter)
 
     # Plot
     ax.scatter(value_list, result_list, facecolor=color, edgecolor=color, marker=marker, s=size*50)

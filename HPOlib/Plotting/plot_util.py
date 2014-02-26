@@ -57,3 +57,12 @@ def extract_trajectory(trials):
             currentbest = result
         trace.append(currentbest)
     return trace
+
+
+def extract_runtime_timestamps(trials):
+    # return a list like (20, 53, 101, 200)
+    time_list = list()
+    time_list.append(0)
+    for trial in trials["trials"]:
+        time_list.append(np.sum(trial["instance_durations"]) + time_list[-1])
+    return time_list
