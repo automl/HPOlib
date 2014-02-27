@@ -32,7 +32,10 @@ __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __license__ = "3-clause BSD License"
 __contact__ = "automl.org"
 
-
+logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
+                           'message)s', datefmt='%H:%M:%S')
+hpolib_logger = logging.getLogger("HPOlib")
+hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.cv")
 
 

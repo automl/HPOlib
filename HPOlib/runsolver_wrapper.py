@@ -33,6 +33,10 @@ __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 
+logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
+                           'message)s', datefmt='%H:%M:%S')
+hpolib_logger = logging.getLogger("HPOlib")
+hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.runsolver_wrapper")
 
 

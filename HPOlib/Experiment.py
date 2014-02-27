@@ -25,7 +25,7 @@ import tempfile
 
 import numpy as np
 
-import HPOlib.Locker as Locker
+# import HPOlib.Locker as Locker
 import HPOlib.wrapping_util as wrapping_util
 
 
@@ -52,13 +52,13 @@ class Experiment:
             folds = 1
 
         self.jobs_pkl = os.path.join(expt_dir, expt_name + ".pkl")
-        self.locker = Locker.Locker()
+        #self.locker = Locker.Locker()
 
         # Only one process at a time is allowed to have access to this.
-        logger.info("Waiting to lock experiments file " +
-                         self.jobs_pkl + "...")
-        self.locker.lock_wait(self.jobs_pkl)
-        logger.info("...acquired\n")
+        #logger.info("Waiting to lock experiments file " +
+        #                 self.jobs_pkl + "...")
+        #self.locker.lock_wait(self.jobs_pkl)
+        #logger.info("...acquired\n")
 
         # Does this exist already?
         if not os.path.exists(self.jobs_pkl):
@@ -124,10 +124,10 @@ class Experiment:
 
     def __del__(self):
         self._save_jobs()
-        if self.locker.unlock(self.jobs_pkl):
-            sys.stderr.write("Released lock on job grid.\n")
-        else:
-            raise Exception("Could not release lock on job grid.\n")
+        #if self.locker.unlock(self.jobs_pkl):
+        #    sys.stderr.write("Released lock on job grid.\n")
+        #else:
+        #    raise Exception("Could not release lock on job grid.\n")
 
     def result_array(self):
         result = np.array([trial['result'] for trial in self.trials])
