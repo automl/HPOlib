@@ -59,6 +59,11 @@ def extract_trajectory(trials):
     return trace
 
 
+def extract_trials(trials):
+    trl = [trial["result"] for trial in trials['trials']]
+    return trl
+
+
 def extract_runtime_timestamps(trials):
     # return a list like (20, 53, 101, 200)
     time_list = list()

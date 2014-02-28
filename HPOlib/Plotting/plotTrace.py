@@ -18,48 +18,47 @@
 
 #!/usr/bin/env python
 
-import cPickle
+from argparse import ArgumentParser
 import itertools
-import optparse
-import os
 import sys
+import cPickle
 
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
+from matplotlib.pyplot import tight_layout, figure, subplots_adjust, subplot, savefig, show, yscale
+import matplotlib.gridspec
 import numpy as np
 import scipy.stats as sc
+
+from HPOlib.Plotting import plot_util
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 
-def plot_optimization_trace(opts, trialList, nameList, optimum = 0, title="", Ymin=0, Ymax=0):
+def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=False,
+                            save="", y_min=0, y_max=0):
     markers = itertools.cycle(['o', 's', '^', 'x'])
     colors = itertools.cycle(['b', 'g', 'r', 'k'])
     linestyles = itertools.cycle(['-'])
     size = 1
-    labels = list()
-    plotH = list()
 
-    # Get handles    
-    ratio=5
-    gs = gridspec.GridSpec(ratio,1)
-    fig = plt.figure(1, dpi=100)
-    fig.suptitle(title)
-    ax = plt.subplot(gs[0:ratio, :])
+    # get handles
+    ratio = 5
+    gs = matplotlib.gridspec.GridSpec(ratio, 1)
+    fig = figure(1, dpi=100)
+    fig.suptitle(title, fontsize=16)
+    ax = subplot(gs[0:ratio, :])
     ax.grid(True, linestyle='-', which='major', color='lightgrey', alpha=0.5)
-    # Get values
-    minVal = sys.maxint
-    maxVal = 0
-    maxTrials = 0
+    min_val = sys.maxint
+    max_val = -sys.maxint
+    max_trials = 0
+
     # This might not do what we actually want; Ideally it would only take the
     # ones that where actually run according to instance_order
-    for i in range(len(nameList)):
-        x = range(len(trialList[i]['trials']))
-        y = np.zeros((len(trialList[i]['trials'])))
-        line = np.zeros((len(trialList[i]['trials'])))
-        for j, trial in enumerate(trialList[i]['trials']):
-            inst_res = trial['instance_results']
+    for i in range(len(name_list)):
+        x = range(len(trial_list[i]))
+        y = np.zeros((len(trial_list[i])))
+        line = np.zeros((len(trial_list[i])))
+        for j, inst_res in enumerate(trial_list[i]):
             if j >= len(y):
                 break
             if type(inst_res) == np.ndarray and not np.isfinite(inst_res).any():
@@ -67,97 +66,103 @@ def plot_optimization_trace(opts, trialList, nameList, optimum = 0, title="", Ym
             elif type(inst_res) != np.ndarray and np.isnan(inst_res):
                 inst_res = 1
             tmp = sc.nanmean(np.array([inst_res, inst_res]).flat)  # Black Magic
-            y[j] = tmp - optimum
-            line[j] = np.min(y[:j + 1])
+            if log:
+                y[j] = np.log(tmp - optimum)
+                line[j] = np.min(y[:j + 1])
+            else:
+                y[j] = tmp - optimum
+                line[j] = np.min(y[:j + 1])
+
         # Plot the stuff
         marker = markers.next()
         color = colors.next()
         l = linestyles.next()
-        ax.scatter(np.argmin(line), min(line), facecolor="w", edgecolor=color, \
+        ax.scatter(np.argmin(line), min(line), facecolor="w", edgecolor=color,
                    s=size*10*15, marker=marker)
         ax.scatter(x, y, color=color, marker=marker, s=size*15)
-        ax.plot(x, line, color=color, label=nameList[i], linestyle=l, linewidth=size)
-        labels.append(trialList[i]['experiment_name'] + " (" + str(min(y)) + ")")
-        if min(y) < minVal:
-            minVal = min(y)
-        if max(y) > maxVal:
-            maxVal = max(y)
-        if len(trialList[i]) > maxTrials:
-            maxTrials = len(trialList[i]['trials'])
+        ax.plot(x, line, color=color, label=name_list[i][0], linestyle=l, linewidth=size)
+
+        if min(y) < min_val:
+            min_val = min(y)
+        if max(y) > max_val:
+            max_val = max(y)
+        if len(trial_list[i]) > max_trials:
+            max_trials = len(trial_list[i])
 
     # Describe and label the stuff
     ax.set_xlabel("#Function evaluations")
-    ax.set_ylabel("Minfunction value")
-
-    if Ymin == Ymax:
-        ax.set_ylim([minVal-0.1, maxVal+0.1])
+    if log:
+        ax.set_ylabel("log10(Minfunction value)")
     else:
-        ax.set_ylim([Ymin, Ymax])
-    
+        ax.set_ylabel("Minfunction value")
+
+    if y_min == y_max:
+        ax.set_ylim([min_val - 0.1, max_val + 0.1])
+    else:
+        ax.set_ylim([y_min, y_max])
+    ax.set_xlim([0, max_trials])
+
     leg = ax.legend(loc='best', fancybox=True)
     leg.get_frame().set_alpha(0.5)
-    ax.set_xlim([0, maxTrials])
-    plt.subplots_adjust(top=0.85)
-    if opts.log:
-        plt.yscale('log')
-    if opts.save != "":
-        plt.savefig(opts.save, dpi=100, facecolor='w', edgecolor='w',
-            orientation='portrait', papertype=None, format=None,
-            transparent=False, bbox_inches="tight", pad_inches=0.1)
+
+    tight_layout()
+    subplots_adjust(top=0.85)
+
+    if save != "":
+        savefig(save, dpi=100, facecolor='w', edgecolor='w',
+                orientation='portrait', papertype=None, format=None,
+                transparent=False, bbox_inches="tight", pad_inches=0.1)
     else:
-        plt.show()
-    
+        show()
+
+
 def main():
-    parser = optparse.OptionParser()
-    # Options for specific functions
-    parser.add_option("-o", "--optimum", type = float, dest = "optimum",
-            default = 0, help = "Optimum")
-    parser.add_option("-b", "--branin", dest = "branin", action = "store_true",
-            default = False, help = "Automatic shift for branin function")
-    parser.add_option("-c", "--camel", dest="camelback", action="store_true",
-            default = False, help="Automatic shift for camelback function")
-    parser.add_option("-i", "--har3", dest = "har3", action = "store_true",
-            default = False, help = "Automatic shift for hartmann3 function")
-    parser.add_option("-j", "--har6", dest = "har6", action = "store_true",
-            default = False, help = "Automatic shift for hartmann6 function")
-    parser.add_option("-g", "--gold", dest = "gold", action = "store_true",
-            default = False, help = "Automatic shift for goldstein function")
-    
+    prog = "python plotTrace.py WhatIsThis <onePickle> [WhatIsThis <onePickle>]"
+    description = "Plot a Trace with evaluated points wrt to performance"
+
+    parser = ArgumentParser(description=description, prog=prog)
+
+    # Options for specific benchmarks
+    parser.add_argument("-o", "--optimum", type=float, dest="optimum",
+                        default=0, help="If not set, the optimum is supposed to be zero")
     # General Options
-    parser.add_option("-l", "--log", dest = "log", action = "store_true",
-            default = False, help = "Plot on the log scale")
-    parser.add_option("--max", dest = "max", action = "store", default = 0,
-            type = float, help = "Maximum of the plot")
-    parser.add_option("--min", dest = "min", action = "store", default = 0,
-            type = float, help = "Minimum of the plot")
-    parser.add_option("-s", "--save", dest = "save", default = "", \
-            help = "Where to save plot instead of showing it?")
-    parser.add_option("-t", "--title", dest="title", \
-        default="", help="Optional supertitle for plot")
-    (opts, args) = parser.parse_args()
-    
-    optimum = opts.optimum
-    if opts.branin: optimum = 0.397887
-    if opts.camelback: optimum = -1.031628453
-    if opts.har3: optimum = -3.86278
-    if opts.har6: optimum = -3.32237
-    if opts.gold: optimum = -3
-    
-    sys.stdout.write("Found " + str(len(args)) + " pkl file(s)\n")
-    trialList = list()
-    nameList = list()
-    for i in range(len(args)):
-        if not ".pkl" in args[i]:
-            print "Adding", args[i]
-            nameList.append(args[i])
-            continue
-        result_file = args[i]
-        fh = open(result_file, "r")
-        trials = cPickle.load(fh)
+    parser.add_argument("-l", "--nolog", action="store_true", dest="log",
+                        default=False, help="Do NOT plot on log scale")
+    parser.add_argument("--max", dest="max", type=float,
+                        default=0, help="Maximum of the plot")
+    parser.add_argument("--min", dest="min", type=float,
+                        default=0, help="Minimum of the plot")
+    parser.add_argument("-s", "--save", dest="save",
+                        default="", help="Where to save plot instead of showing it?")
+    parser.add_argument("-t", "--title", dest="title",
+                        default="", help="Optional supertitle for plot")
+
+    args, unknown = parser.parse_known_args()
+
+    optimum = args.optimum
+
+    sys.stdout.write("Found " + str(len(unknown)) + " arguments\n")
+
+    pkl_list, name_list = plot_util.get_pkl_and_name_list(unknown)
+
+    trial_list = list()
+    for i in range(len(pkl_list)):
+        if len(pkl_list[i]) != 1:
+            raise ValueError("%s is more than <onePickle>!" % str(pkl_list))
+        fh = open(pkl_list[i][0])
+        trl = cPickle.load(fh)
         fh.close()
-        trialList.append(trials)
+        trial_list.append(plot_util.extract_trials(trl))
+
     sys.stdout.write("Plotting trace\n")
-    plot_optimization_trace(opts, trialList, nameList, optimum, title=opts.title, Ymax=opts.max, Ymin=opts.min)
+    plot_optimization_trace(trial_list=trial_list, name_list=name_list, optimum=optimum,
+                            title=args.title, log=not args.log,
+                            save=args.save, y_max=args.max, y_min=args.min)
+
+    if args.save != "":
+        sys.stdout.write("Saved plot to " + args.save + "\n")
+    else:
+        sys.stdout.write("..Done\n")
 
 if __name__ == "__main__":
     main()
