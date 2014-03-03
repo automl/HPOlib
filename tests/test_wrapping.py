@@ -80,11 +80,11 @@ class WrappingTest(unittest.TestCase):
     def test_use_option_parser_no_optimizer(self):
         # Test not specifying an optimizer but random other options
         sys.argv = ['wrapping.py', '-s', '1', '-t', 'DBNet']
-        self.assertRaises(SystemExit, wrapping.use_option_parser)
+        self.assertRaises(SystemExit, wrapping.use_arg_parser)
 
     def test_use_option_parser_the_right_way(self):
         sys.argv = ['wrapping.py', '-s', '1', '-t', 'DBNet', '-o', 'SMAC']
-        args, unknown = wrapping.use_option_parser()
+        args, unknown = wrapping.use_arg_parser()
         self.assertEqual(args.optimizer, 'SMAC')
         self.assertEqual(args.seed, 1)
         self.assertEqual(args.title, 'DBNet')
@@ -92,40 +92,34 @@ class WrappingTest(unittest.TestCase):
 
     def test_use_option_parser_with_config(self):
         sys.argv = ['wrapping.py', '-s', '1', '-t', 'DBNet', '-o', 'SMAC',
-                    '--DEFAULT:total_time_limit', '3600']
-        args, unknown = wrapping.use_option_parser()
+                    '--HPOLIB:total_time_limit', '3600']
+        args, unknown = wrapping.use_arg_parser()
         self.assertEqual(len(unknown), 2)
-        config = parse.parse_config("dummy_config.cfg",
-                                                  allow_no_value=True,
-                                                  optimizer_module="smac")
+        config = parse.parse_config("dummy_config.cfg", allow_no_value=True)
         config_args = wrapping.parse_config_values_from_unknown_arguments(
             unknown, config)
-        self.assertEqual(vars(config_args)['DEFAULT:total_time_limit'],
+        self.assertEqual(vars(config_args)['HPOLIB:total_time_limit'],
                          '3600')
 
     def test_override_config_with_cli_arguments(self):
-        unknown = ['--DEFAULT:total_time_limit', '50',
-                   '--DEFAULT:numberofjobs', '2']
-        config = parse.parse_config("dummy_config.cfg",
-                                                  allow_no_value=True,
-                                                  optimizer_module="smac")
+        unknown = ['--HPOLIB:total_time_limit', '50',
+                   '--HPOLIB:numberofjobs', '2']
+        config = parse.parse_config("dummy_config.cfg", allow_no_value=True)
         config_args = wrapping.parse_config_values_from_unknown_arguments(
             unknown, config)
         new_config = wrapping.override_config_with_cli_arguments(config,
                                                             config_args)
-        self.assertEqual(new_config.get('DEFAULT', 'numberofjobs'), '2')
+        self.assertEqual(new_config.get('HPOLIB', 'numberofjobs'), '2')
 
 
     def test_save_config_to_file(self):
-        unknown = ['--DEFAULT:total_time_limit', '50',
-                   '--DEFAULT:numberofjobs', '2']
-        config = parse.parse_config("dummy_config.cfg",
-                                                  allow_no_value=True,
-                                                  optimizer_module="smac")
+        unknown = ['--HPOLIB:total_time_limit', '50',
+                   '--HPOLIB:numberofjobs', '2']
+        config = parse.parse_config("dummy_config.cfg", allow_no_value=True)
         string_stream = StringIO.StringIO()
         wrapping.save_config_to_file(string_stream, config)
         file_content = string_stream.getvalue()
-        asserted_file_content = "[DEFAULT]\n" \
+        asserted_file_content = "[HPOLIB]\n" \
                             "numberofjobs = 1\n" \
                             "result_on_terminate = 1\n"\
                             "function = 1\n"\
@@ -137,45 +131,7 @@ class WrappingTest(unittest.TestCase):
                             "total_time_limit = 3600\n"\
                             "memory_limit = 2000\n"\
                             "cpu_limit = 14400\n"\
-                            "training_data_format = numpy\n"\
-                            "use_percentage = 100\n"\
-                            "max_crash_per_cv = 3\n"\
-                            "optimizer_version = smac_2_06_01-dev\n"\
-                            "[SMAC]\n"\
-                            "numrun = 0\n"\
-                            "instancefile = train.txt\n"\
-                            "intrainstanceobj = MEAN\n"\
-                            "runobj = QUALITY\n"\
-                            "testinstancefile = test.txt\n"\
-                            "p = smac/params.pcs\n"\
-                            "rf_full_tree_bootstrap = False\n"\
-                            "rf_split_min = 10\n"\
-                            "adaptivecapping = false\n"\
-                            "maxincumbentruns = 2000\n"\
-                            "numiterations = 2147483647\n"\
-                            "runtimelimit = 2147483647\n"\
-                            "deterministic = True\n"\
-                            "retrytargetalgorithmruncount = 0\n"\
-                            "intensification_percentage = 0\n"\
-                            "cutofftime = 3700\n"\
-                            "algoexec = runsolver_wrapper.py\n"\
-                            "totalnumrunslimit = 1\n"\
-                            "numconcurrentalgoexecs = 1\n"\
-                            "numberofjobs = 1\n"\
-                            "result_on_terminate = 1\n"\
-                            "function = 1\n"\
-                            "algorithm = cv.py\n"\
-                            "run_instance = runsolver_wrapper.py\n"\
-                            "numbercv = 1\n"\
-                            "numberofconcurrentjobs = 1\n"\
-                            "runsolver_time_limit = 3600\n"\
-                            "total_time_limit = 3600\n"\
-                            "memory_limit = 2000\n"\
-                            "cpu_limit = 14400\n"\
-                            "training_data_format = numpy\n"\
-                            "use_percentage = 100\n"\
-                            "max_crash_per_cv = 3\n"\
-                            "optimizer_version = smac_2_06_01-dev\n"
+                            "max_crash_per_cv = 3\n"
 
         self.assertEqual(asserted_file_content, file_content)
         string_stream.close()

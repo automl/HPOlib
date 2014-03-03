@@ -93,7 +93,7 @@ def _check_function(experiment_dir):
     config_file = os.path.join(experiment_dir, "config.cfg")
     config = parse_config(config_file, allow_no_value=True)
 
-    path = config.get("DEFAULT", "function")
+    path = config.get("HPOLIB", "function")
 
     if not os.path.isabs(path):
         path = os.path.join(experiment_dir, path)

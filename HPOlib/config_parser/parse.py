@@ -47,27 +47,25 @@ def parse_config(config_fn, allow_no_value=True, optimizer_version=""):
     config_default.read(config_fn_default)
 
     # --------------------------------------------------------------------------
-    # DEFAULT
+    # Defaults for HPOLIB
     # --------------------------------------------------------------------------
-    # Set defaults for DEFAULT
+    # Set defaults for section HPOLIB
     for option in ('algorithm', 'run_instance', 'numberCV',
                    'leading_algo_info', 'numberOfConcurrentJobs',
                    'runsolver_time_limit', 'total_time_limit', 'memory_limit',
-                   'cpu_limit', 'leading_runsolver_info', 'training_data',
-                   'training_targets', 'test_data', 'test_targets',
-                   'training_data_format', 'use_percentage', 'max_crash_per_cv'):
-        if not config.has_option('DEFAULT', option):
-            config.set('DEFAULT', option,
-                       config_default.get('DEFAULT', option))
+                   'cpu_limit', 'leading_runsolver_info', 'max_crash_per_cv'):
+        if not config.has_option('HPOLIB', option):
+            config.set('HPOLIB', option,
+                       config_default.get('HPOLIB', option))
 
-    if not config.has_option('DEFAULT', 'numberOfJobs') or \
-            config.get('DEFAULT', 'numberOfJobs') == '':
+    if not config.has_option('HPOLIB', 'numberOfJobs') or \
+            config.get('HPOLIB', 'numberOfJobs') == '':
         raise Exception('numberOfJobs not specified in .cfg')
-    if not config.has_option('DEFAULT', 'result_on_terminate') or \
-            config.get('DEFAULT', 'result_on_terminate') == '':
+    if not config.has_option('HPOLIB', 'result_on_terminate') or \
+            config.get('HPOLIB', 'result_on_terminate') == '':
         raise Exception('No result_on_terminate specified in .cfg')
-    if not config.has_option('DEFAULT', 'function') or \
-            config.get('DEFAULT', 'function') == '':
+    if not config.has_option('HPOLIB', 'function') or \
+            config.get('HPOLIB', 'function') == '':
         raise Exception('No function specified in .cfg')
 
     # Load optimizer parsing module

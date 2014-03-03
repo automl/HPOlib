@@ -107,6 +107,9 @@ def use_arg_parser():
     parser.add_argument("-t", "--title", action="store", type=str,
                         dest="title", default=None,
                         help="A title for the experiment")
+    parser.add_argument("--cwd", action="store", type=str, dest="working_dir",
+                        default=None, help="Change the working directory to "
+                        "<working_directory> prior to running the experiment")
     parser.add_argument("-r", "--restore", action="store", type=str,
                         dest="restore", default=None,
                         help="Restore the state from a given directory")
@@ -172,25 +175,27 @@ def override_config_with_cli_arguments(config, config_overrides):
     return config
 
 
-def save_config_to_file(fn_handle, config):
-    for section in config.sections():
-        fn_handle.write("[DEFAULT]\n")
+def save_config_to_file(file_handle, config):
+    if len(config.defaults()) > 0:
+        file_handle.write("[DEFAULT]\n")
         for key in config.defaults():
-            if config.get(section, key) is None or \
-               config.get(section, key) != "":
-                fn_handle.write(key + " = " + config.get("DEFAULT", key) + "\n")
+            file_handle.write(key + " = " + config.get("DEFAULT", key) + "\n")
 
-        fn_handle.write("[" + section + "]\n")
+    for section in config.sections():
+        file_handle.write("[" + section + "]\n")
         for key in config.options(section):
             if config.get(section, key) is None or \
                config.get(section, key) != "":
-                fn_handle.write(key + " = " + config.get(section, key) + "\n")
+                file_handle.write(key + " = " + config.get(section, key) + "\n")
 
 
 def main():
     """Start an optimization of the HPOlib. For documentation see the
     comments inside this function and the general HPOlib documentation."""
     args, unknown = use_arg_parser()
+
+    if args.working_dir:
+        os.chdir(args.working_dir)
 
     experiment_dir = os.getcwd()
     check_before_start.check_zeroth(experiment_dir)
@@ -243,7 +248,7 @@ def main():
     cmd += optimizer_call
 
     with open(os.path.join(optimizer_dir_in_experiment, "config.cfg"), "w") as f:
-        config.set("DEFAULT", "is_not_original_config_file", "True")
+        config.set("HPOLIB", "is_not_original_config_file", "True")
         save_config_to_file(f, config)
 
     # _check_function
@@ -255,9 +260,9 @@ def main():
             os.remove(os.path.join(optimizer_dir_in_experiment, optimizer + ".pkl.lock"))
         except OSError:
             pass
-    folds = config.getint('DEFAULT', 'numberCV')
+    folds = config.getint('HPOLIB', 'numberCV')
     trials = Experiment.Experiment(optimizer_dir_in_experiment, optimizer, folds=folds,
-                                   max_wallclock_time=config.get('DEFAULT',
+                                   max_wallclock_time=config.get('HPOLIB',
                                                                  'cpu_limit'),
                                    title=args.title)
     trials.optimizer = optimizer_version
@@ -280,7 +285,7 @@ def main():
                     pass
                 else:
                     trials.get_trial_from_id(_id)['instance_results'][fold] = \
-                        config.getfloat('DEFAULT', 'result_on_terminate')
+                        config.getfloat('HPOLIB', 'result_on_terminate')
                     # Pretty sure we need this here:
                     trials.get_trial_from_id(_id)['instance_status'][fold] = \
                         Experiment.BROKEN_STATE
