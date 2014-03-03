@@ -78,6 +78,7 @@ def add_default(config):
     path_to_optimizer = os.path.normpath(path_to_optimizer)
     if not os.path.exists(path_to_optimizer):
         logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
+        sys.exit(1)
 
     config.set('SMAC', 'path_to_optimizer', path_to_optimizer)
 

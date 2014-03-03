@@ -132,6 +132,7 @@ def check_optimizer(optimizer):
         sys.exit(1)
     if not os.path.exists(version + ".py"):
         logger.critical("Sorry I cannot find the script to call your optimizer: %s.py" % version)
+        sys.exit(1)
     else:
         return version
 
