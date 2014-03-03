@@ -52,7 +52,7 @@ def add_default(config):
 
     if not config.has_option('TPE', 'numberEvals'):
             config.set('TPE', 'numberEvals',
-                       config.get('DEFAULT', 'numberOfJobs'))
+                       config.get('HPOLIB', 'numberOfJobs'))
 
     path_to_optimizer = tpe_config.get('TPE', 'path_to_optimizer')
     if not os.path.isabs(path_to_optimizer):

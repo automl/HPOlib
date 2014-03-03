@@ -85,7 +85,7 @@ def load_experiment_config_file():
     try:
         cfg_filename = "config.cfg"
         cfg = parse_config(cfg_filename, allow_no_value=True)
-        if not cfg.has_option("DEFAULT", "is_not_original_config_file"):
+        if not cfg.has_option("HPOLIB", "is_not_original_config_file"):
             logger.critical("Config file in directory %s seems to be an"
                 " original config which was not created by wrapping.py. "
                 "Please contact the HPOlib maintainer to solve this issue.")

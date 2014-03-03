@@ -191,11 +191,11 @@ def parse_command_line():
 
 
 def get_function_filename(cfg):
-    if os.path.isabs(cfg.get("DEFAULT", "function")):
-        fn_path = cfg.get("DEFAULT", "function")
+    if os.path.isabs(cfg.get("HPOLIB", "function")):
+        fn_path = cfg.get("HPOLIB", "function")
     else:
-        fn_path = cfg.get("DEFAULT", "function")
-        fn_path_parent = os.path.join("..", cfg.get("DEFAULT", "function"))
+        fn_path = cfg.get("HPOLIB", "function")
+        fn_path_parent = os.path.join("..", cfg.get("HPOLIB", "function"))
     fn_name, ext = os.path.splitext(os.path.basename(fn_path))
     try:
         fn = imp.load_source(fn_name, fn_path)
@@ -221,18 +221,18 @@ def get_function_filename(cfg):
 
 
 def make_command(cfg, fold, param_string, run_instance_output):
-    time_limit = cfg.getint('DEFAULT', 'runsolver_time_limit')
-    memory_limit = cfg.getint('DEFAULT', 'memory_limit')
-    cpu_limit = cfg.getint('DEFAULT', 'cpu_limit')
+    time_limit = cfg.getint('HPOLIB', 'runsolver_time_limit')
+    memory_limit = cfg.getint('HPOLIB', 'memory_limit')
+    cpu_limit = cfg.getint('HPOLIB', 'cpu_limit')
     fn_filename = get_function_filename(cfg)
-    python_cmd = cfg.get("DEFAULT", "leading_algo_info") + " python " + \
+    python_cmd = cfg.get("HPOLIB", "leading_algo_info") + " python " + \
                  fn_filename + " --fold %d --folds %d --params %s" % \
-                 (fold, cfg.getint("DEFAULT", "numberCV"), param_string)
+                 (fold, cfg.getint("HPOLIB", "numberCV"), param_string)
     # Do not write the actual task in quotes because runsolver will not work
     # then; also we need use-pty antd timestamp so that the "solver" output
     # is flushed to the output directory
     delay = 0
-    cmd = cfg.get("DEFAULT", "leading_runsolver_info") + \
+    cmd = cfg.get("HPOLIB", "leading_runsolver_info") + \
           " runsolver -o %s --timestamp --use-pty -W %d -C %d -M %d -d %d %s" \
           % (run_instance_output, time_limit, cpu_limit, memory_limit, delay,
              python_cmd)
@@ -254,21 +254,21 @@ def parse_output_files(cfg, run_instance_output, runsolver_output_file):
     if error is None and result_string is None:
         additional_data = "No result string returned. Please have a look " \
                           "at " + run_instance_output
-        rval = (cpu_time, wallclock_time, "CRASHED", cfg.getfloat("DEFAULT",
+        rval = (cpu_time, wallclock_time, "CRASHED", cfg.getfloat("HPOLIB",
                 "result_on_terminate"), additional_data)
         os.remove(runsolver_output_file)
 
     elif error is None and result_array[3] != "SAT":
         additional_data = "Please have a look at " + run_instance_output + "."\
             "The output status is not \"SAT\""
-        rval = (cpu_time, wallclock_time, "CRASHED", cfg.getfloat("DEFAULT",
+        rval = (cpu_time, wallclock_time, "CRASHED", cfg.getfloat("HPOLIB",
                 "result_on_terminate"), additional_data)
         os.remove(runsolver_output_file)
 
     elif error is None and not np.isfinite(float(result_array[6].strip(","))):
         additional_data = "Response value is not finite. Please have a look " \
                           "at " + run_instance_output
-        rval = (cpu_time, wallclock_time, "UNSAT", cfg.getfloat("DEFAULT",
+        rval = (cpu_time, wallclock_time, "UNSAT", cfg.getfloat("HPOLIB",
                 "result_on_terminate"), additional_data)
 
     elif error is None:
@@ -276,10 +276,10 @@ def parse_output_files(cfg, run_instance_output, runsolver_output_file):
         os.remove(run_instance_output)
         os.remove(runsolver_output_file)
         rval = (cpu_time, wallclock_time, "SAT", float(result_array[6].strip(",")),
-                cfg.get("DEFAULT", "function"))
+                cfg.get("HPOLIB", "function"))
 
     else:
-        rval = (cpu_time, wallclock_time, "CRASHED", cfg.getfloat("DEFAULT",
+        rval = (cpu_time, wallclock_time, "CRASHED", cfg.getfloat("HPOLIB",
                 "result_on_terminate"), error + " Please have a look at " +
                                         runsolver_output_file)
         # It is useful to have the run_instance_output for debugging
@@ -342,7 +342,7 @@ def main():
         experiment.set_one_fold_complete(trial_index, fold, result,
                                          wallclock_time)
     elif status == "CRASHED" or status == "UNSAT":
-        result = cfg.getfloat("DEFAULT", "result_on_terminate")
+        result = cfg.getfloat("HPOLIB", "result_on_terminate")
         experiment.set_one_fold_crashed(trial_index, fold, result,
                                         wallclock_time)
     else:
