@@ -17,6 +17,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from argparse import ArgumentParser
 
 import cPickle
 from optparse import OptionParser
@@ -24,7 +25,6 @@ from functools import partial
 from importlib import import_module
 import logging
 import os
-import sys
 
 import hyperopt
 
@@ -59,40 +59,34 @@ def pyll_replace_list_with_dict(search_space, indent = 0):
 
 
 def main():
-    # Parse options and arguments
-    parser = OptionParser()
-    parser.add_option("-p", "--space",
-                      dest="spaceFile",
-                      help="Where is the space.py located?")
-    parser.add_option("-a", "--algoExec",
-                      dest="algoExec",
-                      help="Which function to load located?")
-    parser.add_option("-m", "--maxEvals",
-                      dest="maxEvals",
-                      help="How many evaluations?")
-    parser.add_option("-s", "--seed",
-                      dest="seed",
-                      default="123",
-                      type=int,
-                      help="Seed for the TPE algorithm")
-    parser.add_option("-r", "--restore",
-                      dest="restore",
-                      action="store_true",
-                      help="When this flag is set state.pkl is restored in " +
-                             "the current working directory")
-    parser.add_option("--random", default=False, 
-                      dest="random",
-                      action="store_true",
-                      help="Use a random search")
-    (options, args) = parser.parse_args()
+    prog = "python statistics.py WhatIsThis <manyPickles> WhatIsThis <manyPickles> [WhatIsThis <manyPickles>]"
+    description = "Return some statistical information"
 
-    if not os.path.exists(options.spaceFile):
-        logger.critical("Search space not found: %s" % options.spaceFile)
+    parser = ArgumentParser(description=description, prog=prog)
+
+    parser.add_argument("-p", "--space",
+                        dest="spaceFile", help="Where is the space.py located?")
+    parser.add_argument("-a", "--algoExec",
+                        dest="algoExec", help="Which function to load located?")
+    parser.add_argument("-m", "--maxEvals",
+                        dest="maxEvals", help="How many evaluations?")
+    parser.add_argument("-s", "--seed", default="1",
+                        dest="seed", type=int, help="Seed for the TPE algorithm")
+    parser.add_argument("-r", "--restore", action="store_true",
+                        dest="restore", help="When this flag is set state.pkl is restored in " +
+                             "the current working directory")
+    parser.add_argument("--random", default=False, action="store_true",
+                        dest="random", help="Use a random search")
+
+    args, unknown = parser.parse_known_args()
+
+    if not os.path.exists(args.spaceFile):
+        logger.critical("Search space not found: %s" % args.spaceFile)
         sys.exit(1)
 
     # First remove ".py"
-    algo, ext = os.path.splitext(os.path.basename(options.algoExec))
-    space, ext = os.path.splitext(os.path.basename(options.spaceFile))
+    algo, ext = os.path.splitext(os.path.basename(args.algoExec))
+    space, ext = os.path.splitext(os.path.basename(args.spaceFile))
 
     # Then load dict searchSpace and out function cv.py
     import sys
@@ -105,16 +99,16 @@ def main():
     fn = import_module(algo)
     fn = fn.doForTPE
     
-    if options.random:
+    if args.random:
         # We use a random search
-        tpe_with_seed = partial(hyperopt.tpe.rand.suggest, seed=int(options.seed))
+        tpe_with_seed = partial(hyperopt.tpe.rand.suggest, seed=int(args.seed))
         logger.info("Using Random Search")
     else:
-        tpe_with_seed = partial(hyperopt.tpe.suggest, seed=int(options.seed))
+        tpe_with_seed = partial(hyperopt.tpe.suggest, seed=int(args.seed))
     
     # Now run TPE, emulate fmin.fmin()
     state_filename = "state.pkl"
-    if options.restore:
+    if args.restore:
         # We do not need to care about the state of the trials object since it
         # is only serialized in a synchronized state, there will never be a save
         # with a running experiment
@@ -124,14 +118,14 @@ def main():
         trials = tmp_dict['trials']
         print trials.__dict__
     else:
-        domain = hyperopt.Domain(fn, search_space, rseed=int(options.seed))
+        domain = hyperopt.Domain(fn, search_space, rseed=int(args.seed))
         trials = hyperopt.Trials()
         fh = open(state_filename, "w")
         # By this we probably loose the seed; not too critical for a restart
         cPickle.dump({"trials": trials, "domain": domain}, fh)
         fh.close()
     
-    for i in range(int(options.maxEvals) + 1):
+    for i in range(int(args.maxEvals) + 1):
         # in exhaust, the number of evaluations is max_evals - num_done
         rval = hyperopt.FMinIter(tpe_with_seed, domain, trials, max_evals=i)
         rval.exhaust()
