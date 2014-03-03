@@ -20,13 +20,14 @@ package_dir = {'HPOlib': 'HPOlib',
                'HPOlib.benchmarks': 'HPOlib/benchmarks',
                'HPOlib.optimizers': 'HPOlib/optimizers',
                'HPOlib.benchmarks.branin': 'HPOlib/benchmarks/branin',
-               'HPOlib.benchmarks.har6': 'HPOlib/benchmarks/har6'}
+               'HPOlib.benchmarks.har6': 'HPOlib/benchmarks/har6',
+               'HPOlib.Plotting': 'HPOlib/Plotting'}
 package_data = {'HPOlib': ['*/params.txt', '*/space.py', '*/config.pb'],
                 'HPOlib.benchmarks.branin': ['*.cfg', '*/params.txt', '*/space.py', '*/config.pb'],
                 'HPOlib.benchmarks.har6': ['*.cfg', '*/params.txt', '*/space.py', '*/config.pb'],
                 'HPOlib.config_parser': ['*.cfg']}
 data_files = []
-scripts = ['HPOlib-run', 'runsolver/src/runsolver']
+scripts = ['scripts/HPOlib-run', 'scripts/HPOlib-plot', 'runsolver/src/runsolver']
 
 
 def read(fname):
@@ -39,7 +40,8 @@ def get_find_packages():
                 'HPOlib.benchmarks',
                 'HPOlib.optimizers',
                 'HPOlib.benchmarks.branin',
-                'HPOlib.benchmarks.har6']
+                'HPOlib.benchmarks.har6',
+                'HPOlib.Plotting']
     return packages
 
 

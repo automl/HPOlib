@@ -145,7 +145,27 @@ def _statistics(pkl_list, name_list, save=""):
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def main(pkl_list, name_list, save_dir="", log=""):
+def main():
+    prog = "python doAllPlots.py WhatIsThis <oneOrMorePickles> [WhatIsThis <oneOrMorePickles>]"
+    description = "Tries to save as many plots as possible"
+
+    parser = ArgumentParser(description=description, prog=prog)
+
+    # General Options
+    parser.add_argument("-l", "--nolog", action="store_true", dest="log",
+                        default=False, help="Do NOT plot on log scale")
+    parser.add_argument("-s", "--save", dest="save",
+                        default="", help="Where to save plots? (directory)")
+
+    args, unknown = parser.parse_known_args()
+
+    sys.stdout.write("Found " + str(len(unknown)) + " arguments\n")
+
+    save_dir = args.save
+    log = args.log
+
+    pkl_list, name_list = plot_util.get_pkl_and_name_list(unknown)
+
     time_str = int(time.time() % 1000)
 
     if not os.path.isdir(save_dir) and save_dir is not "":
@@ -210,20 +230,4 @@ def main(pkl_list, name_list, save_dir="", log=""):
     _trace_with_std_per_time(pkl_list=pkl_list, name_list=name_list, save=tmp_save, log=log)
 
 if __name__ == "__main__":
-    prog = "python doAllPlots.py WhatIsThis <oneOrMorePickles> [WhatIsThis <oneOrMorePickles>]"
-    description = "Tries to save as many plots as possible"
-
-    parser = ArgumentParser(description=description, prog=prog)
-
-    # General Options
-    parser.add_argument("-l", "--nolog", action="store_true", dest="log",
-                        default=False, help="Do NOT plot on log scale")
-    parser.add_argument("-s", "--save", dest="save",
-                        default="", help="Where to save plots? (directory)")
-
-    args, unknown = parser.parse_known_args()
-
-    sys.stdout.write("Found " + str(len(unknown)) + " arguments\n")
-
-    pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
-    main(pkl_list=pkl_list_main, name_list=name_list_main, log=args.log, save_dir=args.save)
+    main()
