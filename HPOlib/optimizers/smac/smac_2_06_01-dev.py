@@ -210,12 +210,12 @@ def main(config, options, experiment_dir, **kwargs):
         
         # Copy the smac search space and create the instance information
         fh = open(os.path.join(optimizer_dir, 'train.txt'), "w")
-        for i in range(config.getint('DEFAULT', 'numberCV')):
+        for i in range(config.getint('HPOLIB', 'numberCV')):
             fh.write(str(i) + "\n")
         fh.close()
         
         fh = open(os.path.join(optimizer_dir, 'test.txt'), "w")
-        for i in range(config.getint('DEFAULT', 'numberCV')):
+        for i in range(config.getint('HPOLIB', 'numberCV')):
             fh.write(str(i) + "\n")
         fh.close()
         

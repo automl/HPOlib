@@ -108,9 +108,9 @@ def doCV(params, folds=10):
 
             # If a specified number of runs crashed, quit the whole cross validation
             # in order to save time.
-            worst_possible = cfg.getfloat("DEFAULT", "result_on_terminate")
+            worst_possible = cfg.getfloat("HPOLIB", "result_on_terminate")
             crashed_runs = np.nansum([0 if res != worst_possible else 1 for res in results])
-            if crashed_runs >= cfg.getint("DEFAULT", "max_crash_per_cv"):
+            if crashed_runs >= cfg.getint("HPOLIB", "max_crash_per_cv"):
                 logger.warning("Aborting CV because the number of crashes " \
                             "excceds the configured max_crash_per_cv value")
                 return worst_possible
@@ -129,7 +129,7 @@ def doCV(params, folds=10):
         
     # Do not return any kind of nan because this would break spearmint
     if not np.isfinite(mean):
-        mean = float(cfg.get("DEFAULT", "result_on_terminate"))
+        mean = float(cfg.get("HPOLIB", "result_on_terminate"))
 
     logger.info("Finished CV")
     return mean
@@ -205,7 +205,7 @@ def main(job_id, params):
     cfg = load_experiment_config_file()
 
     # Load number of folds
-    folds = cfg.getint('DEFAULT', 'numberCV')
+    folds = cfg.getint('HPOLIB', 'numberCV')
 
     params = flatten_parameter_dict(params)
 

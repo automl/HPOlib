@@ -59,17 +59,17 @@ def add_default(config):
     # special cases
     if not config.has_option('SMAC', 'cutoffTime'):
         config.set('SMAC', 'cutoffTime',
-                   str(config.getint('DEFAULT', 'runsolver_time_limit') + 100))
+                   str(config.getint('HPOLIB', 'runsolver_time_limit') + 100))
     if not config.has_option('SMAC', 'algoExec'):
         config.set('SMAC', 'algoExec',
-                   config.get('DEFAULT', 'run_instance'))
+                   config.get('HPOLIB', 'run_instance'))
     if not config.has_option('SMAC', 'totalNumRunsLimit'):
         config.set('SMAC', 'totalNumRunsLimit',
-                   str(config.getint('DEFAULT', 'numberOfJobs') *
-                       config.getint('DEFAULT', 'numberCV')))
+                   str(config.getint('HPOLIB', 'numberOfJobs') *
+                       config.getint('HPOLIB', 'numberCV')))
     if not config.has_option('SMAC', 'numConcurrentAlgoExecs'):
         config.set('SMAC', 'numConcurrentAlgoExecs',
-                   config.get('DEFAULT', 'numberOfConcurrentJobs'))
+                   config.get('HPOLIB', 'numberOfConcurrentJobs'))
 
     path_to_optimizer = smac_config.get('SMAC', 'path_to_optimizer')
     if not os.path.isabs(path_to_optimizer):

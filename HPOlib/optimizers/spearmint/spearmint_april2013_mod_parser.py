@@ -62,7 +62,7 @@ def add_default(config):
     # GENERAL
     if not config.has_option('SPEARMINT', 'max_finished_jobs'):
         config.set('SPEARMINT', 'max_finished_jobs',
-                   config.get('DEFAULT', 'numberOfJobs'))
+                   config.get('HPOLIB', 'numberOfJobs'))
 
     path_to_optimizer = spearmint_config.get('SPEARMINT', 'path_to_optimizer')
     if not os.path.isabs(path_to_optimizer):
