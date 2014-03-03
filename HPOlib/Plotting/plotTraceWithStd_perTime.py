@@ -180,10 +180,6 @@ def fill_trajectories(trace_list, times_list):
 
 def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False, y_min=0, y_max=0, scale_std=1):
 
-    sys.stdout.write("Generate plot for ")
-    optimum = args.optimum
-    title = args.title
-
     trial_list = list()
     times_list = list()
 
@@ -217,8 +213,8 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
 
     plot_optimization_trace(trial_list, name_list, times_list, optimum, title=title, log=not log,
                             save=save, y_min=y_min, y_max=y_max, scale_std=scale_std)
-    if args.save != "":
-        sys.stdout.write("Saved plot to " + args.save + "\n")
+    if save != "":
+        sys.stdout.write("Saved plot to " + save + "\n")
     else:
         sys.stdout.write("..Done\n")
 

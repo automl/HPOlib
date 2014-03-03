@@ -132,8 +132,8 @@ def main(pkl_list, name_list, optimum=0, title="", log=False, save="", y_max=0, 
                             title=title, log=not log,
                             save=save, y_max=y_max, y_min=y_min)
 
-    if args.save != "":
-        sys.stdout.write("Saved plot to " + args.save + "\n")
+    if save != "":
+        sys.stdout.write("Saved plot to " + save + "\n")
     else:
         sys.stdout.write("..Done\n")
 

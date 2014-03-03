@@ -142,7 +142,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
                                  (str(max_len), str(len(trial_list[i][t]))))
 
     plot_optimization_trace(trial_list, name_list, optimum, title=title, log=not log,
-                            save=save, y_min=y_min, y_max=y_max, scale_std=scale)
+                            save=save, y_min=y_min, y_max=y_max, scale_std=scale_std)
 
     if save != "":
         sys.stdout.write("Saved plot to " + save + "\n")
