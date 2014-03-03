@@ -74,7 +74,26 @@ def extract_runtime_timestamps(trials):
     return time_list
 
 
-def get_best(trials):
+def get_best(trials, cut=False):
     # returns the best value found in this experiment
-    best_value = extract_trajectory(trials)[-1]
+    traj = extract_trajectory(trials)
+    best_value = sys.maxint
+    if cut and 0 < cut < len(traj):
+        best_value = traj[cut]
+    else:
+        best_value = traj[-1]
     return best_value
+
+
+def get_best_value_and_index(trials, cut=False):
+    # returns the best value and corresponding index
+    traj = extract_trajectory(trials)
+    best_value = sys.maxint
+    best_index = -1
+    if cut and 0 < cut < len(traj):
+        best_value = traj[cut]
+        best_index = np.argmin(traj[cut])
+    else:
+        best_value = traj[-1]
+        best_index = np.argmin(traj)
+    return best_value, best_index
