@@ -114,21 +114,11 @@ def _mann_whitney_u(x, y=None):
 """
 
 
-def main():
-    prog = "python statistics.py WhatIsThis <manyPickles> WhatIsThis <manyPickles> [WhatIsThis <manyPickles>]"
-    description = "Return some statistical information"
-
-    parser = ArgumentParser(description=description, prog=prog)
-
-    parser.add_argument("-c", "--c", dest="cut", default=False,
-                        type=int, help="Only consider that many evaluations")
-    args, unknown = parser.parse_known_args()
+def main(pkl_list, name_list):
 
     best_dict = dict()
     idx_dict = dict()
     keys = list()
-
-    pkl_list, name_list = plot_util.get_pkl_and_name_list(unknown)
 
     for i in range(len(name_list)):
         keys.append(name_list[i][0])
@@ -195,4 +185,14 @@ def main():
     sys.stdout.write("------------------------------------------------------------------------\n")
 
 if __name__ == "__main__":
-    main()
+    prog = "python statistics.py WhatIsThis <manyPickles> WhatIsThis <manyPickles> [WhatIsThis <manyPickles>]"
+    description = "Return some statistical information"
+
+    parser = ArgumentParser(description=description, prog=prog)
+
+    parser.add_argument("-c", "--c", dest="cut", default=False,
+                        type=int, help="Only consider that many evaluations")
+    args, unknown = parser.parse_known_args()
+
+    pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
+    main(pkl_list=pkl_list_main, name_list=name_list_main)

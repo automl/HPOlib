@@ -117,7 +117,39 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="",
         show()
 
 
-def main():
+def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False, y_min=0, y_max=0, scale_std=1):
+
+    trial_list = list()
+    for i in range(len(pkl_list)):
+        trial_list.append(list())
+        for pkl in pkl_list[i]:
+            fh = open(pkl, "r")
+            trials = cPickle.load(fh)
+            fh.close()
+
+            trace = plot_util.extract_trajectory(trials)
+            trial_list[-1].append(np.array(trace))
+
+    for i in range(len(trial_list)):
+        max_len = max([len(ls) for ls in trial_list[i]])
+        for t in range(len(trial_list[i])):
+            if len(trial_list[i][t]) < max_len and autofill:
+                diff = max_len - len(trial_list[i][t])
+                # noinspection PyUnusedLocal
+                trial_list[i][t] = np.append(trial_list[i][t], [trial_list[i][t][-1] for x in range(diff)])
+            elif len(trial_list[i][t]) < max_len and not autofill:
+                raise ValueError("(%s != %s), Traces do not have the same length, please use -a" %
+                                 (str(max_len), str(len(trial_list[i][t]))))
+
+    plot_optimization_trace(trial_list, name_list, optimum, title=title, log=not log,
+                            save=save, y_min=y_min, y_max=y_max, scale_std=scale)
+
+    if save != "":
+        sys.stdout.write("Saved plot to " + save + "\n")
+    else:
+        sys.stdout.write("..Done\n")
+
+if __name__ == "__main__":
     prog = "python plotTraceWithStd.py WhatIsThis <oneOrMorePickles> [WhatIsThis <oneOrMorePickles>]"
     description = "Plot a Trace with std for multiple experiments"
 
@@ -146,44 +178,9 @@ def main():
 
     args, unknown = parser.parse_known_args()
 
-    sys.stdout.write("Generate plot for ")
-    optimum = args.optimum
-    title = args.title
-
     sys.stdout.write("\nFound " + str(len(unknown)) + " arguments\n")
 
-    trial_list = list()
+    pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
 
-    pkl_list, name_list = plot_util.get_pkl_and_name_list(unknown)
-
-    for i in range(len(pkl_list)):
-        trial_list.append(list())
-        for pkl in pkl_list[i]:
-            fh = open(pkl, "r")
-            trials = cPickle.load(fh)
-            fh.close()
-
-            trace = plot_util.extract_trajectory(trials)
-            trial_list[-1].append(np.array(trace))
-
-    for i in range(len(trial_list)):
-        max_len = max([len(ls) for ls in trial_list[i]])
-        for t in range(len(trial_list[i])):
-            if len(trial_list[i][t]) < max_len and args.autofill:
-                diff = max_len - len(trial_list[i][t])
-                # noinspection PyUnusedLocal
-                trial_list[i][t] = np.append(trial_list[i][t], [trial_list[i][t][-1] for x in range(diff)])
-            elif len(trial_list[i][t]) < max_len and not args.autofill:
-                raise ValueError("(%s != %s), Traces do not have the same length, please use -a" %
-                                 (str(max_len), str(len(trial_list[i][t]))))
-
-    plot_optimization_trace(trial_list, name_list, optimum, title=title, log=not args.log,
-                            save=args.save, y_min=args.min, y_max=args.max, scale_std=args.scale)
-
-    if args.save != "":
-        sys.stdout.write("Saved plot to " + args.save + "\n")
-    else:
-        sys.stdout.write("..Done\n")
-
-if __name__ == "__main__":
-    main()
+    main(pkl_list=pkl_list_main, name_list=name_list_main, autofill=args.autofill, optimum=args.optimum,
+         save=args.save, title=args.title, log=args.log, y_min=args.min, y_max=args.max, scale_std=args.scale)

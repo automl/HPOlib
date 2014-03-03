@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 ##
 # wrapping: A program making it easy to use hyperparameter
 # optimization software.
@@ -15,8 +17,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-#!/usr/bin/env python
 
 from argparse import ArgumentParser
 import itertools
@@ -116,7 +116,28 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=Fals
         show()
 
 
-def main():
+def main(pkl_list, name_list, optimum=0, title="", log=False, save="", y_max=0, y_min=0):
+
+    trial_list = list()
+    for i in range(len(pkl_list)):
+        if len(pkl_list[i]) != 1:
+            raise ValueError("%s is more than <onePickle>!" % str(pkl_list))
+        fh = open(pkl_list[i][0])
+        trl = cPickle.load(fh)
+        fh.close()
+        trial_list.append(plot_util.extract_trials(trl))
+
+    sys.stdout.write("Plotting trace\n")
+    plot_optimization_trace(trial_list=trial_list, name_list=name_list, optimum=optimum,
+                            title=title, log=not log,
+                            save=save, y_max=y_max, y_min=y_min)
+
+    if args.save != "":
+        sys.stdout.write("Saved plot to " + args.save + "\n")
+    else:
+        sys.stdout.write("..Done\n")
+
+if __name__ == "__main__":
     prog = "python plotTrace.py WhatIsThis <onePickle> [WhatIsThis <onePickle>]"
     description = "Plot a Trace with evaluated points wrt to performance"
 
@@ -139,30 +160,9 @@ def main():
 
     args, unknown = parser.parse_known_args()
 
-    optimum = args.optimum
-
     sys.stdout.write("Found " + str(len(unknown)) + " arguments\n")
 
-    pkl_list, name_list = plot_util.get_pkl_and_name_list(unknown)
+    pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
 
-    trial_list = list()
-    for i in range(len(pkl_list)):
-        if len(pkl_list[i]) != 1:
-            raise ValueError("%s is more than <onePickle>!" % str(pkl_list))
-        fh = open(pkl_list[i][0])
-        trl = cPickle.load(fh)
-        fh.close()
-        trial_list.append(plot_util.extract_trials(trl))
-
-    sys.stdout.write("Plotting trace\n")
-    plot_optimization_trace(trial_list=trial_list, name_list=name_list, optimum=optimum,
-                            title=args.title, log=not args.log,
-                            save=args.save, y_max=args.max, y_min=args.min)
-
-    if args.save != "":
-        sys.stdout.write("Saved plot to " + args.save + "\n")
-    else:
-        sys.stdout.write("..Done\n")
-
-if __name__ == "__main__":
-    main()
+    main(pkl_list=pkl_list_main, name_list=name_list_main, optimum=args.optimum,
+         title=args.title, log=args.log, save=args.save, y_max=args.max, y_min=args.min)

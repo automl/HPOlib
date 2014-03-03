@@ -104,7 +104,26 @@ def plot_box_whisker(best_trials, name_list, title="", save="", y_min=0, y_max=0
         show()
 
 
-def main():
+def main(pkl_list, name_list, title="", save="", y_min=0, y_max=0):
+
+    best_trials = list()
+    for i in range(len(name_list)):
+        best_trials.append(list())
+        for pkl in pkl_list[i]:
+            fh = open(pkl, "r")
+            trials = cPickle.load(fh)
+            fh.close()
+            best_trials[i].append(plot_util.get_best(trials))
+
+    plot_box_whisker(best_trials=best_trials, name_list=name_list,
+                     title=title, save=save, y_min=y_min, y_max=y_max)
+
+    if save != "":
+        sys.stdout.write("Saving plot to " + save + "\n")
+    else:
+        sys.stdout.write("..Done\n")
+
+if __name__ == "__main__":
     prog = "python plotBoxWhisker.py WhatIsThis <ManyPickles> [WhatIsThis <ManyPickles>]"
     description = "Plot a Box whisker plot for many experiments. The box covers lower to upper quartile."
 
@@ -123,23 +142,7 @@ def main():
 
     sys.stdout.write("\nFound " + str(len(unknown)) + " arguments...")
 
-    pkl_list, name_list = plot_util.get_pkl_and_name_list(unknown)
-    best_trials = list()
-    for i in range(len(name_list)):
-        best_trials.append(list())
-        for pkl in pkl_list[i]:
-            fh = open(pkl, "r")
-            trials = cPickle.load(fh)
-            fh.close()
-            best_trials[i].append(plot_util.get_best(trials))
+    pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
 
-    plot_box_whisker(best_trials=best_trials, name_list=name_list,
-                     title=args.title, save=args.save, y_min=args.min, y_max=args.max)
-
-    if args.save != "":
-        sys.stdout.write("Saving plot to " + args.save + "\n")
-    else:
-        sys.stdout.write("..Done\n")
-
-if __name__ == "__main__":
-    main()
+    main(pkl_list=pkl_list_main, name_list=name_list_main, title=args.title, save=args.save,
+         y_min=args.min, y_max=args.max)

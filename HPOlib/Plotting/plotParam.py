@@ -129,7 +129,37 @@ def plot_params(value_list, result_list, name, save="", title="", jitter=0):
         show()
 
 
-def main():
+def main(pkl_list, name_list, param, save="", title="", jitter=0):
+    if len(name_list) > 1:
+        raise NotImplementedError("No support for more than one experiment")
+
+    mod_param = "-" + param
+
+    value_list = list()
+    result_list = list()
+    param_set = set()
+    for pkl in pkl_list[0]:
+        fh = open(pkl, "r")
+        trials = cPickle.load(fh)
+        fh.close()
+        for t in trials["trials"]:
+            if mod_param in t["params"]:
+                k, value = translate_para(param, t["params"][mod_param])
+                value_list.append(float(value.strip("'")))
+                result_list.append(t["result"])
+            param_set.update(t["params"].keys())
+
+    if len(value_list) == 0:
+        print("No values found for param '%s', Available params:\n%s" %
+              (param, "\n".join([p[1:] for p in param_set])))
+        sys.exit(1)
+    else:
+        print "Found %s values for %s" % (str(len(value_list)), param)
+
+    plot_params(value_list=value_list, result_list=result_list, name=param, save=save, title=title,
+                jitter=jitter)
+
+if __name__ == "__main__":
     prog = "python plot_param.py WhatIsThis <pathTo.pkl>* "
     description = "Plot one param wrt to minfunction value"
 
@@ -146,36 +176,6 @@ def main():
     args, unknown = parser.parse_known_args()
 
     sys.stdout.write("\nFound " + str(len(unknown)) + " argument[s]...\n")
-    pkl_list, name_list = plot_util.get_pkl_and_name_list(unknown)
-
-    if len(name_list) > 1:
-        raise NotImplementedError("No support for more than one experiment")
-
-    param = "-" + args.param
-
-    value_list = list()
-    result_list = list()
-    param_set = set()
-    for pkl in pkl_list[0]:
-        fh = open(pkl, "r")
-        trials = cPickle.load(fh)
-        fh.close()
-        for t in trials["trials"]:
-            if param in t["params"]:
-                k, value = translate_para(args.param, t["params"][param])
-                value_list.append(float(value.strip("'")))
-                result_list.append(t["result"])
-            param_set.update(t["params"].keys())
-
-    if len(value_list) == 0:
-        print("No values found for param '%s', Available params:\n%s" %
-              (args.param, "\n".join([p[1:] for p in param_set])))
-        sys.exit(1)
-    else:
-        print "Found %s values for %s" % (str(len(value_list)), args.param)
-
-    plot_params(value_list=value_list, result_list=result_list, name=args.param, save=args.save, title=args.title,
-                jitter=args.jitter)
-
-if __name__ == "__main__":
-    main()
+    pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
+    main(pkl_list=pkl_list_main, name_list=name_list_main, param=args.param,
+         save=args.save, title=args.title, jitter=args.jitter)

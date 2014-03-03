@@ -106,34 +106,7 @@ def plot_time_trace(time_dict, name_list, title="", log=True, save="", y_max=0, 
         plt.show()
 
 
-def main():
-    prog = "python plotOptimizerOverhead.py WhatIsThis <oneOrMorePickles> [WhatIsThis <oneOrMorePickles>]"
-    description = "Plot a Trace with std for multiple experiments"
-
-    parser = ArgumentParser(description=description, prog=prog)
-
-    # General Options
-    parser.add_argument("-l", "--nolog", action="store_true", dest="log",
-                        default=False, help="Do NOT plot on log scale")
-    parser.add_argument("--max", type=float, dest="max",
-                        default=0, help="Maximum of the plot")
-    parser.add_argument("--min", type=float, dest="min",
-                        default=0, help="Minimum of the plot")
-    parser.add_argument("-s", "--save", dest="save",
-                        default="", help="Where to save plot instead of showing it?")
-    parser.add_argument("-t", "--title", dest="title",
-                        default="", help="Choose a supertitle for the plot")
-
-    # Options which are available only for this plot
-    parser.add_argument("-a", "--autofill", action="store_true", dest="autofill",
-                        default=False, help="Fill trace automatically")
-
-    args, unknown = parser.parse_known_args()
-
-    sys.stdout.write("\nFound " + str(len(unknown)) + " arguments\n")
-
-    pkl_list, name_list = plot_util.get_pkl_and_name_list(unknown)
-
+def main(pkl_list, name_list, autofill, title="", log=False, save="", y_min=0, y_max=0):
     times_dict = dict()
     for exp in range(len(name_list)):
         times_dict[name_list[exp][0]] = list()
@@ -175,22 +148,48 @@ def main():
     for key in times_dict.keys():
         max_len = max([len(ls) for ls in times_dict[key]])
         for t in range(len(times_dict[key])):
-            if len(times_dict[key][t]) < max_len and args.autofill:
+            if len(times_dict[key][t]) < max_len and autofill:
                 diff = max_len - len(times_dict[key][t])
                 # noinspection PyUnusedLocal
                 times_dict[key][t] = np.append(times_dict[key][t], [times_dict[key][t][-1] for x in range(diff)])
-            elif len(times_dict[key][t]) < max_len and not args.autofill:
+            elif len(times_dict[key][t]) < max_len and not autofill:
                 raise ValueError("(%s != %s), Traces do not have the same length, please use -a" %
                                  (str(max_len), str(len(times_dict[key][t]))))
-    title = args.title
 
-    plot_time_trace(times_dict, name_list, title=title, log=not args.log, save=args.save,
-                    y_min=args.min, y_max=args.max)
+    plot_time_trace(times_dict, name_list, title=title, log=not log, save=save,
+                    y_min=y_min, y_max=y_max)
 
-    if args.save != "":
-        sys.stdout.write("Saved plot to " + args.save + "\n")
+    if save != "":
+        sys.stdout.write("Saved plot to " + save + "\n")
     else:
         sys.stdout.write("..Done\n")
 
 if __name__ == "__main__":
-    main()
+    prog = "python plotOptimizerOverhead.py WhatIsThis <oneOrMorePickles> [WhatIsThis <oneOrMorePickles>]"
+    description = "Plot a Trace with std for multiple experiments"
+
+    parser = ArgumentParser(description=description, prog=prog)
+
+    # General Options
+    parser.add_argument("-l", "--nolog", action="store_true", dest="log",
+                        default=False, help="Do NOT plot on log scale")
+    parser.add_argument("--max", type=float, dest="max",
+                        default=0, help="Maximum of the plot")
+    parser.add_argument("--min", type=float, dest="min",
+                        default=0, help="Minimum of the plot")
+    parser.add_argument("-s", "--save", dest="save",
+                        default="", help="Where to save plot instead of showing it?")
+    parser.add_argument("-t", "--title", dest="title",
+                        default="", help="Choose a supertitle for the plot")
+
+    # Options which are available only for this plot
+    parser.add_argument("-a", "--autofill", action="store_true", dest="autofill",
+                        default=False, help="Fill trace automatically")
+
+    args, unknown = parser.parse_known_args()
+
+    sys.stdout.write("\nFound " + str(len(unknown)) + " arguments\n")
+
+    pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
+    main(pkl_list_main, name_list_main, autofill=args.autofill, title=args.title, log=not args.log, save=args.save,
+         y_min=args.min, y_max=args.max)
