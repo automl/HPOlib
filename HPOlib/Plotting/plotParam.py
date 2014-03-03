@@ -1,7 +1,26 @@
 #!/usr/bin/env python
 
+##
+# wrapping: A program making it easy to use hyperparameter
+# optimization software.
+# Copyright (C) 2013 Katharina Eggensperger and Matthias Feurer
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+from argparse import ArgumentParser
+
 import cPickle
-import optparse
 import re
 import sys
 
@@ -10,9 +29,9 @@ from matplotlib.gridspec import GridSpec
 
 import numpy as np
 
+from HPOlib.Plotting import plot_util
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
-__license__ = "3-clause BSD License"
 __contact__ = "automl.org"
 
 
@@ -111,48 +130,52 @@ def plot_params(value_list, result_list, name, save="", title="", jitter=0):
 
 
 def main():
-    usage = "python plot_param.py WhatIsThis <pathTo.pkl>* [options]"
-    parser = optparse.OptionParser(usage)
-    parser.add_option("-s", "--save", dest="save", default="",
-                      help="Where to save plot instead of showing it?")
-    parser.add_option("-p", "--parameter", dest="param", default="",
-                      help="Which parameter to plot")
-    parser.add_option("-j", "--jitter", dest="jitter", default=0, type=float,
-                      help="Jitter data?")
-    parser.add_option("-t", "--title", dest="title", default="",
-                      help="Choose a supertitle for the plot")
-    (opts, args) = parser.parse_args()
-    sys.stdout.write("\nFound " + str(len(args)) + " argument[s]...\n")
+    prog = "python plot_param.py WhatIsThis <pathTo.pkl>* "
+    description = "Plot one param wrt to minfunction value"
 
-    title = opts.title
+    parser = ArgumentParser(description=description, prog=prog)
+    parser.add_argument("-s", "--save", dest="save", default="",
+                        help="Where to save plot instead of showing it?")
+    parser.add_argument("-p", "--parameter", dest="param", default="",
+                        help="Which parameter to plot")
+    parser.add_argument("-j", "--jitter", dest="jitter", default=0, type=float,
+                        help="Jitter data?")
+    parser.add_argument("-t", "--title", dest="title", default="",
+                        help="Choose a supertitle for the plot")
+
+    args, unknown = parser.parse_known_args()
+
+    sys.stdout.write("\nFound " + str(len(unknown)) + " argument[s]...\n")
+    pkl_list, name_list = plot_util.get_pkl_and_name_list(unknown)
+
+    if len(name_list) > 1:
+        raise NotImplementedError("No support for more than one experiment")
+
+    param = "-" + args.param
 
     value_list = list()
     result_list = list()
     param_set = set()
-    for fn in args:
-        if not ".pkl" in fn:
-            print "This is not a .pkl file: %s" % (fn,)
-            continue
-        print "Loading ", fn
-        fh = open(fn, "r")
+    for pkl in pkl_list[0]:
+        fh = open(pkl, "r")
         trials = cPickle.load(fh)
         fh.close()
-
         for t in trials["trials"]:
-            if opts.param in t["params"]:
-                k, value = translate_para(opts.param, t["params"][opts.param])
+            if param in t["params"]:
+                k, value = translate_para(args.param, t["params"][param])
                 value_list.append(float(value.strip("'")))
                 result_list.append(t["result"])
             param_set.update(t["params"].keys())
 
     if len(value_list) == 0:
-        print("No values found for param '%s', Available params:\n%s" % (opts.param, "\n".join([p for p in param_set])))
+        print("No values found for param '%s', Available params:\n%s" %
+              (args.param, "\n".join([p[1:] for p in param_set])))
         sys.exit(1)
     else:
-        print "Found %s values for %s" % (str(len(value_list)), opts.param)
+        print "Found %s values for %s" % (str(len(value_list)), args.param)
 
-    plot_params(value_list=value_list, result_list=result_list, name=opts.param, save=opts.save, title=title,
-                jitter=opts.jitter)
+    plot_params(value_list=value_list, result_list=result_list, name=args.param, save=args.save, title=args.title,
+                jitter=args.jitter)
 
 if __name__ == "__main__":
     main()
