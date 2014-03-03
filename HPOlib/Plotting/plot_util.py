@@ -18,6 +18,7 @@
 
 import os
 import numpy as np
+import sys
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -71,3 +72,9 @@ def extract_runtime_timestamps(trials):
     for trial in trials["trials"]:
         time_list.append(np.sum(trial["instance_durations"]) + time_list[-1])
     return time_list
+
+
+def get_best(trials):
+    # returns the best value found in this experiment
+    best_value = extract_trajectory(trials)[-1]
+    return best_value
