@@ -191,33 +191,20 @@ def parse_command_line():
 
 
 def get_function_filename(cfg):
+    fn_path = None
+    exp_dir = os.path.dirname(os.getcwd())
+
+    # Check whether function path is absolute
     if os.path.isabs(cfg.get("HPOLIB", "function")):
         fn_path = cfg.get("HPOLIB", "function")
     else:
-        fn_path = cfg.get("HPOLIB", "function")
-        fn_path_parent = os.path.join("..", cfg.get("HPOLIB", "function"))
-    fn_name, ext = os.path.splitext(os.path.basename(fn_path))
-    try:
-        fn = imp.load_source(fn_name, fn_path)
-    except (ImportError, IOError) as e:
-        logger.warning("Raised" + e.message + "trying to recover...")
-        try:
-            logger.info(os.path.exists(fn_path_parent))
-            fn = imp.load_source(fn_name, fn_path_parent)
-        except (ImportError, IOError):
-            logger.critical(os.path.join(fn_path_parent))
-            logger.critical(("Could not find\n%s\n\tin\n%s\n\tor its parent "
-                             "directory relative to\n%s")
-                             % (fn_name, fn_path, os.getcwd()))
-            import traceback
+        # We hope to find function in the experiment directory
+        fn_path = os.path.join(exp_dir, cfg.get("HPOLIB", "function"))
 
-            logger.critical(traceback.format_exc())
-            sys.exit(1)
-    fn_filename = os.path.realpath(fn.__file__)
-    if fn_filename[-3:] == "pyc":
-        fn_filename = fn_filename[:-1]
-
-    return fn_filename
+    if not os.path.exists(fn_path):
+        logger.critical("%s is not absolute nor in %s. Function cannot be found" %
+                        (cfg.get("HPOLIB", "function"), exp_dir))
+    return fn_path
 
 
 def make_command(cfg, fold, param_string, run_instance_output):

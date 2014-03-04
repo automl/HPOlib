@@ -385,8 +385,9 @@ def main():
 
         elif args.silent:
             # Print nothing
-            proc = subprocess.Popen(cmd, shell=True, stdin=fh, stdout=fh, stderr=fh)
+            proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=fh, stderr=fh)
             logger.info('Optimizer runs with PID (+1): %d' % proc.pid)
+            proc.wait()
 
         else:
             # Print only stderr
