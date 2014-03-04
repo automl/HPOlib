@@ -26,16 +26,19 @@ import ConfigParser
 logger = logging.getLogger("HPOlib.config_parser.parse")
 
 
-def parse_config(config_fn, allow_no_value=True, optimizer_version=""):
-    # Reads config_fn
+def parse_config(config_file, allow_no_value=True, optimizer_version="",
+                 cli_values=None):
+    # Reads config_file
     # Overwrites with default values from generalDefault.cfg
     # Loads optimizer specific parser, called 'optimizer_version'_parser.py, which can read its own default config
-    if not os.path.isfile(config_fn):
+    if not os.path.isfile(config_file):
         raise Exception('%s is not a valid file\n' % os.path.join(
-                        os.getcwd(), config_fn))
+                        os.getcwd(), config_file))
 
     config = ConfigParser.SafeConfigParser(allow_no_value=allow_no_value)
-    config.read(config_fn)
+    config.read(config_file)
+    if cli_values is not None:
+        config.readfp(cli_values)
 
     # Load general default configs
     config_fn_default = \

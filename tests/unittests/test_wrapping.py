@@ -45,38 +45,6 @@ class WrappingTest(unittest.TestCase):
     def test_calculate_optimizer_time(self):
         self.fail()
 
-    # Test spearmint
-    @unittest.skip("Not implemented yet")
-    def test_build_spearmint_call(self):
-        self.fail()
-
-    @unittest.skip("Not implemented yet")
-    def test_main_spearmint(self):
-        self.fail()
-        
-    # Test tpe
-    @unittest.skip("Not implemented yet")
-    def test_build_tpe_call(self):
-        self.fail()
-
-    @unittest.skip("Not implemented yet")
-    def test_main_tpe(self):
-        self.fail()
-        
-    # Test random
-    @unittest.skip("Not implemented yet")
-    def test_build_random_call(self):
-        self.fail()
-
-    @unittest.skip("Not implemented yet")
-    def test_main_random(self):
-        self.fail()
-        
-    # Test smac
-    @unittest.skip("Not implemented yet")
-    def test_build_smac_call(self):
-        self.fail()
-
     def test_use_option_parser_no_optimizer(self):
         # Test not specifying an optimizer but random other options
         sys.argv = ['wrapping.py', '-s', '1', '-t', 'DBNet']
@@ -111,11 +79,27 @@ class WrappingTest(unittest.TestCase):
                                                             config_args)
         self.assertEqual(new_config.get('HPOLIB', 'numberofjobs'), '2')
 
+    def test_override_config_with_cli_arguments_2(self):
+        """This tests whether wrapping
+        .parse_config_values_from_unknown_arguments works as expected. This
+        test is not sufficient to conclude that we can actually override
+        optimizer parameters from the command line. We must make sure that
+        the config parser is invoked before we parse the cli arguments."""
+        unknown = ['--HPOLIB:total_time_limit', '50',
+                   '--HPOLIB:numberofjobs', '2',
+                   '--GRIDSEARCH:params', 'test']
+        config = parse.parse_config("dummy_config.cfg", allow_no_value=True)
+        config_args = wrapping.parse_config_values_from_unknown_arguments(
+            unknown, config)
+        new_config = wrapping.override_config_with_cli_arguments(config,
+                                                            config_args)
+        self.assertEqual(new_config.get('GRIDSEARCH', 'params'), 'test')
 
     def test_save_config_to_file(self):
         unknown = ['--HPOLIB:total_time_limit', '50',
                    '--HPOLIB:numberofjobs', '2']
         config = parse.parse_config("dummy_config.cfg", allow_no_value=True)
+        config.set("HPOLIB", "total_time_limit", None)
         string_stream = StringIO.StringIO()
         wrapping.save_config_to_file(string_stream, config)
         file_content = string_stream.getvalue()
@@ -128,29 +112,44 @@ class WrappingTest(unittest.TestCase):
                             "numbercv = 1\n"\
                             "numberofconcurrentjobs = 1\n"\
                             "runsolver_time_limit = 3600\n"\
-                            "total_time_limit = 3600\n"\
+                            "total_time_limit = None\n"\
                             "memory_limit = 2000\n"\
                             "cpu_limit = 14400\n"\
-                            "max_crash_per_cv = 3\n"
+                            "max_crash_per_cv = 3\n" \
+                            "[GRIDSEARCH]\n" \
+                            "params = params.pcs\n"
 
         self.assertEqual(asserted_file_content, file_content)
         string_stream.close()
 
-    @unittest.skip("Not implemented yet")
-    def test_main_smac(self):
-        os.chdir("./branin_test/")
-        sys.argv = ['wrapping.py', 'smac']
-        ret = wrapping.main()
-        self.assertEqual(ret, 0, "Return code of SMAC is not 0, please debug")
-        
-        # TODO: Test what happens when the runsolver limit is exceeded
-        # TODO: Clean up the test directory
+    def test_save_config_to_file_ignore_none(self):
+        config = parse.parse_config("dummy_config.cfg", allow_no_value=True)
+        config.set("HPOLIB", "total_time_limit", None)
+        string_stream = StringIO.StringIO()
+        wrapping.save_config_to_file(string_stream, config, write_nones=False)
+        file_content = string_stream.getvalue()
+        asserted_file_content = "[HPOLIB]\n" \
+                            "numberofjobs = 1\n" \
+                            "result_on_terminate = 1\n"\
+                            "function = 1\n"\
+                            "algorithm = cv.py\n"\
+                            "run_instance = runsolver_wrapper.py\n"\
+                            "numbercv = 1\n"\
+                            "numberofconcurrentjobs = 1\n"\
+                            "runsolver_time_limit = 3600\n"\
+                            "memory_limit = 2000\n"\
+                            "cpu_limit = 14400\n"\
+                            "max_crash_per_cv = 3\n" \
+                            "[GRIDSEARCH]\n" \
+                            "params = params.pcs\n"
+
+        self.assertEqual(asserted_file_content, file_content)
+        string_stream.close()
         
     # General main test
     @unittest.skip("Not implemented yet")
     def test_main(self):
         self.fail()
-
 
 
 if __name__ == "__main__": 
