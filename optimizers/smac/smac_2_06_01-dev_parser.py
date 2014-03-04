@@ -25,38 +25,7 @@ import ConfigParser
 logger = logging.getLogger("HPOlib.optimizers.smac.smac_2_06_01-dev_parser")
 
 
-def add_default(config):
-    # This module reads smacDefault.cfg and adds this defaults to a given config
-
-    assert isinstance(config, ConfigParser.RawConfigParser), \
-        'config is not a valid instance'
-
-     # Find out name of .cfg, we are in anything_parser.py[c]
-    optimizer_config_fn = os.path.splitext(__file__)[0][:-7] + "Default.cfg"
-    if not os.path.exists(optimizer_config_fn):
-        logger.critical("No default config %s found" % optimizer_config_fn)
-        sys.exit(1)
-
-    smac_config = ConfigParser.SafeConfigParser(allow_no_value=True)
-    smac_config.read(optimizer_config_fn)
-    # --------------------------------------------------------------------------
-    # SMAC
-    # --------------------------------------------------------------------------
-    # Set defaults for SMAC
-    if not config.has_section('SMAC'):
-        config.add_section('SMAC')
-    # optional arguments (exec_dir taken out as is does not seem to be used)
-    for option in ('numRun', 'instanceFile', 'intraInstanceObj', 'runObj',
-                   'testInstanceFile', 'p', 'rf_full_tree_bootstrap',
-                   'rf_split_min', 'adaptiveCapping', 'maxIncumbentRuns',
-                   'numIterations', 'runtimeLimit', 'deterministic',
-                   'retryTargetAlgorithmRunCount',
-                   'intensification_percentage'):
-        if not config.has_option('SMAC', option):
-            config.set('SMAC', option,
-                       smac_config.get('SMAC', option))
-
-    # special cases
+def manipulate_config(config):
     if not config.has_option('SMAC', 'cutoffTime'):
         config.set('SMAC', 'cutoffTime',
                    str(config.getint('HPOLIB', 'runsolver_time_limit') + 100))
@@ -71,7 +40,7 @@ def add_default(config):
         config.set('SMAC', 'numConcurrentAlgoExecs',
                    config.get('HPOLIB', 'numberOfConcurrentJobs'))
 
-    path_to_optimizer = smac_config.get('SMAC', 'path_to_optimizer')
+    path_to_optimizer = config.get('SMAC', 'path_to_optimizer')
     if not os.path.isabs(path_to_optimizer):
         path_to_optimizer = os.path.join(os.path.dirname(os.path.realpath(__file__)), path_to_optimizer)
 

@@ -22,7 +22,7 @@ import os
 import subprocess
 import sys
 
-from config_parser.parse import parse_config
+from HPOlib.wrapping_util import get_configuration
 
 
 logger = logging.getLogger("HPOlib.check_before_start")
@@ -91,7 +91,7 @@ def _check_config(experiment_dir):
 def _check_function(experiment_dir):
     # Check whether path function exists
     config_file = os.path.join(experiment_dir, "config.cfg")
-    config = parse_config(config_file, allow_no_value=True)
+    config = get_configuration(experiment_dir, None, None)
 
     path = config.get("HPOLIB", "function")
 
