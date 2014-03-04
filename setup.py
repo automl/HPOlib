@@ -1,6 +1,5 @@
 import hashlib
 from setuptools import setup
-from setuptools.command.test import test as test_command
 from setuptools.command.install import install as install_command
 import shutil
 import urllib
@@ -17,15 +16,16 @@ keywords = 'hyperparameter optimization empirical evaluation black box'
 
 package_dir = {'HPOlib': 'HPOlib',
                'HPOlib.config_parser': 'HPOlib/config_parser',
-               'HPOlib.benchmarks': 'HPOlib/benchmarks',
-               'HPOlib.optimizers': 'HPOlib/optimizers',
-               'HPOlib.benchmarks.branin': 'HPOlib/benchmarks/branin',
-               'HPOlib.benchmarks.har6': 'HPOlib/benchmarks/har6',
+               #'HPOlib.benchmarks': 'HPOlib/benchmarks',
+               #'HPOlib.optimizers': 'HPOlib/optimizers',
+               #'HPOlib.benchmarks.branin': 'HPOlib/benchmarks/branin',
+               #'HPOlib.benchmarks.har6': 'HPOlib/benchmarks/har6',
                'HPOlib.Plotting': 'HPOlib/Plotting'}
-package_data = {'HPOlib': ['*/params.txt', '*/space.py', '*/config.pb'],
-                'HPOlib.benchmarks.branin': ['*.cfg', '*/params.txt', '*/space.py', '*/config.pb'],
-                'HPOlib.benchmarks.har6': ['*.cfg', '*/params.txt', '*/space.py', '*/config.pb'],
-                'HPOlib.config_parser': ['*.cfg']}
+package_data = {'HPOlib.config_parser': ['*.cfg']}
+               # 'HPOlib': ['*/params.txt', '*/space.py', '*/config.pb'],
+               # 'HPOlib.benchmarks.branin': ['*.cfg', '*/params.txt', '*/space.py', '*/config.pb'],
+               # 'HPOlib.benchmarks.har6': ['*.cfg', '*/params.txt', '*/space.py', '*/config.pb']}
+
 data_files = []
 scripts = ['scripts/HPOlib-run', 'scripts/HPOlib-plot', 'runsolver/src/runsolver']
 
@@ -37,21 +37,68 @@ def read(fname):
 def get_find_packages():
     packages = ['HPOlib',
                 'HPOlib.config_parser',
-                'HPOlib.benchmarks',
-                'HPOlib.optimizers',
-                'HPOlib.benchmarks.branin',
-                'HPOlib.benchmarks.har6',
+                #'HPOlib.benchmarks',
+                #'HPOlib.optimizers',
+                #'HPOlib.benchmarks.branin',
+                #'HPOlib.benchmarks.har6',
                 'HPOlib.Plotting']
     return packages
 
 
-class InstallRunsolver(install_command):
-    """Is supposed to install the runsolver later on"""
-    runsolver_needs_to_be_installed = False
-    download_url = 'http://www.cril.univ-artois.fr/~roussel/runsolver/runsolver-3.3.2.tar.bz2'
-    md5_should = '62d139a6d2b1b376eb9ed59ccb5d6726'
-    save_as = os.path.join(os.getcwd(), "runsolver-3.3.2.tar.bz2")
-    extract_as = os.getcwd()
+def download_source(download_url, md5, save_as):
+    try:
+        urllib.urlretrieve(download_url, filename=save_as)
+    except Exception, e:
+        print("Error downloading %s: %s" % (download_url, e))
+        return False
+    md5_new = hashlib.md5(open(save_as).read()).hexdigest()
+    if md5_new != md5:
+        print "md5 checksum has changed: %s to %s" % (md5, md5_new)
+        return False
+    return True
+
+
+def extract_source(fn_name, extract_as):
+    if tarfile.is_tarfile(fn_name):
+        try:
+            tfile = tarfile.open(fn_name)
+            tfile.extractall(extract_as)
+        except Exception, e:
+            print("Error occurred during extraction: %s" % e)
+            return False
+        return True
+    return False
+
+
+def copy_folder(new_dir, old_dir):
+    try:
+        shutil.copytree(old_dir, new_dir, symlinks=True,
+                        ignore=shutil.ignore_patterns('*.pyc', '*_src*'))
+    except shutil.Error as e:
+        sys.stderr.write("[shutil.ERROR] Could not copy folder from %s to %s\n" % (old_dir, new_dir))
+        return False
+    except Exception, e:
+        sys.stderr.write("[ERROR] Could not copy folder from %s to %s\n" % (old_dir, new_dir))
+        sys.stderr.write("%s\n" % e.message)
+        return False
+    return True
+
+
+def make_dir(new_dir):
+    try:
+        if not os.path.exists(new_dir):
+            os.mkdir(new_dir)
+        else:
+            sys.stdout.write("[INFO] %s is already a directory, we use it for our installation\n" %
+                             new_dir)
+    except Exception, e:
+        sys.stdout.write("[ERROR] Something (%s) went wrong, please create %s and try again\n" %
+                         (e.message, new_dir))
+
+
+class AdditionalInstall(install_command):
+    """Is supposed to install the runsolver, download optimizers,
+     and copy benchmarks"""
 
     def _check_for_runsolver(self):
         name = 'runsolver'
@@ -67,33 +114,10 @@ class InstallRunsolver(install_command):
                 return p
         return False
 
-    def _download_runsolver(self):
-        try:
-            urllib.urlretrieve(self.download_url, filename=self.save_as)
-        except Exception, e:
-            print("Error downloading %s: %s" % (self.download_url, e))
-            return False
-        md5 = hashlib.md5(open(self.save_as).read()).hexdigest()
-        if md5 != self.md5_should:
-            print "md5 checksum has changed: %s to %s" % (self.md5_should, md5)
-            return False
-        return True
-
-    def _extract_runsolver(self):
-        if tarfile.is_tarfile(self.save_as):
-            try:
-                tfile = tarfile.open(self.save_as)
-                tfile.extractall(self.extract_as)
-            except Exception, e:
-                print("Error occurred during extraction: %s" % e)
-                return False
-            return True
-        return False
-
-    def _build(self):
+    def _build(self, build_dir):
         print("Building runsolver")
         cur_pwd = os.getcwd()
-        os.chdir(os.path.join(self.extract_as, "runsolver", "src"))
+        os.chdir(build_dir)
         try:
             subprocess.check_call("make")
         except subprocess.CalledProcessError, e:
@@ -103,8 +127,32 @@ class InstallRunsolver(install_command):
         os.chdir(cur_pwd)
         return True
 
-    def run(self):
+    def _copy_and_download_optimizer(self, new_optimizer_dir, old_optimizer_dir, optimizer_name, optimizer_tar_name,
+                                     url, md5):
+        load, extract, copy = (False, False, False)
+        copy = copy_folder(old_dir=os.path.join(old_optimizer_dir, optimizer_name),
+                           new_dir=os.path.join(new_optimizer_dir, optimizer_name))
 
+        load = download_source(download_url=url, md5=md5,
+                               save_as=os.path.join(new_optimizer_dir, optimizer_tar_name))
+
+        if load:
+            extract = extract_source(os.path.join(new_optimizer_dir, optimizer_tar_name),
+                                     extract_as=os.path.join(new_optimizer_dir, optimizer_name))
+            os.remove(os.path.join(new_optimizer_dir, optimizer_tar_name))
+
+
+
+        if load and extract and copy:
+            return True
+        else:
+            return False
+
+    def run(self):
+        # RUNSOLVER STUFF
+        here_we_are = os.getcwd()
+        runsolver_tar_name = "runsolver-3.3.2.tar.bz2"
+        runsolver_name = "runsolver-3.3.2"
         if sys.version_info < (2, 7, 0) or sys.version_info >= (2, 8, 0):
             sys.stderr.write("HPOlib requires Python 2.7.0\n")
             sys.exit(-1)
@@ -112,26 +160,27 @@ class InstallRunsolver(install_command):
         downloaded, extracted, built = (False, False, False)
         runsolver_needs_to_be_installed = False
 
-        print "Check whether you already have installed runsolver"
         runsolver_path = self._check_for_runsolver()
         if not runsolver_path:
-            print "'runsolver' not found, so we try to install it"
+            sys.stdout.write("[INFO] 'runsolver' not found, so we try to install it")
             runsolver_needs_to_be_installed = True
 
-        download_url = 'http://www.cril.univ-artois.fr/~roussel/runsolver/runsolver-3.3.2.tar.bz2'
-        save_as = os.path.join(os.getcwd(), "runsolver-3.3.2.tar.bz2")
-        extract_as = os.getcwd()
         if runsolver_needs_to_be_installed:
-            print("Downloading runsolver from %s, saving to %s" % (download_url, save_as))
-            downloaded = self._download_runsolver()
+            sys.stdout.write("Downloading runsolver from %s%s, saving to %s/%s" %
+                             ('http://www.cril.univ-artois.fr/~roussel/runsolver/',
+                              runsolver_tar_name, os.getcwd(), runsolver_tar_name))
+            downloaded = download_source(download_url='http://www.cril.univ-artois.fr/~roussel/runsolver/%s' %
+                                                      runsolver_tar_name,
+                                         md5="62d139a6d2b1b376eb9ed59ccb5d6726",
+                                         save_as=os.path.join(here_we_are, runsolver_tar_name))
 
         if runsolver_needs_to_be_installed and downloaded:
-            print("Extracting runsolver to %s" % extract_as)
-            extracted = self._extract_runsolver()
+            print("Extracting runsolver to %s" % os.path.join(here_we_are, runsolver_name))
+            extracted = extract_source(fn_name=os.path.join(here_we_are, runsolver_tar_name), extract_as=here_we_are)
 
         if runsolver_needs_to_be_installed and extracted:
             print("Building runsolver")
-            built = self._build()
+            built = self._build(build_dir=os.path.join(here_we_are, "runsolver", "src"))
             if not built:
                 print "Try a second time and replace '/usr/include/asm/unistd.h' with '/usr/include/unistd.h'"
                 call = "sed -i 's/\/usr\/include\/asm\/unistd/\/usr\/include\/unistd/g' runsolver/src/Makefile"
@@ -139,30 +188,78 @@ class InstallRunsolver(install_command):
                     subprocess.check_call(call, shell=True)
                 except subprocess.CalledProcessError, e:
                     print "Replacing did not work: %s" % e
-                built = self._build()
+                built = self._build(build_dir=os.path.join(here_we_are, "runsolver", "src"))
 
+        # COPY BENCHMARKS TO ROOT FOLDER
+        new_benchmark_dir = os.path.join(here_we_are, "benchmarks")
+        old_benchmark_dir = os.path.join(os.path.dirname(HPOlib.__file__), "benchmarks")
+
+        make_dir(new_dir=new_benchmark_dir)
+        branin = copy_folder(new_dir=os.path.join(new_benchmark_dir, "branin"),
+                             old_dir=os.path.join(old_benchmark_dir, "branin"))
+        har6 = copy_folder(new_dir=os.path.join(new_benchmark_dir, "har6"),
+                           old_dir=os.path.join(old_benchmark_dir, "har6"))
+
+        # COPY/DOWNLOAD OPTIMIZER TO ROOT FOLDER
+        new_optimizer_dir = os.path.join(here_we_are, "optimizers")
+        old_optimizer_dir = os.path.join(os.path.dirname(HPOlib.__file__), "optimizers")
+        make_dir(new_dir=new_optimizer_dir)
+
+        tpe, smac, spearmint = (False, False, False)
+        tpe = self._copy_and_download_optimizer(new_optimizer_dir=new_optimizer_dir,
+                                                old_optimizer_dir=old_optimizer_dir,
+                                                optimizer_name='tpe',
+                                                optimizer_tar_name="hyperopt_august2013_mod_src.tar.gz",
+                                                url="http://www.automl.org/hyperopt_august2013_mod_src.tar.gz",
+                                                md5='15ce1adf9d32bb7f71dcfb9a847c55c7')
+        # If one optimizer fails, others are likely to fail as well
+        if tpe:
+            smac = self._copy_and_download_optimizer(new_optimizer_dir=new_optimizer_dir,
+                                                     old_optimizer_dir=old_optimizer_dir,
+                                                     optimizer_name='smac',
+                                                     optimizer_tar_name="smac_2_06_01-dev_src.tar.gz",
+                                                     url="http://www.automl.org/smac_2_06_01-dev_src.tar.gz",
+                                                     md5='30ab1d09696de47efac77ed163772c0a')
+            spearmint = self._copy_and_download_optimizer(new_optimizer_dir=new_optimizer_dir,
+                                                          old_optimizer_dir=old_optimizer_dir,
+                                                          optimizer_name='spearmint',
+                                                          optimizer_tar_name="spearmint_april2013_mod_src.tar.gz",
+                                                          url="http://www.automl.org/spearmint_april2013_mod_src.tar.gz",
+                                                          md5='aa3eb7961637f9bf2a8cb9b14c4b8791')
+
+        # Do whatever you want to do
         install_command.run(self)
 
         # Give detailed output to user
+        if not har6 or not branin:
+            sys.stderr.write("[ERROR] Branin/Har6 benchmark could not be copied, please do the following:\n" +
+                             "mkdir benchmarks\n" +
+                             "cp HPOlib/benchmarks/* benchmarks/ -r\n")
+        if not tpe or not smac or not spearmint:
+            sys.stderr.write("[ERROR] Something went wrong while copying and downloading optimizers." +
+                       "Please do the following to be ready to start optimizing:\n\n" +
+                       "rm optimizers\n" + "mkdir optimizers\n" +
+                       "cp HPOlib/optimizers/tpe optimizers/ -r\n" +
+                       "cp HPOlib/optimizers/smac optimizers/ -r\n" +
+                       "cp HPOlib/optimizers/spearmint optimizers/ -r\n"
+                       "cd optimizers\n" +
+                       "wget http://www.automl.org/hyperopt_august2013_mod_src.tar.gz \n" +
+                       "wget http://www.automl.org/smac_2_06_01-dev_src.tar.gz \n" +
+                       "wget http://www.automl.org/spearmint_april2013_mod_src.tar.gz \n"
+                       "tar -xf hyperopt_august2013_mod_src.tar.gz \n" + "mv hyperopt_august2013_mod_src tpe/ \n" +
+                       "tar -xf smac_2_06_01-dev_src.tar.gz \n" + "mv smac_2_06_01-dev_src.tar.gz smac/ \n" +
+                       "tar -xf spearmint_april2013_mod_src.tar.gz \n" +
+                       "mv spearmint_april2013_mod_src.tar.gz spearmint/ \n\n" +
+                       "Thank You!\n")
         if runsolver_needs_to_be_installed and not built:
-            print "[ERROR] Please install runsolver on your own! You can download it from:\n%s" % download_url
+            print "[ERROR] Please install runsolver on your own! You can download it from:\n%s%s" % \
+                  ('http://www.cril.univ-artois.fr/~roussel/runsolver/%s', runsolver_tar_name)
             print "[ERROR] Be sure 'runsolver' can be found during runtime in your $PATH variable!"
         if not runsolver_needs_to_be_installed and not built:
             print "[INFO] 'runsolver' has been found on this system and was copied from: %s" % runsolver_path
         if built:
             print "'runsolver' has been downloaded and installed"
 
-
-class PyTest(test_command):
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        print("Hello User,\n"
-              "so far we have not included any tests. Sorry")
 
 setup(
     name='HPOlib',
@@ -172,13 +269,13 @@ setup(
     platforms=['Linux'],
     author=HPOlib.__authors__,
     test_suite="tests.testsuite.suite",
-    install_requires=['argparse==1.2.1',
-                      'matplotlib==1.3.1',
-                      'networkx==1.8.1',
-                      'numpy==1.8.0',
-                      'protobuf==2.5.0',
-                      'scipy==0.13.2',
-                      'pymongo==2.6.3',
+    install_requires=['argparse>=1.2.1',
+                      'matplotlib>=1.3.1',
+                      'networkx>=1.8.1',
+                      'numpy>=1.8.0',
+                      'protobuf>=2.5.0',
+                      'scipy>=0.13.2',
+                      'pymongo>=2.6.3',
                       ],
     author_email='eggenspk@informatik.uni-freiburg.de',
     description=desc,
@@ -190,7 +287,7 @@ setup(
     data_files=data_files,
     scripts=scripts,
     cmdclass={
-        'install': InstallRunsolver,
+        'install': AdditionalInstall,
     },
     classifiers=[
         'Programming Language :: Python :: 2.7',
