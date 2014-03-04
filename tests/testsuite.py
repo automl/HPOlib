@@ -7,6 +7,7 @@ import unittests.test_experiment as test_experiment
 #import unittests.test_gridsearch as test_gridsearch
 import unittests.test_runsolver_wrapper as test_runsolver_wrapper
 import unittests.test_wrapping as test_wrapping
+import unittests.test_wrapping_util as test_wrapping_util
 
 
 def suite():
@@ -18,6 +19,7 @@ def suite():
     #_suite.addTest(unittest.makeSuite(test_gridsearch.GridSearchTest))
     _suite.addTest(unittest.makeSuite(test_runsolver_wrapper.RunsolverWrapperTest))
     _suite.addTest(unittest.makeSuite(test_wrapping.WrappingTest))
+    _suite.addTest(unittest.makeSuite(test_wrapping_util.WrappingTestUtil))
     return _suite
 
 

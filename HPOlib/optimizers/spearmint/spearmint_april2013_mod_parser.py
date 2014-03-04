@@ -25,46 +25,19 @@ import ConfigParser
 logger = logging.getLogger("HPOlib.optimizers.spearmint.spearmint_april2013_mod_parser")
 
 
-def add_default(config):
-   # This module reads __file__Default.cfg and adds this defaults to a given config
-    assert isinstance(config, ConfigParser.RawConfigParser), \
-        "config is not a valid instance"
-
-    # Find out name of .cfg, we are in anything_parser.py[c]
-    optimizer_config_fn = os.path.splitext(__file__)[0][:-7] + "Default.cfg"
-    if not os.path.exists(optimizer_config_fn):
-        logger.critical("No default config %s found" % optimizer_config_fn)
-        sys.exit(1)
-
-    spearmint_config = ConfigParser.SafeConfigParser(allow_no_value=True)
-    spearmint_config.read(optimizer_config_fn)
-
-    # --------------------------------------------------------------------------
-    # SPEARMINT
-    # --------------------------------------------------------------------------
-    # Set default for SPEARMINT
-    if not config.has_section('SPEARMINT'):
-        config.add_section('SPEARMINT')
-    # optional arguments
-    for option in ('script', 'method', 'grid_size', 'config', 'grid_seed',
-                   'spearmint_polling_time', 'max_concurrent', 'method_args'):
-        if not config.has_option('SPEARMINT', option):
-            config.set('SPEARMINT', option,
-                       spearmint_config.get('SPEARMINT', option))
-
+def manipulate_config(config):
     # special cases
     if not config.has_option('SPEARMINT', 'method'):
-        config.set('SPEARMINT', 'method',
-                   spearmint_config.get('SPEARMINT', 'method'))
-        config.set('SPEARMINT', 'method-args',
-                   spearmint_config.get('SPEARMINT', 'method-args'))
+        raise Exception("SPEARMINT:method not specified in .cfg")
+    if not config.has_option('SPEARMINT', 'method_args'):
+        raise Exception("SPEARMINT:method-args not specified in .cfg")
 
     # GENERAL
     if not config.has_option('SPEARMINT', 'max_finished_jobs'):
         config.set('SPEARMINT', 'max_finished_jobs',
                    config.get('HPOLIB', 'numberOfJobs'))
 
-    path_to_optimizer = spearmint_config.get('SPEARMINT', 'path_to_optimizer')
+    path_to_optimizer = config.get('SPEARMINT', 'path_to_optimizer')
     if not os.path.isabs(path_to_optimizer):
         path_to_optimizer = os.path.join(os.path.dirname(os.path.realpath(__file__)), path_to_optimizer)
 

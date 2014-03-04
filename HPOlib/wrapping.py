@@ -20,15 +20,13 @@ from argparse import ArgumentParser
 import imp
 import logging
 import os
-from StringIO import StringIO
 import subprocess
 import sys
 import time
 
-from config_parser.parse import parse_config
-
 import HPOlib
 import HPOlib.check_before_start as check_before_start
+import HPOlib.wrapping_util as wrapping_util
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -127,89 +125,10 @@ def use_arg_parser():
     return args, unknown
 
 
-def parse_config_values_from_unknown_arguments(unknown_arguments, config):
-    """Parse values not recognized by use_option_parser for config values.
-
-    Args:
-       unknown_arguments: A list of arguments which is returned by
-           use_option_parser. It should only contain keys which are allowed
-           in config files.
-        config: A ConfigParser.SafeConfigParser object which contains all keys
-           should be parsed from the unknown_arguments list.
-    Returns:
-        an argparse.Namespace object containing the parsed values.
-    Raises:
-        an error if an argument from unknown_arguments is not a key in config
-    """
-    further_possible_command_line_arguments = []
-    for section in config.sections():
-        for key in config.options(section):
-            further_possible_command_line_arguments.append("--" + section +
-                                                           ":" + key)
-    for key in config.defaults():
-        further_possible_command_line_arguments.append("--DEFAULT:" + key)
-
-    parser = ArgumentParser()
-    for argument in further_possible_command_line_arguments:
-        parser.add_argument(argument)
-
-    return parser.parse_args(unknown_arguments)
-
-
-def config_with_cli_arguments(config, config_overrides):
-    arg_dict = vars(config_overrides)
-    for section in config.sections():
-        for key in config.options(section):
-            cli_key = "%s:%s" % (section, key)
-            if cli_key in arg_dict:
-                config.set(section, key, arg_dict[cli_key])
-            else:
-                config.remove_option(section, key)
-    return config
-
-
-def override_config_with_cli_arguments(config, config_overrides):
-    arg_dict = vars(config_overrides)
-    for key in arg_dict:
-        if arg_dict[key] is not None:
-            split_key = key.split(":")
-            if len(split_key) != 2:
-                raise ValueError("Command line argument must be in the style "
-                                 "of --SECTION:key. Please check that there "
-                                 "is exactly one colon. You provided: %s" %
-                                 key)
-            if split_key[0] == 'DEFAULT' and split_key[1] == "optimizer_version":
-                raise NotImplementedError("Overwriting the optimizer_version via a cli is a bad idea."
-                                          "Try to do something else!\n"
-                                          "You were trying to use %s instead of %s"
-                                          % (arg_dict[key], config.get("DEFAULT", "optimizer_version")))
-            config.set(split_key[0], split_key[1], arg_dict[key])
-
-    return config
-
-
-def save_config_to_file(file_handle, config, write_nones=True):
-    if len(config.defaults()) > 0:
-        file_handle.write("[DEFAULT]\n")
-        for key in config.defaults():
-            if (config.get("DEFAULT", key) is None and write_nones) or \
-                    config.get("DEFAULT", key) is not None:
-                file_handle.write(key + " = " + config.get("DEFAULT", key) + "\n")
-
-    for section in config.sections():
-        file_handle.write("[" + section + "]\n")
-        for key in config.options(section):
-            if (config.get(section, key) is None and write_nones) or \
-                    config.get(section, key) is not None:
-                if config.get(section, key) is None or \
-                   config.get(section, key) != "":
-                    file_handle.write("%s = %s\n" % (key, config.get(section, key)))
-
-
 def main():
     """Start an optimization of the HPOlib. For documentation see the
     comments inside this function and the general HPOlib documentation."""
-    args, unknown = use_arg_parser()
+    args, unknown_arguments = use_arg_parser()
 
     if args.working_dir:
         os.chdir(args.working_dir)
@@ -229,36 +148,9 @@ def main():
     logger.warning("You called -o %s, I am using optimizer defined in %sDefault.cfg" % (optimizer, optimizer_version))
     optimizer = os.path.basename(optimizer_version)
 
-    """How the configuration is parsed:
-    1. The command line is already parsed, we have a list of unknown arguments
-    2. call parse_config to find out all allowed keys. Ignore the values.
-    3. call parse_config_values_from_unknown_arguments to get parameters for
-       the optimization software from the command line in a config object
-    4. call parse_config again to fill in the missing values
-    """
-    config_file = os.path.join(experiment_dir, "config.cfg")
-    # Is the config file really the right place to get the allowed keys for a
-    #  hyperparameter optimizer?
-    config = parse_config(config_file, allow_no_value=True, optimizer_version=optimizer_version)
+    config = wrapping_util.get_configuration(experiment_dir,
+                                             optimizer_version, unknown_arguments)
 
-    # Parse command line arguments
-    config_overrides = parse_config_values_from_unknown_arguments(unknown, config)
-
-    # Remove every option from the configuration which was not present on the
-    #  command line
-    config = config_with_cli_arguments(config, config_overrides)
-
-    # Transform to a string so we can pass it to parse_config
-    fh = StringIO()
-    save_config_to_file(fh, config, write_nones=False)
-    fh.seek(0)
-
-    config = parse_config(config_file, allow_no_value=True,
-                          optimizer_version=optimizer_version,
-                          cli_values=fh)
-    fh.close()
-
-    # config = override_config_with_cli_arguments(config, config_overrides)
     # Saving the config file is down further at the bottom, as soon as we get
     # hold of the new optimizer directory
     wrapping_dir = os.path.dirname(os.path.realpath(__file__))
@@ -290,7 +182,7 @@ def main():
 
     with open(os.path.join(optimizer_dir_in_experiment, "config.cfg"), "w") as f:
         config.set("HPOLIB", "is_not_original_config_file", "True")
-        save_config_to_file(f, config)
+        wrapping_util.save_config_to_file(f, config, write_nones=True)
 
     # _check_function
     check_before_start.check_second(experiment_dir)
