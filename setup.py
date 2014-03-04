@@ -127,23 +127,19 @@ class AdditionalInstall(install_command):
         os.chdir(cur_pwd)
         return True
 
-    def _copy_and_download_optimizer(self, new_optimizer_dir, old_optimizer_dir, optimizer_name, optimizer_tar_name,
+    def _copy_and_download_optimizer(self, optimizer_dir, optimizer_name, optimizer_tar_name,
                                      url, md5):
-        load, extract, copy = (False, False, False)
-        copy = copy_folder(old_dir=os.path.join(old_optimizer_dir, optimizer_name),
-                           new_dir=os.path.join(new_optimizer_dir, optimizer_name))
+        load, extract = (False, False)
 
         load = download_source(download_url=url, md5=md5,
-                               save_as=os.path.join(new_optimizer_dir, optimizer_tar_name))
+                               save_as=os.path.join(optimizer_dir, optimizer_tar_name))
 
         if load:
-            extract = extract_source(os.path.join(new_optimizer_dir, optimizer_tar_name),
-                                     extract_as=os.path.join(new_optimizer_dir, optimizer_name))
-            os.remove(os.path.join(new_optimizer_dir, optimizer_tar_name))
+            extract = extract_source(os.path.join(optimizer_dir, optimizer_tar_name),
+                                     extract_as=os.path.join(optimizer_dir, optimizer_name))
+            os.remove(os.path.join(optimizer_dir, optimizer_tar_name))
 
-
-
-        if load and extract and copy:
+        if load and extract:
             return True
         else:
             return False
@@ -190,38 +186,23 @@ class AdditionalInstall(install_command):
                     print "Replacing did not work: %s" % e
                 built = self._build(build_dir=os.path.join(here_we_are, "runsolver", "src"))
 
-        # COPY BENCHMARKS TO ROOT FOLDER
-        new_benchmark_dir = os.path.join(here_we_are, "benchmarks")
-        old_benchmark_dir = os.path.join(os.path.dirname(HPOlib.__file__), "benchmarks")
-
-        make_dir(new_dir=new_benchmark_dir)
-        branin = copy_folder(new_dir=os.path.join(new_benchmark_dir, "branin"),
-                             old_dir=os.path.join(old_benchmark_dir, "branin"))
-        har6 = copy_folder(new_dir=os.path.join(new_benchmark_dir, "har6"),
-                           old_dir=os.path.join(old_benchmark_dir, "har6"))
-
         # COPY/DOWNLOAD OPTIMIZER TO ROOT FOLDER
-        new_optimizer_dir = os.path.join(here_we_are, "optimizers")
-        old_optimizer_dir = os.path.join(os.path.dirname(HPOlib.__file__), "optimizers")
-        make_dir(new_dir=new_optimizer_dir)
+        optimizer_dir = os.path.join(here_we_are, "optimizers")
 
         tpe, smac, spearmint = (False, False, False)
-        tpe = self._copy_and_download_optimizer(new_optimizer_dir=new_optimizer_dir,
-                                                old_optimizer_dir=old_optimizer_dir,
+        tpe = self._copy_and_download_optimizer(optimizer_dir=optimizer_dir,
                                                 optimizer_name='tpe',
                                                 optimizer_tar_name="hyperopt_august2013_mod_src.tar.gz",
                                                 url="http://www.automl.org/hyperopt_august2013_mod_src.tar.gz",
                                                 md5='15ce1adf9d32bb7f71dcfb9a847c55c7')
         # If one optimizer fails, others are likely to fail as well
         if tpe:
-            smac = self._copy_and_download_optimizer(new_optimizer_dir=new_optimizer_dir,
-                                                     old_optimizer_dir=old_optimizer_dir,
+            smac = self._copy_and_download_optimizer(optimizer_dir=optimizer_dir,
                                                      optimizer_name='smac',
                                                      optimizer_tar_name="smac_2_06_01-dev_src.tar.gz",
                                                      url="http://www.automl.org/smac_2_06_01-dev_src.tar.gz",
                                                      md5='30ab1d09696de47efac77ed163772c0a')
-            spearmint = self._copy_and_download_optimizer(new_optimizer_dir=new_optimizer_dir,
-                                                          old_optimizer_dir=old_optimizer_dir,
+            spearmint = self._copy_and_download_optimizer(optimizer_dir=optimizer_dir,
                                                           optimizer_name='spearmint',
                                                           optimizer_tar_name="spearmint_april2013_mod_src.tar.gz",
                                                           url="http://www.automl.org/spearmint_april2013_mod_src.tar.gz",
@@ -231,10 +212,6 @@ class AdditionalInstall(install_command):
         install_command.run(self)
 
         # Give detailed output to user
-        if not har6 or not branin:
-            sys.stderr.write("[ERROR] Branin/Har6 benchmark could not be copied, please do the following:\n" +
-                             "mkdir benchmarks\n" +
-                             "cp HPOlib/benchmarks/* benchmarks/ -r\n")
         if not tpe or not smac or not spearmint:
             sys.stderr.write("[ERROR] Something went wrong while copying and downloading optimizers." +
                        "Please do the following to be ready to start optimizing:\n\n" +
