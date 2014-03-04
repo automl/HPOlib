@@ -20,6 +20,7 @@ from argparse import ArgumentParser
 import imp
 import logging
 import os
+from StringIO import StringIO
 import subprocess
 import sys
 import time
@@ -155,6 +156,18 @@ def parse_config_values_from_unknown_arguments(unknown_arguments, config):
     return parser.parse_args(unknown_arguments)
 
 
+def config_with_cli_arguments(config, config_overrides):
+    arg_dict = vars(config_overrides)
+    for section in config.sections():
+        for key in config.options(section):
+            cli_key = "%s:%s" % (section, key)
+            if cli_key in arg_dict:
+                config.set(section, key, arg_dict[cli_key])
+            else:
+                config.remove_option(section, key)
+    return config
+
+
 def override_config_with_cli_arguments(config, config_overrides):
     arg_dict = vars(config_overrides)
     for key in arg_dict:
@@ -175,18 +188,22 @@ def override_config_with_cli_arguments(config, config_overrides):
     return config
 
 
-def save_config_to_file(file_handle, config):
+def save_config_to_file(file_handle, config, write_nones=True):
     if len(config.defaults()) > 0:
         file_handle.write("[DEFAULT]\n")
         for key in config.defaults():
-            file_handle.write(key + " = " + config.get("DEFAULT", key) + "\n")
+            if (config.get("DEFAULT", key) is None and write_nones) or \
+                    config.get("DEFAULT", key) is not None:
+                file_handle.write(key + " = " + config.get("DEFAULT", key) + "\n")
 
     for section in config.sections():
         file_handle.write("[" + section + "]\n")
         for key in config.options(section):
-            if config.get(section, key) is None or \
-               config.get(section, key) != "":
-                file_handle.write(key + " = " + config.get(section, key) + "\n")
+            if (config.get(section, key) is None and write_nones) or \
+                    config.get(section, key) is not None:
+                if config.get(section, key) is None or \
+                   config.get(section, key) != "":
+                    file_handle.write("%s = %s\n" % (key, config.get(section, key)))
 
 
 def main():
@@ -212,12 +229,36 @@ def main():
     logger.warning("You called -o %s, I am using optimizer defined in %sDefault.cfg" % (optimizer, optimizer_version))
     optimizer = os.path.basename(optimizer_version)
 
+    """How the configuration is parsed:
+    1. The command line is already parsed, we have a list of unknown arguments
+    2. call parse_config to find out all allowed keys. Ignore the values.
+    3. call parse_config_values_from_unknown_arguments to get parameters for
+       the optimization software from the command line in a config object
+    4. call parse_config again to fill in the missing values
+    """
     config_file = os.path.join(experiment_dir, "config.cfg")
+    # Is the config file really the right place to get the allowed keys for a
+    #  hyperparameter optimizer?
     config = parse_config(config_file, allow_no_value=True, optimizer_version=optimizer_version)
 
-    # Override config values with command line values
+    # Parse command line arguments
     config_overrides = parse_config_values_from_unknown_arguments(unknown, config)
-    config = override_config_with_cli_arguments(config, config_overrides)
+
+    # Remove every option from the configuration which was not present on the
+    #  command line
+    config = config_with_cli_arguments(config, config_overrides)
+
+    # Transform to a string so we can pass it to parse_config
+    fh = StringIO()
+    save_config_to_file(fh, config, write_nones=False)
+    fh.seek(0)
+
+    config = parse_config(config_file, allow_no_value=True,
+                          optimizer_version=optimizer_version,
+                          cli_values=fh)
+    fh.close()
+
+    # config = override_config_with_cli_arguments(config, config_overrides)
     # Saving the config file is down further at the bottom, as soon as we get
     # hold of the new optimizer directory
     wrapping_dir = os.path.dirname(os.path.realpath(__file__))
