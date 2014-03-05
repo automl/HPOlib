@@ -272,6 +272,10 @@ def main():
         logger.info("-----------------------RUNNING----------------------------------")
         # http://stackoverflow.com/questions/375427/non-blocking-read-on-a-subprocess-pipe-in-python
         last_output = time.time()
+        printed_start_configuration = list()
+        printed_end_configuration = list()
+        current_best = -1
+        minimal_runs_to_go = 2
 
         def enqueue_output(out, queue):
             for line in iter(out.readline, b''):
@@ -288,7 +292,7 @@ def main():
         stdout_thread.start()
         logger.info('Optimizer runs with PID (+1): %d' % proc.pid)
 
-        while proc.poll() is None:
+        while minimal_runs_to_go > 0:     # Think of this as a do-while loop...
             try:
                 for line in stdout_queue.get_nowait():
                     fh.write(line)
@@ -312,12 +316,36 @@ def main():
                 pass
 
             fh.flush()
-            time.sleep(0.25)
+            #time.sleep(0.05)
 
-            if time.time() - last_output > 1:
-                sys.stdout.write("1 second\n")
-                sys.stdout.flush()
+            if not (args.verbose or args.silent) and time.time() - last_output > 1:
+                trials = Experiment.Experiment(optimizer_dir_in_experiment,
+                                               optimizer)
+
+                for i in range(len(printed_end_configuration), len(trials.instance_order)):
+                    if i + 1 > len(printed_start_configuration):
+                        output = "Starting configuration %5d, fold %2d" %\
+                                 (trials.instance_order[i][0],
+                                  trials.instance_order[i][1])
+                        logger.info(output)
+                        printed_start_configuration.append(i)
+
+                    if np.isfinite(trials.trials[i]["instance_results"][
+                            trials.instance_order[i][1]]):
+                        last_result = trials.trials[i]["instance_results"][
+                            trials.instance_order[i][1]]
+                        tmp_current_best = trials.get_arg_best()
+                        if tmp_current_best <= i:
+                            current_best = tmp_current_best
+                        logger.info("Result %10f, current best %10f" %
+                            (last_result, trials.trials[current_best]["result"]))
+                        printed_end_configuration.append(i)
+
+                del trials
                 last_output = time.time()
+
+                if proc.poll() is not None:       # the end condition for the
+                    minimal_runs_to_go -= 1       # do-while loop
 
         ret = proc.returncode
 
