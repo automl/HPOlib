@@ -93,5 +93,5 @@ if __name__ == "__main__":
     args, params = benchmark_util.parse_cli()
     result = main(params, **args)
     duration = time.time() - starttime
-    print "Result for ParamILS: %s, %d, 1, %f, %d, %s" % \
+    print "Result for ParamILS: %s, %f, 1, %f, %d, %s" % \
         ("SAT", abs(duration), result, -1, str(__file__))

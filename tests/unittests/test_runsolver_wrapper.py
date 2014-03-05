@@ -101,8 +101,6 @@ class RunsolverWrapperTest(unittest.TestCase):
                                             "SAT", "0.35", "1", "0.5",
                                             "-1", "Random", "file"])
 
-
-
     def test_get_trial_index_cv(self):
         try:
             os.remove("test_get_trial_index.pkl")

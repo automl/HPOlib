@@ -236,9 +236,15 @@ def get_parameters():
 
 
 def parse_output_files(cfg, run_instance_output, runsolver_output_file):
-    cpu_time, wallclock_time, error = read_runsolver_output(
+    cpu_time, measured_wallclock_time, error = read_runsolver_output(
         runsolver_output_file)
     result_array, result_string = read_run_instance_output(run_instance_output)
+    instance_wallclock_time = float(result_array[4])
+
+    if cfg.getboolean("HPOLIB", "use_own_time_measurement") is True:
+        wallclock_time = measured_wallclock_time
+    else:
+        wallclock_time = instance_wallclock_time
 
     if error is None and result_string is None:
         additional_data = "No result string returned. Please have a look " \
