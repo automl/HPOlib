@@ -20,8 +20,6 @@ import logging
 import os
 import sys
 
-import ConfigParser
-
 logger = logging.getLogger("HPOlib.optimizers.spearmint.spearmint_april2013_mod_parser")
 
 

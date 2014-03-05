@@ -97,7 +97,7 @@ def load_experiment_config_file():
             sys.exit(1)
         return config
     except IOError as e:
-        logger.critical("Could not open config file in directory %s" %
+        logger.critical("Could not open config file in directory %s",
                         os.getcwd())
         sys.exit(1)
 
@@ -132,9 +132,9 @@ def get_configuration(experiment_dir, optimizer_version, unknown_arguments):
             optimizer_module_parser = imp.load_source(optimizer_version_parser,
                                                       optimizer_version_parser_path)
         except Exception as e:
-            logger.critical('Could not find\n%s\n\tin\n%s\n\t relative to\n%s' %
-                            (optimizer_version_parser,
-                             optimizer_version_parser_path, os.getcwd()))
+            logger.critical('Could not find\n%s\n\tin\n%s\n\t relative to\n%s',
+                            optimizer_version_parser,
+                             optimizer_version_parser_path, os.getcwd())
             import traceback
 
             logger.critical(traceback.format_exc())
@@ -144,7 +144,7 @@ def get_configuration(experiment_dir, optimizer_version, unknown_arguments):
                                                .__file__)[0][
                               :-7] + "Default.cfg"
         if not os.path.exists(optimizer_config_fn):
-            logger.critical("No default config %s found" % optimizer_config_fn)
+            logger.critical("No default config %s found", optimizer_config_fn)
             sys.exit(1)
         config_files.append(optimizer_config_fn)
 

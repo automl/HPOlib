@@ -198,8 +198,8 @@ def get_function_filename(cfg):
         fn_path = os.path.join(exp_dir, cfg.get("HPOLIB", "function"))
 
     if not os.path.exists(fn_path):
-        logger.critical("%s is not absolute nor in %s. Function cannot be found" %
-                        (cfg.get("HPOLIB", "function"), exp_dir))
+        logger.critical("%s is not absolute nor in %s. Function cannot be "
+                        "found", cfg.get("HPOLIB", "function"), exp_dir)
         sys.exit(1)
 
     return fn_path

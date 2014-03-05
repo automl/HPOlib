@@ -18,8 +18,6 @@
 
 import os
 import logging
-import imp
-import sys
 import ConfigParser
 
 

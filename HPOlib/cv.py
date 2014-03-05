@@ -67,7 +67,7 @@ def do_cv(params, folds=10):
     results = []
 
     try:
-        logger.info("%s" % params)
+        logger.info("%s",  params)
         param_array = ["-" + str(param_name) + " " + str(params[param_name]) for param_name in params]
         param_string = " ".join(param_array)
         
@@ -81,7 +81,7 @@ def do_cv(params, folds=10):
                 os.path.join(os.path.dirname(os.path.realpath(__file__)), "runsolver_wrapper.py")
             cmd = "%s %d %s %d %d %d %s" % \
                 (runsolver_wrapper_script, fold, optimizer, 0, 0, 0, param_string)
-            logger.info("Calling command:\n%s" % cmd)
+            logger.info("Calling command:\n%s", cmd)
 
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
@@ -122,7 +122,7 @@ def do_cv(params, folds=10):
 
     except Exception as e:
         logger.error(format_traceback(sys.exc_info()))
-        logger.error("CV failed %s %s" % (sys.exc_info()[0], e))
+        logger.error("CV failed %s %s", sys.exc_info()[0], e)
         # status = "CRASHED"
         # status = "SAT"
         mean = np.NaN
@@ -191,7 +191,7 @@ def flatten_parameter_dict(params):
 
 
 def main(*args, **kwargs):
-    logger.critical('args: %s kwargs: %s' % (str(args), str(kwargs)))
+    logger.critical('args: %s kwargs: %s', str(args), str(kwargs))
 
     params = None
 
@@ -204,7 +204,7 @@ def main(*args, **kwargs):
 
     if params is None:
         logger.critical("No parameter dict found in cv.py.\n"
-                        "args: %s\n kwargs: %s" % (args, kwargs))
+                        "args: %s\n kwargs: %s", args, kwargs)
         sys.exit(1)
 
     # Load the experiment to do time-keeping
@@ -223,7 +223,7 @@ def main(*args, **kwargs):
     params = flatten_parameter_dict(params)
 
     res = do_cv(params, folds=folds)
-    logger.info("Result: %f" % res)
+    logger.info("Result: %f", res)
     
     # Load the experiment to do time-keeping
     experiment = load_experiment_file()

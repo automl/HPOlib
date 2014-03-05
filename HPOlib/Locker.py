@@ -21,7 +21,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import os
-import sys
 import time
 
 
@@ -49,7 +48,7 @@ class Locker:
             self.locks[filename] += 1
             return True
         else:
-            cmd = 'ln -s /dev/null "%s.lock" 2> /dev/null' % (filename)
+            cmd = 'ln -s /dev/null "%s.lock" 2> /dev/null' % filename
             fail = os.system(cmd)
             if not fail:
                 self.locks[filename] = 1
@@ -57,12 +56,12 @@ class Locker:
 
     def unlock(self, filename):
         if not self.locks.has_key(filename):
-            logger.info("Trying to unlock not-locked file %s.\n" % filename)
+            logger.info("Trying to unlock not-locked file %s.\n", filename)
             return True
         if self.locks[filename] == 1:
             success = safe_delete('%s.lock' % (filename))
             if not success:
-                logger.log("Could not unlock file: %s.\n" % filename)
+                logger.log("Could not unlock file: %s.\n", filename)
             del self.locks[filename]
             return success
         else:

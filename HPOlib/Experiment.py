@@ -280,13 +280,13 @@ class Experiment:
     # parameters. Useful to delete all unnecessary entries after a crash in order
     # to restart
     def remove_all_but_first_runs(self, restored_runs):
-        logger.info("Restored runs %d" % restored_runs)
-        logger.info("%s %s" % (self.instance_order, len(self.instance_order)))
+        logger.info("Restored runs %d", restored_runs)
+        logger.info("%s %s" ,self.instance_order, len(self.instance_order))
         if len(self.instance_order) == restored_runs:
             pass
         else:
             for _id, instance in self.instance_order[-1:restored_runs - 1:-1]:
-                logger.info("Deleting %d %d" % (_id, instance))
+                logger.info("Deleting %d %d", _id, instance)
                 if np.isfinite(self.trials[_id]['instance_durations'][instance]):
                     self.total_wallclock_time -= \
                         self.trials[_id]['instance_durations'][instance]

@@ -140,7 +140,7 @@ def main():
         relative_path = optimizer
         optimizer = os.path.abspath(optimizer)
         logger.info("Converting relative optimizer path %s to absolute "
-                    "optimizer path %s." % (relative_path, optimizer))
+                    "optimizer path %s.", relative_path, optimizer)
 
     if args.working_dir:
         os.chdir(args.working_dir)
@@ -156,7 +156,8 @@ def main():
     # are installed
     optimizer_version = check_before_start.check_optimizer(optimizer)
 
-    logger.warning("You called -o %s, I am using optimizer defined in %sDefault.cfg" % (optimizer, optimizer_version))
+    logger.warning("You called -o %s, I am using optimizer defined in "
+                   "%sDefault.cfg", optimizer, optimizer_version)
     optimizer = os.path.basename(optimizer_version)
 
     config = wrapping_util.get_configuration(experiment_dir,
@@ -179,7 +180,7 @@ def main():
         optimizer_dir = os.path.dirname(os.path.realpath(optimizer_version))
         optimizer_module = imp.load_source(optimizer_dir, optimizer_version + ".py")
     except (ImportError, IOError):
-        logger.critical("Optimizer module %s not found" % optimizer)
+        logger.critical("Optimizer module %s not found", optimizer)
         import traceback
         logger.critical(traceback.format_exc())
         sys.exit(1)
@@ -237,12 +238,12 @@ def main():
                                                      optimizer_dir=optimizer_dir_in_experiment,
                                                      cmd=cmd)
         except:
-            logger.critical("Could not restore runs for %s" % args.restore)
+            logger.critical("Could not restore runs for %s", args.restore)
             import traceback
             logger.critical(traceback.format_exc())
             sys.exit(1)
 
-        logger.info("Restored %d runs" % restored_runs)
+        logger.info("Restored %d runs", restored_runs)
         trials.remove_all_but_first_runs(restored_runs)
         fh = open(os.path.join(optimizer_dir_in_experiment, optimizer + ".out"), "a")
         fh.write("#" * 80 + "\n" + "Restart! Restored %d runs.\n" % restored_runs)
@@ -290,7 +291,7 @@ def main():
         stdout_thread.daemon = True
         stderr_thread.start()
         stdout_thread.start()
-        logger.info('Optimizer runs with PID (+1): %d' % proc.pid)
+        logger.info('Optimizer runs with PID (+1): %d', proc.pid)
 
         while minimal_runs_to_go > 0:     # Think of this as a do-while loop...
             try:
@@ -324,10 +325,9 @@ def main():
 
                 for i in range(len(printed_end_configuration), len(trials.instance_order)):
                     if i + 1 > len(printed_start_configuration):
-                        output = "Starting configuration %5d, fold %2d" %\
-                                 (trials.instance_order[i][0],
-                                  trials.instance_order[i][1])
-                        logger.info(output)
+                        logger.info("Starting configuration %5d, fold %2d",
+                                    trials.instance_order[i][0],
+                                    trials.instance_order[i][1])
                         printed_start_configuration.append(i)
 
                     if np.isfinite(trials.trials[i]["instance_results"][
@@ -337,8 +337,9 @@ def main():
                         tmp_current_best = trials.get_arg_best()
                         if tmp_current_best <= i:
                             current_best = tmp_current_best
-                        logger.info("Result %10f, current best %10f" %
-                            (last_result, trials.trials[current_best]["result"]))
+                        logger.info("Result %10f, current best %10f",
+                                    last_result,
+                                    trials.trials[current_best]["result"])
                         printed_end_configuration.append(i)
 
                 del trials
@@ -364,17 +365,17 @@ def main():
         try:
             for starttime, endtime in zip(trials.starttime, trials.endtime):
                 total_time += endtime - starttime
-            logger.info("Needed a total of %f seconds" % total_time)
-            logger.info("The optimizer %s took %10.5f seconds" %\
-                  (optimizer, float(calculate_optimizer_time(trials))))
-            logger.info("The overhead of HPOlib is %f seconds" % \
-                  (calculate_wrapping_overhead(trials)))
+            logger.info("Needed a total of %f seconds", total_time)
+            logger.info("The optimizer %s took %10.5f seconds",
+                  optimizer, float(calculate_optimizer_time(trials)))
+            logger.info("The overhead of HPOlib is %f seconds",
+                  calculate_wrapping_overhead(trials))
             logger.info("The benchmark itself took %f seconds" % \
                   trials.total_wallclock_time)
         except Exception as e:
             logger.error(HPOlib.wrapping_util.format_traceback(sys.exc_info()))
             logger.error("Experiment itself went fine, but calculating "
-                         "durations of optimization failed: %s %s" %
+                         "durations of optimization failed: %s %s",
                          sys.exc_info()[0], e)
         del trials
         logger.info("Finished with return code: " + str(ret))

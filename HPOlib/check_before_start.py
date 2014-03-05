@@ -52,7 +52,7 @@ def _check_modules():
         import numpy
         if numpy.__version__ < "1.6.0":
             logger.warning("WARNING: You are using a numpy %s < 1.6.0. This "
-                           "might not work" % numpy.__version__)
+                           "might not work", numpy.__version__)
     except:
         raise ImportError("Numpy cannot be imported. Are you sure that it's installed?")
 
@@ -60,7 +60,7 @@ def _check_modules():
         import scipy
         if scipy.__version__ < "0.12.0":
             logger.warning("WARNING: You are using a scipy %s < 0.12.0. "
-                           "This might not work" % scipy.__version__)
+                           "This might not work", scipy.__version__)
     except:
         raise ImportError("Scipy cannot be imported. Are you sure that it's installed?")
 
@@ -104,7 +104,8 @@ def check_optimizer(optimizer):
         # Now check how many versions are present
         parser = glob.glob(os.path.join(path, '*_parser.py'))
         if len(parser) > 1:
-            logger.critical("Sorry I don't know which optimizer to use: %s" % parser)
+            logger.critical("Sorry I don't know which optimizer to use: %s",
+                            parser)
             sys.exit(1)
         version = parser[0][:-10]
     elif len(glob.glob(path + '*_parser.py')) == 1:
@@ -113,18 +114,21 @@ def check_optimizer(optimizer):
     elif len(glob.glob(path + '*_parser.py')) > 1:
         # Note this is a different case
         # User told us e.g. "tpe/hyperopt_august" but this was not specific enough
-        logger.critical("Sorry I don't know which optimizer to use: %s" % glob.glob(path + '*_parser.py'))
+        logger.critical("Sorry I don't know which optimizer to use: %s",
+                        glob.glob(path + '*_parser.py'))
         sys.exit(1)
     else:
-        logger.critical("We cannot find: %s" % path)
+        logger.critical("We cannot find: %s", path)
         sys.exit(1)
 
     # Now check the other stuff
     if not os.path.exists(version + "Default.cfg"):
-        logger.critical("Sorry I cannot find the default config for your optimizer: %sDefault.cfg" % version)
+        logger.critical("Sorry I cannot find the default config for your "
+                        "optimizer: %sDefault.cfg", version)
         sys.exit(1)
     if not os.path.exists(version + ".py"):
-        logger.critical("Sorry I cannot find the script to call your optimizer: %s.py" % version)
+        logger.critical("Sorry I cannot find the script to call your "
+                        "optimizer: %s.py", version)
         sys.exit(1)
 
     # Check the optimizer dependencies
