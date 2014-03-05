@@ -20,8 +20,10 @@ from argparse import ArgumentParser
 import imp
 import logging
 import os
+from Queue import Queue, Empty
 import subprocess
 import sys
+from threading import Thread
 import time
 
 import HPOlib
@@ -264,35 +266,58 @@ def main():
         logger.info(cmd)
         output_file = os.path.join(optimizer_dir_in_experiment, optimizer + ".out")
         fh = open(output_file, "a")
-        # process = subprocess.Popen(cmd, stdout=fh, stderr=fh, shell=True, executable="/bin/bash")
-        # ret = process.wait()
-
-        logger.info("-----------------------RUNNING----------------------------------")
 
         proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
+        logger.info("-----------------------RUNNING----------------------------------")
+        # http://stackoverflow.com/questions/375427/non-blocking-read-on-a-subprocess-pipe-in-python
+        last_output = time.time()
+
+        def enqueue_output(out, queue):
+            for line in iter(out.readline, b''):
+                queue.put(line)
+            out.close()
+
+        stderr_queue = Queue()
+        stdout_queue = Queue()
+        stderr_thread = Thread(target=enqueue_output, args=(proc.stderr, stderr_queue))
+        stdout_thread = Thread(target=enqueue_output, args=(proc.stdout, stdout_queue))
+        stderr_thread.daemon = True
+        stdout_thread.daemon = True
+        stderr_thread.start()
+        stdout_thread.start()
+        logger.info('Optimizer runs with PID (+1): %d' % proc.pid)
 
         while proc.poll() is None:
-            logger.info('Optimizer runs with PID (+1): %d' % proc.pid)
+            try:
+                for line in stdout_queue.get_nowait():
+                    fh.write(line)
 
-            for line in iter(proc.stdout.readline, ''):
-                fh.write(line)
+                    # Write to stdout only if verbose is on
+                    if args.verbose:
+                        sys.stdout.write(line)
+                        sys.stdout.flush()
+            except Empty:
+                pass
 
-                # Write to stdout only if verbose is on
-                if args.verbose:
-                    sys.stdout.write(line)
-                    sys.stdout.flush()
+            try:
+                for line in stderr_queue.get_nowait():
+                    fh.write(line)
 
-            for line in iter(proc.stderr.readline, ''):
-                fh.write(line)
-
-                # Write always, except silent is on
-                if not args.silent:
-                    sys.stderr.write(line)
-                    sys.stderr.flush()
+                    # Write always, except silent is on
+                    if not args.silent:
+                        sys.stderr.write(line)
+                        sys.stderr.flush()
+            except Empty:
+                pass
 
             fh.flush()
-            time.sleep(0.05)
+            time.sleep(0.25)
+
+            if time.time() - last_output > 1:
+                sys.stdout.write("1 second\n")
+                sys.stdout.flush()
+                last_output = time.time()
 
         ret = proc.returncode
 
