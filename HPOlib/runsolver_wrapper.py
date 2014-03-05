@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from collections import OrderedDict
-import imp
 import logging
 import numpy as np
 import os
@@ -27,11 +26,10 @@ import sys
 import time
 
 import HPOlib.Experiment as Experiment
-import HPOlib.wrapping_util as wrapping_util
+import HPOlib.wrapping_util as wrappingUtil
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
-
 
 logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
                            'message)s', datefmt='%H:%M:%S')
@@ -56,30 +54,30 @@ def remove_param_metadata(params):
         new_name = para
         if "LOG10_" in para:
             pos = para.find("LOG10")
-            new_name = para[0:pos] + para[pos+6:]
+            new_name = para[0:pos] + para[pos + 6:]
             # new_name = new_name.strip("_")
             params[new_name] = np.power(10, float(params[para]))
             del params[para]
         elif "LOG2" in para:
             pos = para.find("LOG2_")
-            new_name = para[0:pos] + para[pos+5:]
+            new_name = para[0:pos] + para[pos + 5:]
             # new_name = new_name.strip("_")
             params[new_name] = np.power(2, float(params[para]))
             del params[para]
         elif "LOG_" in para:
             pos = para.find("LOG")
-            new_name = para[0:pos] + para[pos+4:]
+            new_name = para[0:pos] + para[pos + 4:]
             # new_name = new_name.strip("_")
             params[new_name] = np.exp(float(params[para]))
             del params[para]
-        #Check for Q value, returns round(x/q)*q
+            #Check for Q value, returns round(x/q)*q
         m = re.search(r'Q[0-999\.]{1,10}_', para)
         if m is not None:
             pos = new_name.find(m.group(0))
-            tmp = new_name[0:pos] + new_name[pos+len(m.group(0)):]
+            tmp = new_name[0:pos] + new_name[pos + len(m.group(0)):]
             #tmp = tmp.strip("_")
             q = float(m.group(0)[1:-1])
-            params[tmp] = round(float(params[new_name])/q)*q
+            params[tmp] = round(float(params[new_name]) / q) * q
             del params[new_name]
 
 
@@ -127,7 +125,6 @@ def read_run_instance_output(run_instance_output):
     """
     Read the run_instance output file
     """
-    result_string = None
     result_array = None
     fh = open(run_instance_output, "r")
     run_instance_content = fh.readlines()
@@ -135,8 +132,8 @@ def read_run_instance_output(run_instance_output):
     result_string = None
     for line in run_instance_content:
         match = re.search(r"\s*[Rr]esult\s+(?:([Ff]or)|([oO]f))\s"
-                         r"+(?:(HAL)|(ParamILS)|(SMAC)|([tT]his [wW]rapper))",
-                         line)
+                          r"+(?:(HAL)|(ParamILS)|(SMAC)|([tT]his [wW]rapper))",
+                          line)
         if match:
             pos = match.start(0)
             result_string = line[pos:].strip()
@@ -157,7 +154,7 @@ def get_trial_index(experiment, fold, params):
     for idx, trial in enumerate(experiment.trials):
         exp = trial['params']
         if exp == params and (idx, fold) not in experiment.instance_order and \
-                (experiment.get_trial_from_id(idx)['instance_results'][fold] == np.NaN or \
+                (experiment.get_trial_from_id(idx)['instance_results'][fold] == np.NaN or
                  experiment.get_trial_from_id(idx)['instance_results'][fold] !=
                  experiment.get_trial_from_id(idx)['instance_results'][fold]):
             new = False
@@ -191,7 +188,6 @@ def parse_command_line():
 
 
 def get_function_filename(cfg):
-    fn_path = None
     exp_dir = os.path.dirname(os.getcwd())
 
     # Check whether function path is absolute
@@ -214,17 +210,16 @@ def make_command(cfg, fold, param_string, run_instance_output):
     memory_limit = cfg.getint('HPOLIB', 'memory_limit')
     cpu_limit = cfg.getint('HPOLIB', 'cpu_limit')
     fn_filename = get_function_filename(cfg)
-    python_cmd = cfg.get("HPOLIB", "leading_algo_info") + " python " + \
-                 fn_filename + " --fold %d --folds %d --params %s" % \
-                 (fold, cfg.getint("HPOLIB", "numberCV"), param_string)
+    python_cmd = cfg.get("HPOLIB", "leading_algo_info") + " python " + fn_filename
+    python_cmd += " --fold %d --folds %d --params %s" % (fold, cfg.getint("HPOLIB", "numberCV"), param_string)
     # Do not write the actual task in quotes because runsolver will not work
-    # then; also we need use-pty antd timestamp so that the "solver" output
+    # then; also we need use-pty and timestamp so that the "solver" output
     # is flushed to the output directory
     delay = 0
-    cmd = cfg.get("HPOLIB", "leading_runsolver_info") + \
-          " runsolver -o %s --timestamp --use-pty -W %d -C %d -M %d -d %d %s" \
-          % (run_instance_output, time_limit, cpu_limit, memory_limit, delay,
-             python_cmd)
+    cmd = cfg.get("HPOLIB", "leading_runsolver_info")
+    cmd += " runsolver -o %s --timestamp --use-pty -W %d -C %d -M %d -d %d %s" \
+           % (run_instance_output, time_limit, cpu_limit, memory_limit, delay,
+              python_cmd)
     return cmd
 
 
@@ -250,21 +245,21 @@ def parse_output_files(cfg, run_instance_output, runsolver_output_file):
         additional_data = "No result string returned. Please have a look " \
                           "at " + run_instance_output
         rval = (cpu_time, wallclock_time, "CRASHED", cfg.getfloat("HPOLIB",
-                "result_on_terminate"), additional_data)
+                                                                  "result_on_terminate"), additional_data)
         os.remove(runsolver_output_file)
 
     elif error is None and result_array[3] != "SAT":
-        additional_data = "Please have a look at " + run_instance_output + "."\
-            "The output status is not \"SAT\""
+        additional_data = "Please have a look at " + run_instance_output + "." \
+                                                                           "The output status is not \"SAT\""
         rval = (cpu_time, wallclock_time, "CRASHED", cfg.getfloat("HPOLIB",
-                "result_on_terminate"), additional_data)
+                                                                  "result_on_terminate"), additional_data)
         os.remove(runsolver_output_file)
 
     elif error is None and not np.isfinite(float(result_array[6].strip(","))):
         additional_data = "Response value is not finite. Please have a look " \
                           "at " + run_instance_output
         rval = (cpu_time, wallclock_time, "UNSAT", cfg.getfloat("HPOLIB",
-                "result_on_terminate"), additional_data)
+                                                                "result_on_terminate"), additional_data)
 
     elif error is None:
         # Remove the run_instance_output only if there is a valid result
@@ -275,8 +270,9 @@ def parse_output_files(cfg, run_instance_output, runsolver_output_file):
 
     else:
         rval = (cpu_time, wallclock_time, "CRASHED", cfg.getfloat("HPOLIB",
-                "result_on_terminate"), error + " Please have a look at " +
-                                        runsolver_output_file)
+                                                                  "result_on_terminate"),
+                error + " Please have a look at " +
+                runsolver_output_file)
         # It is useful to have the run_instance_output for debugging
         os.remove(run_instance_output)
 
@@ -285,21 +281,32 @@ def parse_output_files(cfg, run_instance_output, runsolver_output_file):
 
 def format_return_string(status, runtime, runlength, quality, seed,
                          additional_data):
-    return_string = "Result for ParamILS: %s, %f, %d, %f, %d, %s" %\
-                   (status, runtime, runlength, quality, seed, additional_data)
+    return_string = "Result for ParamILS: %s, %f, %d, %f, %d, %s" % \
+                    (status, runtime, runlength, quality, seed, additional_data)
     return return_string
 
 
 def main():
-    optimizer = get_optimizer()
+    """
+    If we are not called from cv means we are called from CLI. This means
+    the optimizer itself handles crossvalidation (smac). To keep a nice .pkl we have to do some
+    bookkeeping here
+    """
+
+    cfg = wrappingUtil.load_experiment_config_file()
+    called_from_cv = True
+    if cfg.getint('HPOLIB', 'handles_cv') == 1:
+        # If Our Optimizer can handle crossvalidation,
+        # we are called from CLI. To keep a sane nice .pkl
+        # we have to do some bookkeeping here
+        called_from_cv = False
+
     # This has to be done here for SMAC, since smac does not call cv.py
-    if 'smac' in optimizer:
+    if not called_from_cv:
         cv_starttime = time.time()
         experiment = load_experiment_file()
         experiment.start_cv(cv_starttime)
         del experiment
-
-    cfg = wrapping_util.load_experiment_config_file()
 
     fold, seed = parse_command_line()
     # Side-effect: removes all additional information like log and applies
@@ -307,7 +314,7 @@ def main():
     params = get_parameters()
     param_string = " ".join([key + " " + params[key] for key in params])
 
-    time_string = wrapping_util.get_time_string()
+    time_string = wrappingUtil.get_time_string()
     run_instance_output = os.path.join(os.getcwd(),
                                        time_string + "_run_instance.out")
     runsolver_output_file = os.path.join(os.getcwd(),
@@ -324,7 +331,7 @@ def main():
 
     process = subprocess.Popen(cmd, stdout=fh,
                                stderr=fh, shell=True, executable="/bin/bash")
-                                    
+
     logger.info("-----------------------RUNNING RUNSOLVER----------------------------")
     process.wait()
     fh.close()
@@ -343,12 +350,12 @@ def main():
     else:
         # TODO: We need a global stopping mechanism
         pass
-    del experiment  #release lock
+    del experiment  # release lock
 
     return_string = format_return_string(status, wallclock_time, 1, result,
                                          seed, additional_data)
 
-    if 'smac' in optimizer:
+    if not called_from_cv:
         experiment = load_experiment_file()
         experiment.end_cv(time.time())
         del experiment
@@ -356,6 +363,7 @@ def main():
     logger.info(return_string)
     print return_string
     return return_string
-        
+
+
 if __name__ == "__main__":
     main()
