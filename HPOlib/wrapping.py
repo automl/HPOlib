@@ -27,6 +27,7 @@ import time
 import HPOlib
 import HPOlib.check_before_start as check_before_start
 import HPOlib.wrapping_util as wrapping_util
+# Experiment is imported after we check for numpy
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -143,14 +144,14 @@ def main():
         os.chdir(args.working_dir)
 
     experiment_dir = os.getcwd()
-    check_before_start.check_zeroth(experiment_dir)
+    check_before_start.check_first(experiment_dir)
 
     # Now we can safely import non standard things
     import numpy as np
-    import HPOlib.Experiment as Experiment
-    import HPOlib.wrapping_util
+    import HPOlib.Experiment as Experiment          # Wants numpy and scipy
 
-    # Check how many optimizer versions are present
+    # Check how many optimizer versions are present and if all dependencies
+    # are installed
     optimizer_version = check_before_start.check_optimizer(optimizer)
 
     logger.warning("You called -o %s, I am using optimizer defined in %sDefault.cfg" % (optimizer, optimizer_version))
@@ -166,9 +167,6 @@ def main():
     # TODO: We don't need this anymore, if we install HPOlib
     # Try adding runsolver to path
     os.putenv('PATH', os.environ['PATH'] + ":" + wrapping_dir + "/../runsolver/src/")
-
-    # _check_runsolver, _check_modules()
-    check_before_start.check_first(experiment_dir)
 
     # TODO: We also don't need this
     # build call

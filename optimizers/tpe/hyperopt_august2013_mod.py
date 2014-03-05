@@ -30,6 +30,35 @@ __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 
+def check_dependencies():
+    try:
+        import nose
+    except ImportError:
+        raise ImportError("Nose cannot be imported. Are you sure it's "
+                          "installed?")
+    try:
+        import networkx
+    except ImportError:
+        raise ImportError("Networkx cannot be imported. Are you sure it's "
+                          "installed?")
+    try:
+        import pymongo
+        from bson.objectid import ObjectId
+    except ImportError:
+        raise ImportError("Pymongo cannot be imported. Are you sure it's"
+                          " installed?")
+    try:
+        import numpy
+    except ImportError:
+        raise ImportError("Numpy cannot be imported. Are you sure that it's"
+                          " installed?")
+    try:
+        import scipy
+    except ImportError:
+        raise ImportError("Scipy cannot be imported. Are you sure that it's"
+                          " installed?")
+
+
 def build_tpe_call(config, options, optimizer_dir):
     # For TPE we have to cd to the exp_dir
     call = "cd " + optimizer_dir + "\n" + \

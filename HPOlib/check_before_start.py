@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import glob
+import imp
 import logging
 import os
 import subprocess
@@ -34,13 +35,14 @@ logger = logging.getLogger("HPOlib.check_before_start")
 def _check_runsolver():
     # check whether runsolver is in path
     process = subprocess.Popen("which runsolver", stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, shell=True,
-                               executable="/bin/bash")
+        stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
     stdoutdata, stderrdata = process.communicate()
+
     if stdoutdata is not None and "runsolver" in stdoutdata:
         pass
     else:
-        raise Exception("Runsolver cannot not be found. Are you sure that it's installed?\n"
+        raise Exception("Runsolver cannot not be found. "
+                        "Are you sure that it's installed?\n"
                         "Your $PATH is: " + os.environ['PATH'])
 
 
@@ -62,20 +64,11 @@ def _check_modules():
     except:
         raise ImportError("Scipy cannot be imported. Are you sure that it's installed?")
 
-    import networkx
-    import google.protobuf
-
     try:
         import theano
     except ImportError:
         logger.warning("Theano not found. You might need this to run some "
                        "more complex benchmarks!")
-
-    try:
-        import pymongo
-        from bson.objectid import ObjectId
-    except ImportError:
-        raise ImportError("Pymongo cannot be imported. Are you sure it's installed?")
 
     if 'cuda' not in os.environ['PATH']:
         logger.warning("CUDA not in $PATH")
@@ -133,30 +126,19 @@ def check_optimizer(optimizer):
     if not os.path.exists(version + ".py"):
         logger.critical("Sorry I cannot find the script to call your optimizer: %s.py" % version)
         sys.exit(1)
-    else:
-        return version
 
-
-def check_zeroth(experiment_dir):
-    logger.info("Check config.cfg..",)
-    _check_config(experiment_dir)
-    logger.info("..passed")
+    # Check the optimizer dependencies
+    optimizer_module = imp.load_source(version, version + ".py")
+    optimizer_module.check_dependencies()
+    return version
 
 
 # noinspection PyUnusedLocal
 def check_first(experiment_dir):
     """ Do some checks before optimizer is loaded """
-    main()
-
-
-def check_second(experiment_dir):
-    """ Do remaining tests """
-    logger.info("Check algorithm..",)
-    _check_function(experiment_dir)
+    logger.info("Check config.cfg..",)
+    _check_config(experiment_dir)
     logger.info("..passed")
-
-
-def main():
     logger.info("Check dependencies:")
     logger.info("Runsolver..")
     _check_runsolver()
@@ -166,5 +148,8 @@ def main():
     logger.info("..passed")
 
 
-if __name__ == "__main__":
-    main()
+def check_second(experiment_dir):
+    """ Do remaining tests """
+    logger.info("Check algorithm..",)
+    _check_function(experiment_dir)
+    logger.info("..passed")

@@ -41,6 +41,19 @@ version_info = ["Automatic Configurator Library ==> v2.06.01-development-643 (a1
 #optimizer_str = "smac_2_06_01-dev"
 
 
+def check_dependencies():
+    process = subprocess.Popen("which java", stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
+    stdoutdata, stderrdata = process.communicate()
+
+    if stdoutdata is not None and "java" in stdoutdata:
+        pass
+    else:
+        raise Exception("Java cannot not be found. "
+                        "Are you sure that it's installed?\n"
+                        "Your $PATH is: " + os.environ['PATH'])
+
+
 def _get_state_run(optimizer_dir):
     rungroups = glob.glob(optimizer_dir + "scenario-SMAC*")
     if len(rungroups) == 1:

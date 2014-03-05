@@ -38,6 +38,29 @@ version_info = ("# %76s #\n" %
                 "https://github.com/JasperSnoek/spearmint/tree/613350f2f617de3af5f101b1dc5eccf60867f67e")
 
 
+def check_dependencies():
+    try:
+        import networkx
+    except ImportError:
+        raise ImportError("Networkx cannot be imported. Are you sure it's "
+                          "installed?")
+    try:
+        import google.protobuf
+    except ImportError:
+        raise ImportError("Google protobuf cannot be imported. Are you sure "
+                          "it's  installed?")
+    try:
+        import numpy
+    except ImportError:
+        raise ImportError("Numpy cannot be imported. Are you sure that it's"
+                          " installed?")
+    try:
+        import scipy
+    except ImportError:
+        raise ImportError("Scipy cannot be imported. Are you sure that it's"
+                          " installed?")
+
+
 def build_spearmint_call(config, options, optimizer_dir):
     print
     call = 'python ' + os.path.join(config.get('SPEARMINT', 'path_to_optimizer'), 'spearmint_sync.py')
