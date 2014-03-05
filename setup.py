@@ -248,7 +248,7 @@ setup(
                       ],
     author_email='eggenspk@informatik.uni-freiburg.de',
     description=desc,
-    long_description=read("README"),
+    long_description=read("README.md"),
     keywords=keywords,
     packages=get_find_packages(),
     package_dir=package_dir,
