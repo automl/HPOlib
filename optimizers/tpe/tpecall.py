@@ -20,11 +20,11 @@
 from argparse import ArgumentParser
 
 import cPickle
-from optparse import OptionParser
 from functools import partial
 from importlib import import_module
 import logging
 import os
+import sys
 
 import hyperopt
 
@@ -89,15 +89,13 @@ def main():
     space, ext = os.path.splitext(os.path.basename(args.spaceFile))
 
     # Then load dict searchSpace and out function cv.py
-    import sys
     sys.path.append("./")
     sys.path.append("")
-    print os.getcwd()
 
     module = import_module(space)
     search_space = module.space
     fn = import_module(algo)
-    fn = fn.doForTPE
+    fn = fn.main  # doForTPE
     
     if args.random:
         # We use a random search

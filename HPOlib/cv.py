@@ -45,13 +45,13 @@ def get_optimizer():
     return "_".join(os.getcwd().split("/")[-1].split("_")[0:-2])
 
 
-def loadExperimentFile():
+def load_experiment_file():
     optimizer = get_optimizer()
     experiment = Experiment(".", optimizer)
     return experiment
 
 
-def doCV(params, folds=10):
+def do_cv(params, folds=10):
     logger.info("Starting Cross validation")
     sys.stdout.flush()
     optimizer = get_optimizer()
@@ -60,15 +60,15 @@ def doCV(params, folds=10):
     # Now evaluate $fold times
     # TODO This is a bad idea, no one replaces this by the worst possible
     # value later on
-    if folds < 1: return np.NaN
+    if folds < 1:
+        return np.NaN
     
     # Store the results to hand them back to tpe and spearmint
     results = []
 
     try:
         logger.info("%s" % params)
-        param_array = ["-" + str(param_name) + " " + str(params[param_name]) \
-            for param_name in params]
+        param_array = ["-" + str(param_name) + " " + str(params[param_name]) for param_name in params]
         param_string = " ".join(param_array)
         
         for fold in range(folds):
@@ -78,15 +78,13 @@ def doCV(params, folds=10):
             # Cutofftime, cutofflength and seed can be safely ignored since they
             # are read in runsolver_wrapper
             runsolver_wrapper_script = "python " + \
-                os.path.join(os.path.dirname(os.path.realpath(__file__)), \
-                    "runsolver_wrapper.py")
+                os.path.join(os.path.dirname(os.path.realpath(__file__)), "runsolver_wrapper.py")
             cmd = "%s %d %s %d %d %d %s" % \
-                (runsolver_wrapper_script, fold, optimizer, 0, 0, 0, \
-                    param_string)
+                (runsolver_wrapper_script, fold, optimizer, 0, 0, 0, param_string)
             logger.info("Calling command:\n%s" % cmd)
 
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                     stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
+                                       stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
             logger.info("--------------RUNNING RUNSOLVER_WRAPPER--------------")
             stdoutdata, stderrdata = process.communicate()
             if stdoutdata:
@@ -105,7 +103,7 @@ def doCV(params, folds=10):
                     results.append(float(result_array[6].strip(",")))
                     break
 
-            if result_string == None:
+            if result_string is None:
                 raise NotImplementedError("No result string available or result string doesn't contain SAT")
 
             # If a specified number of runs crashed, quit the whole cross validation
@@ -113,8 +111,8 @@ def doCV(params, folds=10):
             worst_possible = cfg.getfloat("HPOLIB", "result_on_terminate")
             crashed_runs = np.nansum([0 if res != worst_possible else 1 for res in results])
             if crashed_runs >= cfg.getint("HPOLIB", "max_crash_per_cv"):
-                logger.warning("Aborting CV because the number of crashes " \
-                            "excceds the configured max_crash_per_cv value")
+                logger.warning("Aborting CV because the number of crashes "
+                               "exceeds the configured max_crash_per_cv value")
                 return worst_possible
 
             # TODO: Error Handling
@@ -126,7 +124,7 @@ def doCV(params, folds=10):
         logger.error(format_traceback(sys.exc_info()))
         logger.error("CV failed %s %s" % (sys.exc_info()[0], e))
         # status = "CRASHED"
-        status = "SAT"
+        # status = "SAT"
         mean = np.NaN
         
     # Do not return any kind of nan because this would break spearmint
@@ -153,8 +151,8 @@ def flatten_parameter_dict(params):
     # This class enables us to distinguish tuples, which are parameters from
     # tuples which contain different things...
     class Parameter:
-        def __init__(self, param):
-            self.param = param
+        def __init__(self, pparam):
+            self.pparam = pparam
 
     params_to_check = list()
     params_to_check.append(params)
@@ -164,7 +162,6 @@ def flatten_parameter_dict(params):
         param = params_to_check.pop()
 
         if type(param) in (list, tuple, np.ndarray):
-            added_literal = False
 
             for sub_param in param:
                 params_to_check.append(sub_param)
@@ -173,12 +170,12 @@ def flatten_parameter_dict(params):
             params_to_check.extend([Parameter(tmp_param) for tmp_param in zip(param.keys(), param.values())])
 
         elif isinstance(param, Parameter):
-            key = param.param[0]
-            value = param.param[1]
+            key = param.pparam[0]
+            value = param.pparam[1]
             if type(value) == dict:
                 params_to_check.append(value)
             elif type(value) in (list, tuple, np.ndarray) and \
-                all([type(v) not in (list, tuple, np.ndarray) for v in value]):
+                    all([type(v) not in (list, tuple, np.ndarray) for v in value]):
                 # Spearmint special case, keep only the first element
                 new_dict[key] = value[0]
             elif type(value) in (list, tuple, np.ndarray):
@@ -193,17 +190,31 @@ def flatten_parameter_dict(params):
     return params
 
 
-def main(job_id, params):
-    # Forget job_id which comes from spearmint
+def main(*args, **kwargs):
+    logger.critical('args: %s kwargs: %s' % (str(args), str(kwargs)))
+
+    params = None
+
+    if 'params' in kwargs.keys():
+        params = kwargs['params']
+    else:
+        for arg in args:
+            if type(arg) == dict:
+                params = arg
+
+    if params is None:
+        logger.critical("No parameter dict found in cv.py.\n"
+                        "args: %s\n kwargs: %s" % (args, kwargs))
+        sys.exit(1)
 
     # Load the experiment to do time-keeping
     cv_starttime = time.time()
-    experiment = loadExperimentFile()
+    experiment = load_experiment_file()
     # experiment.next_iteration()
     experiment.start_cv(cv_starttime)
     del experiment
 
-    cfg_filename = "config.cfg"
+    # cfg_filename = "config.cfg"
     cfg = load_experiment_config_file()
 
     # Load number of folds
@@ -211,19 +222,19 @@ def main(job_id, params):
 
     params = flatten_parameter_dict(params)
 
-    res = doCV(params, folds=folds)
+    res = do_cv(params, folds=folds)
     logger.info("Result: %f" % res)
     
     # Load the experiment to do time-keeping
-    experiment = loadExperimentFile()
+    experiment = load_experiment_file()
     experiment.end_cv(time.time())
     del experiment
     
     return res
 
 
-def doForTPE(params):
-    return main(42, params)
+#def doForTPE(params):
+#    return main(42, params)
 
 
 def read_params_from_command_line():
@@ -249,5 +260,5 @@ def read_params_from_command_line():
 
 
 if __name__ == "__main__":
-    params = read_params_from_command_line()
-    main(42, params)
+    cli_params = read_params_from_command_line()
+    main(params=cli_params)
