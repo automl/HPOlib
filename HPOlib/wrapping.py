@@ -269,38 +269,34 @@ def main():
 
         logger.info("-----------------------RUNNING----------------------------------")
 
-        if args.verbose:
-            # Print std and err output for optimizer
-            proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+
+        while proc.poll() is None:
             logger.info('Optimizer runs with PID (+1): %d' % proc.pid)
 
-            while proc.poll() is None:
-                next_line = proc.stdout.readline()
-                fh.write(next_line)
-                sys.stdout.write(next_line)
-                sys.stdout.flush()
+            for line in iter(proc.stdout.readline, ''):
+                fh.write(line)
 
-        elif args.silent:
-            # Print nothing
-            proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=fh, stderr=fh)
-            logger.info('Optimizer runs with PID (+1): %d' % proc.pid)
-            proc.wait()
+                # Write to stdout only if verbose is on
+                if args.verbose:
+                    sys.stdout.write(line)
+                    sys.stdout.flush()
 
-        else:
-            # Print only stderr
-            proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=fh, stderr=subprocess.PIPE)
-            logger.info('Optimizer runs with PID (+1): %d' % proc.pid)
+            for line in iter(proc.stderr.readline, ''):
+                fh.write(line)
 
-            while proc.poll() is None:
-                next_line = proc.stderr.readline()
-                fh.write(next_line)
-                sys.stdout.write("[ERR]:" + next_line)
-                sys.stdout.flush()
+                # Write always, except silent is on
+                if not args.silent:
+                    sys.stderr.write(line)
+                    sys.stderr.flush()
+
+            fh.flush()
+            time.sleep(0.05)
 
         ret = proc.returncode
 
-        logger.info("\n-----------------------END--------------------------------------")
+        logger.info("-----------------------END--------------------------------------")
         fh.close()
 
         trials = Experiment.Experiment(optimizer_dir_in_experiment, optimizer)
