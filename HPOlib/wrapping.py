@@ -130,6 +130,15 @@ def main():
     comments inside this function and the general HPOlib documentation."""
     args, unknown_arguments = use_arg_parser()
 
+    # Convert the path to the optimizer to be an absolute path, which is
+    # necessary later when we change the working directory
+    optimizer = args.optimizer
+    if not os.path.isabs(optimizer):
+        relative_path = optimizer
+        optimizer = os.path.abspath(optimizer)
+        logger.info("Converting relative optimizer path %s to absolute "
+                    "optimizer path %s." % (relative_path, optimizer))
+
     if args.working_dir:
         os.chdir(args.working_dir)
 
@@ -141,7 +150,6 @@ def main():
     import HPOlib.Experiment as Experiment
     import HPOlib.wrapping_util
 
-    optimizer = args.optimizer
     # Check how many optimizer versions are present
     optimizer_version = check_before_start.check_optimizer(optimizer)
 
