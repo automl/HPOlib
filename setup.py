@@ -1,6 +1,6 @@
 import hashlib
 from setuptools import setup
-from setuptools.command.install import install as install_command
+from setuptools.command.install import install
 import shutil
 import urllib
 import os
@@ -16,15 +16,8 @@ keywords = 'hyperparameter optimization empirical evaluation black box'
 
 package_dir = {'HPOlib': 'HPOlib',
                'HPOlib.config_parser': 'HPOlib/config_parser',
-               #'HPOlib.benchmarks': 'HPOlib/benchmarks',
-               #'HPOlib.optimizers': 'HPOlib/optimizers',
-               #'HPOlib.benchmarks.branin': 'HPOlib/benchmarks/branin',
-               #'HPOlib.benchmarks.har6': 'HPOlib/benchmarks/har6',
                'HPOlib.Plotting': 'HPOlib/Plotting'}
 package_data = {'HPOlib.config_parser': ['*.cfg']}
-               # 'HPOlib': ['*/params.txt', '*/space.py', '*/config.pb'],
-               # 'HPOlib.benchmarks.branin': ['*.cfg', '*/params.txt', '*/space.py', '*/config.pb'],
-               # 'HPOlib.benchmarks.har6': ['*.cfg', '*/params.txt', '*/space.py', '*/config.pb']}
 
 data_files = []
 scripts = ['scripts/HPOlib-run', 'scripts/HPOlib-plot', 'runsolver/src/runsolver']
@@ -37,10 +30,6 @@ def read(fname):
 def get_find_packages():
     packages = ['HPOlib',
                 'HPOlib.config_parser',
-                #'HPOlib.benchmarks',
-                #'HPOlib.optimizers',
-                #'HPOlib.benchmarks.branin',
-                #'HPOlib.benchmarks.har6',
                 'HPOlib.Plotting']
     return packages
 
@@ -76,6 +65,7 @@ def copy_folder(new_dir, old_dir):
                         ignore=shutil.ignore_patterns('*.pyc', '*_src*'))
     except shutil.Error as e:
         sys.stderr.write("[shutil.ERROR] Could not copy folder from %s to %s\n" % (old_dir, new_dir))
+        sys.stderr.write("%s\n" % e.message)
         return False
     except Exception, e:
         sys.stderr.write("[ERROR] Could not copy folder from %s to %s\n" % (old_dir, new_dir))
@@ -96,7 +86,7 @@ def make_dir(new_dir):
                          (e.message, new_dir))
 
 
-class AdditionalInstall(install_command):
+class AdditionalInstall(install):
     """Is supposed to install the runsolver, download optimizers,
      and copy benchmarks"""
 
@@ -205,29 +195,30 @@ class AdditionalInstall(install_command):
             spearmint = self._copy_and_download_optimizer(optimizer_dir=optimizer_dir,
                                                           optimizer_name='spearmint',
                                                           optimizer_tar_name="spearmint_april2013_mod_src.tar.gz",
-                                                          url="http://www.automl.org/spearmint_april2013_mod_src.tar.gz",
+                                                          url="http://www.automl.org/spearmint_april2013" +
+                                                              "_mod_src.tar.gz",
                                                           md5='aa3eb7961637f9bf2a8cb9b14c4b8791')
 
         # Do whatever you want to do
-        install_command.run(self)
+        # TODO: Normally one wants to call run(self), but this runs distutils and ignores install_requirements for unknown reasons
+        # if anyone knows a better way, feel free to change
+        install.do_egg_install(self)
+
 
         # Give detailed output to user
         if not tpe or not smac or not spearmint:
             sys.stderr.write("[ERROR] Something went wrong while copying and downloading optimizers." +
-                       "Please do the following to be ready to start optimizing:\n\n" +
-                       "rm optimizers\n" + "mkdir optimizers\n" +
-                       "cp HPOlib/optimizers/tpe optimizers/ -r\n" +
-                       "cp HPOlib/optimizers/smac optimizers/ -r\n" +
-                       "cp HPOlib/optimizers/spearmint optimizers/ -r\n"
-                       "cd optimizers\n" +
-                       "wget http://www.automl.org/hyperopt_august2013_mod_src.tar.gz \n" +
-                       "wget http://www.automl.org/smac_2_06_01-dev_src.tar.gz \n" +
-                       "wget http://www.automl.org/spearmint_april2013_mod_src.tar.gz \n"
-                       "tar -xf hyperopt_august2013_mod_src.tar.gz \n" + "mv hyperopt_august2013_mod_src tpe/ \n" +
-                       "tar -xf smac_2_06_01-dev_src.tar.gz \n" + "mv smac_2_06_01-dev_src.tar.gz smac/ \n" +
-                       "tar -xf spearmint_april2013_mod_src.tar.gz \n" +
-                       "mv spearmint_april2013_mod_src.tar.gz spearmint/ \n\n" +
-                       "Thank You!\n")
+                             "Please do the following to be ready to start optimizing:\n\n" +
+                             "cd optimizers\n" +
+                             "wget http://www.automl.org/hyperopt_august2013_mod_src.tar.gz \n" +
+                             "wget http://www.automl.org/smac_2_06_01-dev_src.tar.gz \n" +
+                             "wget http://www.automl.org/spearmint_april2013_mod_src.tar.gz \n" +
+                             "tar -xf hyperopt_august2013_mod_src.tar.gz \n" +
+                             "mv hyperopt_august2013_mod_src tpe/ \n" +
+                             "tar -xf smac_2_06_01-dev_src.tar.gz \n" + "mv smac_2_06_01-dev_src.tar.gz smac/ \n" +
+                             "tar -xf spearmint_april2013_mod_src.tar.gz \n" +
+                             "mv spearmint_april2013_mod_src spearmint/ \n\n" +
+                             "Thank You!\n")
         if runsolver_needs_to_be_installed and not built:
             print "[ERROR] Please install runsolver on your own! You can download it from:\n%s%s" % \
                   ('http://www.cril.univ-artois.fr/~roussel/runsolver/%s', runsolver_tar_name)
@@ -237,7 +228,6 @@ class AdditionalInstall(install_command):
         if built:
             print "'runsolver' has been downloaded and installed"
 
-
 setup(
     name='HPOlib',
     version=HPOlib.__version__,
@@ -246,13 +236,15 @@ setup(
     platforms=['Linux'],
     author=HPOlib.__authors__,
     test_suite="tests.testsuite.suite",
-    install_requires=['argparse>=1.2.1',
-                      'matplotlib>=1.3.1',
-                      'networkx>=1.8.1',
-                      'numpy>=1.8.0',
-                      'protobuf>=2.5.0',
+    # setup_requires=['numpy'],
+    # We require scipy, but this does not automatically install numpy,
+    # so the user needs to make sure numpy is already installed
+    install_requires=['argparse','numpy',
+                      'matplotlib',
+                      'networkx',
+                      'protobuf',
                       'scipy>=0.13.2',
-                      'pymongo>=2.6.3',
+                      'pymongo'
                       ],
     author_email='eggenspk@informatik.uni-freiburg.de',
     description=desc,
@@ -263,9 +255,7 @@ setup(
     package_data=package_data,
     data_files=data_files,
     scripts=scripts,
-    cmdclass={
-        'install': AdditionalInstall,
-    },
+    cmdclass={'install': AdditionalInstall},
     classifiers=[
         'Programming Language :: Python :: 2.7',
         'Development Status :: 2 - Pre-Alpha',
