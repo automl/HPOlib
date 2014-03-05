@@ -106,7 +106,8 @@ def build_smac_call(config, options, optimizer_dir):
                     '--save-runs-every-iteration true',
                     '--intensification-percentage',
                     config.get('SMAC', 'intensification_percentage'),
-                    '--rf-split-min', config.get('SMAC', 'rf_split_min')])
+                    '--rf-split-min', config.get('SMAC', 'rf_split_min'),
+                    '--validation', config.get('SMAC', 'validation')])
 
     if config.getboolean('SMAC', 'deterministic'):
         call = " ".join([call, '--deterministic true'])
