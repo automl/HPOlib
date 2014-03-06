@@ -295,7 +295,8 @@ def main():
 
         while minimal_runs_to_go > 0:     # Think of this as a do-while loop...
             try:
-                for line in stdout_queue.get_nowait():
+                while True:
+                    line = stdout_queue.get_nowait()
                     fh.write(line)
 
                     # Write to stdout only if verbose is on
@@ -306,18 +307,20 @@ def main():
                 pass
 
             try:
-                for line in stderr_queue.get_nowait():
+                while True:
+                    line = stderr_queue.get_nowait()
                     fh.write(line)
 
                     # Write always, except silent is on
                     if not args.silent:
-                        sys.stderr.write(line)
+                        sys.stderr.write("[ERR]:" + line)
                         sys.stderr.flush()
             except Empty:
                 pass
 
             fh.flush()
-            #time.sleep(0.05)
+            # necessary, otherwise HPOlib-run takes 100% of one processor
+            time.sleep(0.1)
 
             if not (args.verbose or args.silent) and time.time() - last_output > 1:
                 trials = Experiment.Experiment(optimizer_dir_in_experiment,
