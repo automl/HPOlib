@@ -16,7 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from numpy import pi, cos, ndarray, array, exp
+from numpy import pi, cos, ndarray, array, exp, NaN
+import sys
 
 
 def save_branin(params, **kwargs):
