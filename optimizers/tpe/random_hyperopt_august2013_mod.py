@@ -23,7 +23,7 @@ import logging
 import os
 import sys
 
-import HPOlib.wrapping_util as wrapping_util
+import HPOlib.wrapping_util as wrappingUtil
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -32,8 +32,36 @@ __contact__ = "automl.org"
 logger = logging.getLogger("HPOlib.optimizers.tpe.randomtpe")
 
 version_info = ("# %76s #" % "https://github.com/hyperopt/hyperopt/tree/486aebec8a4170e4781d99bbd6cca09123b12717")
-__authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
-__contact__ = "automl.org"
+
+
+# noinspection PyUnresolvedReferences
+def check_dependencies():
+    try:
+        import nose
+    except ImportError:
+        raise ImportError("Nose cannot be imported. Are you sure it's "
+                          "installed?")
+    try:
+        import networkx
+    except ImportError:
+        raise ImportError("Networkx cannot be imported. Are you sure it's "
+                          "installed?")
+    try:
+        import pymongo
+        from bson.objectid import ObjectId
+    except ImportError:
+        raise ImportError("Pymongo cannot be imported. Are you sure it's"
+                          " installed?")
+    try:
+        import numpy
+    except ImportError:
+        raise ImportError("Numpy cannot be imported. Are you sure that it's"
+                          " installed?")
+    try:
+        import scipy
+    except ImportError:
+        raise ImportError("Scipy cannot be imported. Are you sure that it's"
+                          " installed?")
 
 
 def build_random_call(config, options, optimizer_dir):
@@ -48,17 +76,18 @@ def build_random_call(config, options, optimizer_dir):
     return call
 
 
+# noinspection PyUnusedLocal
 def restore(config, optimizer_dir, **kwargs):
     restore_file = os.path.join(optimizer_dir, 'state.pkl')
     if not os.path.exists(restore_file):
         logger.error("Oups, this should have been checked before")
         raise Exception("%s does not exist" % (restore_file,))
-        return -1
 
     fh = open(restore_file)
     state = cPickle.load(fh)
     fh.close()
     complete_runs = 0
+    # noinspection PyProtectedMember
     tpe_trials = state['trials']._trials
     for trial in tpe_trials:
         # Assumes that all states no valid state is marked crashed
@@ -68,16 +97,20 @@ def restore(config, optimizer_dir, **kwargs):
     return restored_runs
 
 
+# noinspection PyUnusedLocal
 def main(config, options, experiment_dir, **kwargs):
     # config:           Loaded .cfg file
     # options:          Options containing seed, restore, 
     # experiment_dir:   Experiment directory/Benchmarkdirectory
     # **kwargs:         Nothing so far
-    time_string = wrapping_util.get_time_string()
+    time_string = wrappingUtil.get_time_string()
     cmd = ""
 
     # Add path_to_optimizer to PYTHONPATH and to sys.path
-    os.environ['PYTHONPATH'] = config.get('TPE', 'path_to_optimizer') + os.pathsep + os.environ['PYTHONPATH']
+    if not 'PYTHONPATH' in os.environ:
+        os.environ['PYTHONPATH'] = config.get('TPE', 'path_to_optimizer')
+    else:
+        os.environ['PYTHONPATH'] = config.get('TPE', 'path_to_optimizer') + os.pathsep + os.environ['PYTHONPATH']
     sys.path.append(config.get('TPE', 'path_to_optimizer'))
     optimizer_str = os.path.splitext(os.path.basename(__file__))[0]
 
@@ -118,6 +151,5 @@ def main(config, options, experiment_dir, **kwargs):
         logger.info("%s" % version_info)
         logger.info("# A newer version might be available, but not yet built in.                    #")
     logger.info("################################################################################")
-    return cmd, optimizer_dir
 
     return cmd, optimizer_dir

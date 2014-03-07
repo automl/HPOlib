@@ -146,6 +146,7 @@ def _statistics(pkl_list, name_list, save=""):
 
 
 def main():
+
     prog = "python doAllPlots.py WhatIsThis <oneOrMorePickles> [WhatIsThis <oneOrMorePickles>]"
     description = "Tries to save as many plots as possible"
 
@@ -157,11 +158,15 @@ def main():
     parser.add_argument("-s", "--save", dest="save",
                         default="", help="Where to save plots? (directory)")
 
+    parser.add_argument("-f", "--file", dest="file",
+                        default="png", help="File ending")
+
     args, unknown = parser.parse_known_args()
 
     sys.stdout.write("Found " + str(len(unknown)) + " arguments\n")
 
-    save_dir = args.save
+    save_dir = os.path.realpath(args.save)
+
     log = args.log
 
     pkl_list, name_list = plot_util.get_pkl_and_name_list(unknown)
@@ -181,7 +186,7 @@ def main():
     if len(name_list) == 1 and name_list[0][1] == 1:
         # We have one exp and one pkl
         if save_dir is not "":
-            tmp_save = os.path.join(save_dir, "plotTrace_%s.png" % time_str)
+            tmp_save = os.path.join(save_dir, "plotTrace_%s.%s" % (time_str, args.file))
         else:
             tmp_save = save_dir
         sys.stdout.write("plotTrace.py ... %s ..." % tmp_save)
@@ -191,7 +196,7 @@ def main():
         # Some plots only make sense, if there are many experiments
         # BoxWhisker
         if save_dir is not "":
-            tmp_save = os.path.join(save_dir, "BoxWhisker_%s.png" % time_str)
+            tmp_save = os.path.join(save_dir, "BoxWhisker_%s.%s" % (time_str, args.file))
         else:
             tmp_save = save_dir
         sys.stdout.write("plotBoxWhisker.py ... %s ..." % tmp_save)
@@ -208,7 +213,7 @@ def main():
     # We can always plot this
     # OptimizerOverhead
     if save_dir is not "":
-        tmp_save = os.path.join(save_dir, "OptimizerOverhead_%s.png" % time_str)
+        tmp_save = os.path.join(save_dir, "OptimizerOverhead_%s.%s" % (time_str, args.file))
     else:
         tmp_save = save_dir
     sys.stdout.write("plotOptimizerOverhead.py ... %s ..." % tmp_save)
@@ -216,14 +221,14 @@ def main():
 
     # Error Trace with Std
     if save_dir is not "":
-        tmp_save = os.path.join(save_dir, "TraceWithStd_perEval_%s.png" % time_str)
+        tmp_save = os.path.join(save_dir, "TraceWithStd_perEval_%s.%s" % (time_str, args.file))
     else:
         tmp_save = save_dir
     sys.stdout.write("TraceWithStd_perEval.py ... %s ..." % tmp_save)
     _trace_with_std_per_eval(pkl_list=pkl_list, name_list=name_list, save=tmp_save, log=log)
 
     if save_dir is not "":
-        tmp_save = os.path.join(save_dir, "TraceWithStd_perTime_%s.png" % time_str)
+        tmp_save = os.path.join(save_dir, "TraceWithStd_perTime_%s.%s" % (time_str, args.file))
     else:
         tmp_save = save_dir
     sys.stdout.write("TraceWithStd_perTime.py ... %s ..." % tmp_save)
