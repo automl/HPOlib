@@ -172,3 +172,11 @@ then you can run a benchmark like in step 5.) from installing with setup.py with
 ``HPOlib-run`` with ``../../scripts/HPOlib-run`` and ``HPOlib-plot`` with ``../../scripts/HPOlib-plot``
 
 **FOR FURTHER DETAILS VISIT:** www.automl.org
+
+
+**Problems during installation**
+
+``python setup.py`` crashes with ``ImportError: cannot import name Feature`` during installing pymongo. This happens due to pymongo using a deprecated feature ''Feature'', which is not available in the setuptools version (>2.2). This error is fixed, but not yet available on PYPI.
+
+Solution: Downgrade ``setuptools`` with ``pip install setuptools==2.2`` and try again or install ``pymongo`` manually.
+
