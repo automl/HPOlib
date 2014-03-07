@@ -37,14 +37,12 @@ __contact__ = "automl.org"
 
 
 def build_random_call(config, options, optimizer_dir):
-    #For TPE (and Random Search) we have to cd to the exp_dir
-    call = 'cd ' + optimizer_dir + '\n' + \
-           'python ' + os.path.dirname(os.path.realpath(__file__)) + \
-           '/tpecall.py'
+    call = "python " + os.path.dirname(os.path.realpath(__file__)) + \
+           "/tpecall.py"
     call = ' '.join([call, '-p', config.get('TPE', 'space'),
-           '-a', config.get('HPOLIB', 'algorithm'),
-           '-m', config.get('HPOLIB', 'numberOfJobs'),
-           '-s', str(options.seed), '--random'])
+                     "-m", config.get('TPE', 'numberEvals'),
+                     "-s", str(options.seed),
+                     "--cwd", optimizer_dir], "--random")
     if options.restore:
         call = ' '.join([call, '-r'])
     return call

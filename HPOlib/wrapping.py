@@ -173,10 +173,6 @@ def main():
     # Try adding runsolver to path
     os.putenv('PATH', os.environ['PATH'] + ":" + wrapping_dir + "/../runsolver/src/")
 
-    # TODO: We also don't need this
-    # build call
-    cmd = "export PYTHONPATH=$PYTHONPATH:" + wrapping_dir + "\n"
-
     # Load optimizer
     try:
         optimizer_dir = os.path.dirname(os.path.realpath(optimizer_version))
@@ -189,7 +185,7 @@ def main():
     optimizer_call, optimizer_dir_in_experiment = optimizer_module.main(config=config,
                                                           options=args,
                                                           experiment_dir=experiment_dir)
-    cmd += optimizer_call
+    cmd = optimizer_call
 
     with open(os.path.join(optimizer_dir_in_experiment, "config.cfg"), "w") as f:
         config.set("HPOLIB", "is_not_original_config_file", "True")

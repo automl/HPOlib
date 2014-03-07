@@ -27,6 +27,7 @@ import os
 import sys
 
 import hyperopt
+import HPOlib.cv as cv
 
 logger = logging.getLogger("HPOlib.optimizers.tpe.tpecall")
 
@@ -66,8 +67,6 @@ def main():
 
     parser.add_argument("-p", "--space",
                         dest="spaceFile", help="Where is the space.py located?")
-    parser.add_argument("-a", "--algoExec",
-                        dest="algoExec", help="Which function to load located?")
     parser.add_argument("-m", "--maxEvals",
                         dest="maxEvals", help="How many evaluations?")
     parser.add_argument("-s", "--seed", default="1",
@@ -77,15 +76,19 @@ def main():
                              "the current working directory")
     parser.add_argument("--random", default=False, action="store_true",
                         dest="random", help="Use a random search")
+    parser.add_argument("--cwd", help="Change the working directory before "
+                                      "optimizing.")
 
     args, unknown = parser.parse_known_args()
+
+    if args.cwd:
+        os.chdir(args.cwd)
 
     if not os.path.exists(args.spaceFile):
         logger.critical("Search space not found: %s" % args.spaceFile)
         sys.exit(1)
 
     # First remove ".py"
-    algo, ext = os.path.splitext(os.path.basename(args.algoExec))
     space, ext = os.path.splitext(os.path.basename(args.spaceFile))
 
     # Then load dict searchSpace and out function cv.py
@@ -94,8 +97,7 @@ def main():
 
     module = import_module(space)
     search_space = module.space
-    fn = import_module(algo)
-    fn = fn.main  # doForTPE
+    fn = cv.main  # doForTPE
     
     if args.random:
         # We use a random search
