@@ -98,7 +98,7 @@ class AdditionalInstall(install):
             return False
         for p in os.environ.get('PATH', '').split(os.pathsep):
             p = os.path.join(p, name)
-            if os.access(p, flags):
+            if os.access(p, flags) and not os.path.isdir(p):
                 print "Copy runsolver from %s to runsolver/src/runsolver" % p
                 shutil.copy(p, os.path.join(os.getcwd(), 'runsolver/src/runsolver'))
                 return p
