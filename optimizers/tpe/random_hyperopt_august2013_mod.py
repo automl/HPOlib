@@ -70,7 +70,7 @@ def build_random_call(config, options, optimizer_dir):
     call = ' '.join([call, '-p', config.get('TPE', 'space'),
                      "-m", config.get('TPE', 'numberEvals'),
                      "-s", str(options.seed),
-                     "--cwd", optimizer_dir], "--random")
+                     "--cwd", optimizer_dir, "--random"])
     if options.restore:
         call = ' '.join([call, '-r'])
     return call
