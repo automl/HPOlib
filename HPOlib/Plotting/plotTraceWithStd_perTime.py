@@ -100,7 +100,7 @@ def plot_optimization_trace(trial_list, name_list, times_list, optimum=0, title=
     # Descript and label the stuff
     leg = ax1.legend(loc='best', fancybox=True)
     leg.get_frame().set_alpha(0.5)
-    ax1.set_xlabel("duration")
+    ax1.set_xlabel("Duration [sec] ")
 
     if y_max == y_min:
         # Set axes limit

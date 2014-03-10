@@ -105,7 +105,7 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="",
         ax1.set_ylim([min_val-0.1*abs((max_val-min_val)), max_val+0.1*abs((max_val-min_val))])
     else:
         ax1.set_ylim([y_min, y_max])
-    ax1.set_xlim([0, 100])  # maxTrials])
+    ax1.set_xlim([0, max_trials + 1])
 
     tight_layout()
     subplots_adjust(top=0.85)
