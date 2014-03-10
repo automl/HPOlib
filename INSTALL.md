@@ -18,7 +18,7 @@ source virtualHPOlib/bin/activate
 ```bash
 easy_install -U distribute
 pip install numpy
-pip install scipy
+pip install scipy==0.13.2
 pip install matplotlib
 ```
 This may take some time. Afterwards you can verify having those libs installed with:
@@ -33,7 +33,7 @@ pip freeze
     numpy==1.8.0
     pyparsing==2.0.1
     python-dateutil==2.2
-    scipy==0.13.3
+    scipy==0.13.2
     six==1.5.2
     tornado==3.2
     wsgiref==0.1.2
