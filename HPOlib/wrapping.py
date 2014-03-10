@@ -329,7 +329,7 @@ def main():
 
             if time.time() > optimizer_end_time + 200 and not sent_SIGKILL:
                 os.killpg(proc.pid, signal.SIGKILL)
-                sent_SIGKILL
+                sent_SIGKILL = True
 
             fh.flush()
             # necessary, otherwise HPOlib-run takes 100% of one processor
