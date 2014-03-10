@@ -177,7 +177,7 @@ class Experiment:
         best_value = sys.maxint
         for i, trial in enumerate(self.trials):
             tmp_res = np.NaN
-            if trial['result'] == trial['result']:
+            if np.isfinite(trial['result']):
                 tmp_res = trial['result']
             elif np.isfinite(trial['instance_results']).any():
                 tmp_res = scipy.nanmean(trial['instance_results'])
