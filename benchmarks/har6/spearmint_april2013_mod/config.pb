@@ -1,5 +1,5 @@
 language: PYTHON
-name:     "cv"
+name:     "HPOlib.cv"
 
 variable {
  name: "x"

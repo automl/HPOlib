@@ -21,6 +21,8 @@ import imp
 import logging
 import os
 from Queue import Queue, Empty
+import signal
+import shlex
 import subprocess
 import sys
 from threading import Thread
@@ -171,10 +173,6 @@ def main():
     # Try adding runsolver to path
     os.putenv('PATH', os.environ['PATH'] + ":" + wrapping_dir + "/../runsolver/src/")
 
-    # TODO: We also don't need this
-    # build call
-    cmd = "export PYTHONPATH=$PYTHONPATH:" + wrapping_dir + "\n"
-
     # Load optimizer
     try:
         optimizer_dir = os.path.dirname(os.path.realpath(optimizer_version))
@@ -187,7 +185,7 @@ def main():
     optimizer_call, optimizer_dir_in_experiment = optimizer_module.main(config=config,
                                                           options=args,
                                                           experiment_dir=experiment_dir)
-    cmd += optimizer_call
+    cmd = optimizer_call
 
     with open(os.path.join(optimizer_dir_in_experiment, "config.cfg"), "w") as f:
         config.set("HPOLIB", "is_not_original_config_file", "True")
@@ -267,15 +265,22 @@ def main():
         logger.info(cmd)
         output_file = os.path.join(optimizer_dir_in_experiment, optimizer + ".out")
         fh = open(output_file, "a")
-
-        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
+        cmd = shlex.split(cmd)
+        print cmd
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, preexec_fn=os.setsid)
         logger.info("-----------------------RUNNING----------------------------------")
         # http://stackoverflow.com/questions/375427/non-blocking-read-on-a-subprocess-pipe-in-python
+        # How often is the experiment pickle supposed to be opened?
         last_output = time.time()
+        optimizer_end_time = time.time() + config.getint("HPOLIB", "total_time_limit")
         printed_start_configuration = list()
         printed_end_configuration = list()
         current_best = -1
+        sent_SIGTERM = False
+        sent_SIGKILL = False
+        # After the evaluation finished, we scan the experiment pickle twice
+        # to print everything!
         minimal_runs_to_go = 2
 
         def enqueue_output(out, queue):
@@ -291,7 +296,7 @@ def main():
         stdout_thread.daemon = True
         stderr_thread.start()
         stdout_thread.start()
-        logger.info('Optimizer runs with PID (+1): %d', proc.pid)
+        logger.info('Optimizer runs with PID: %d', proc.pid)
 
         while minimal_runs_to_go > 0:     # Think of this as a do-while loop...
             try:
@@ -317,6 +322,14 @@ def main():
                         sys.stderr.flush()
             except Empty:
                 pass
+
+            if time.time() > optimizer_end_time and not sent_SIGTERM:
+                os.killpg(proc.pid, signal.SIGTERM)
+                sent_SIGTERM = True
+
+            if time.time() > optimizer_end_time + 200 and not sent_SIGKILL:
+                os.killpg(proc.pid, signal.SIGKILL)
+                sent_SIGKILL = True
 
             fh.flush()
             # necessary, otherwise HPOlib-run takes 100% of one processor

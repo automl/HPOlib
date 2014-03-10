@@ -61,13 +61,12 @@ def check_dependencies():
 
 def build_tpe_call(config, options, optimizer_dir):
     # For TPE we have to cd to the exp_dir
-    call = "cd " + optimizer_dir + "\n" + \
-           "python " + os.path.dirname(os.path.realpath(__file__)) + \
+    call = "python " + os.path.dirname(os.path.realpath(__file__)) + \
            "/tpecall.py"
     call = ' '.join([call, '-p', config.get('TPE', 'space'),
-                     "-a", config.get('HPOLIB', 'algorithm'),
                      "-m", config.get('TPE', 'numberEvals'),
-                     "-s", str(options.seed)])
+                     "-s", str(options.seed),
+                     "--cwd", optimizer_dir])
     if options.restore:
         call = ' '.join([call, '-r'])
     return call
