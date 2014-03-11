@@ -340,22 +340,26 @@ def main():
                                                optimizer)
 
                 for i in range(len(printed_end_configuration), len(trials.instance_order)):
+                    configuration = trials.instance_order[i][0]
+                    fold = trials.instance_order[i][1]
                     if i + 1 > len(printed_start_configuration):
                         logger.info("Starting configuration %5d, fold %2d",
-                                    trials.instance_order[i][0],
-                                    trials.instance_order[i][1])
+                                    configuration, fold)
                         printed_start_configuration.append(i)
 
-                    if np.isfinite(trials.trials[i]["instance_results"][
-                            trials.instance_order[i][1]]):
-                        last_result = trials.trials[i]["instance_results"][
-                            trials.instance_order[i][1]]
+                    if np.isfinite(trials.trials[configuration]
+                                   ["instance_results"][fold]):
+                        last_result = trials.trials[configuration] \
+                            ["instance_results"][fold]
                         tmp_current_best = trials.get_arg_best()
                         if tmp_current_best <= i:
                             current_best = tmp_current_best
+                        res = trials.trials[current_best]["result"] if \
+                            np.isfinite(trials.trials[current_best]["result"]) \
+                            else np.nanmean(trials.trials[current_best][
+                                "instance_results"])
                         logger.info("Result %10f, current best %10f",
-                                    last_result,
-                                    trials.trials[current_best]["result"])
+                                    last_result, res)
                         printed_end_configuration.append(i)
 
                 del trials

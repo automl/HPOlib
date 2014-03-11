@@ -271,8 +271,8 @@ def parse_output_files(cfg, run_instance_output, runsolver_output_file):
                                                                 "result_on_terminate"), additional_data)
 
     elif error is None:
-        # Remove the run_instance_output only if there is a valid result
-        os.remove(run_instance_output)
+        if cfg.getboolean("HPOLIB", "remove_target_algorithm_output"):
+            os.remove(run_instance_output)
         os.remove(runsolver_output_file)
         rval = (cpu_time, wallclock_time, "SAT", float(result_array[6].strip(",")),
                 cfg.get("HPOLIB", "function"))
