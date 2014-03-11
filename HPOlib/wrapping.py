@@ -272,8 +272,12 @@ def main():
         logger.info("-----------------------RUNNING----------------------------------")
         # http://stackoverflow.com/questions/375427/non-blocking-read-on-a-subprocess-pipe-in-python
         # How often is the experiment pickle supposed to be opened?
+        if config.get("HPOLIB", "total_time_limit"):
+            optimizer_end_time = time.time() + config.getint("HPOLIB", "total_time_limit")
+        else:
+            optimizer_end_time = sys.float_info.max
+
         last_output = time.time()
-        optimizer_end_time = time.time() + config.getint("HPOLIB", "total_time_limit")
         printed_start_configuration = list()
         printed_end_configuration = list()
         current_best = -1

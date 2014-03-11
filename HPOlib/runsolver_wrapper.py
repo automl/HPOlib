@@ -212,9 +212,6 @@ def get_function_filename(cfg):
 
 
 def make_command(cfg, fold, param_string, run_instance_output):
-    time_limit = cfg.getint('HPOLIB', 'runsolver_time_limit')
-    memory_limit = cfg.getint('HPOLIB', 'memory_limit')
-    cpu_limit = cfg.getint('HPOLIB', 'cpu_limit')
     fn_filename = get_function_filename(cfg)
     python_cmd = cfg.get("HPOLIB", "leading_algo_info") + " python " + fn_filename
     python_cmd += " --fold %d --folds %d --params %s" % (fold, cfg.getint(
@@ -224,9 +221,16 @@ def make_command(cfg, fold, param_string, run_instance_output):
     # is flushed to the output directory
     delay = 0
     cmd = cfg.get("HPOLIB", "leading_runsolver_info")
-    cmd += " runsolver -o %s --timestamp --use-pty -W %d -C %d -M %d -d %d %s" \
-           % (run_instance_output, time_limit, cpu_limit, memory_limit, delay,
-              python_cmd)
+    cmd += " runsolver -o %s --timestamp --use-pty" % run_instance_output
+    if cfg.get('HPOLIB', 'runsolver_time_limit'):
+        cmd += " -W %d" % cfg.getint('HPOLIB', 'runsolver_time_limit')
+    if cfg.get('HPOLIB', 'cpu_limit'):
+        cmd += " -C %d" % cfg.getint('HPOLIB', 'cpu_limit')
+    if cfg.get('HPOLIB', 'memory_limit'):
+        cmd += " -M %d" % cfg.getint('HPOLIB', 'memory_limit')
+    if delay is not None:
+        cmd += " -d %d" % int(delay)
+    cmd += " " + python_cmd
     return cmd
 
 

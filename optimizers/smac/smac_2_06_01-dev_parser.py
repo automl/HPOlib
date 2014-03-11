@@ -27,8 +27,13 @@ logger = logging.getLogger("HPOlib.optimizers.smac.smac_2_06_01-dev_parser")
 
 def manipulate_config(config):
     if not config.has_option('SMAC', 'cutoff_time'):
-        config.set('SMAC', 'cutoff_time',
+        print config.get('HPOLIB', 'runsolver_time_limit')
+        if config.get('HPOLIB', 'runsolver_time_limit'):
+            config.set('SMAC', 'cutoff_time',
                    str(config.getint('HPOLIB', 'runsolver_time_limit') + 100))
+        else:
+            # SMACs maxint
+            config.set('SMAC', 'cutoff_time', "2147483647")
     if not config.has_option('SMAC', 'algo_exec'):
         config.set('SMAC', 'algo_exec',
                    config.get('HPOLIB', 'run_instance'))
