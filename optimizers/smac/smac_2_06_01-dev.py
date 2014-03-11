@@ -82,27 +82,28 @@ def build_smac_call(config, options, optimizer_dir):
     call = config.get('SMAC', 'path_to_optimizer') + "/smac"
     call = " ".join([call, '--numRun', str(options.seed),
                     '--scenario-file', os.path.join(optimizer_dir, 'scenario.txt'),
-                    '--cutoffTime', config.get('SMAC', 'cutoffTime'),
+                    '--cutoffTime', config.get('SMAC', 'cutoff_time'),
                     # The instance file does interfere with state restoration, it will only
                     # be loaded if no state is restored (look further down in the code
                     # '--instanceFile', config.get('SMAC', 'instanceFile'),
-                    '--intraInstanceObj', config.get('SMAC', 'intraInstanceObj'),
-                    '--runObj', config.get('SMAC', 'runObj'),
+                    '--intraInstanceObj', config.get('SMAC', 'intra_instance_obj'),
+                    '--runObj', config.get('SMAC', 'run_obj'),
                     # '--testInstanceFile', config.get('SMAC', 'testInstanceFile'),
-                    '--algoExec',  '"python', os.path.join(algo_exec_dir, config.get('SMAC', 'algoExec')) + '"',
+                    '--algoExec',  '"python', os.path.join(algo_exec_dir,
+                                    config.get('SMAC', 'algo_exec')) + '"',
                     '--execDir', optimizer_dir,
                     '-p', config.get('SMAC', 'p'),
                     # The experiment dir MUST not be specified when restarting, it is set
                     # further down in the code
                     # '--experimentDir', optimizer_dir,
-                    '--numIterations', config.get('SMAC', 'numIterations'),
-                    '--totalNumRunsLimit', config.get('SMAC', 'totalNumRunsLimit'),
+                    '--numIterations', config.get('SMAC', 'num_iterations'),
+                    '--totalNumRunsLimit', config.get('SMAC', 'total_num_runs_limit'),
                     '--outputDirectory', optimizer_dir,
-                    '--numConcurrentAlgoExecs', config.get('SMAC', 'numConcurrentAlgoExecs'),
+                    '--numConcurrentAlgoExecs', config.get('SMAC', 'num_concurrent_algo_execs'),
                     # '--runGroupName', config.get('SMAC', 'runGroupName'),
-                    '--maxIncumbentRuns', config.get('SMAC', 'maxIncumbentRuns'),
+                    '--maxIncumbentRuns', config.get('SMAC', 'max_incumbent_runs'),
                     '--retryTargetAlgorithmRunCount',
-                    config.get('SMAC', 'retryTargetAlgorithmRunCount'),
+                    config.get('SMAC', 'retry_target_algorithm_run_count'),
                     '--save-runs-every-iteration true',
                     '--intensification-percentage',
                     config.get('SMAC', 'intensification_percentage'),
@@ -112,8 +113,8 @@ def build_smac_call(config, options, optimizer_dir):
     if config.getboolean('SMAC', 'deterministic'):
         call = " ".join([call, '--deterministic true'])
 
-    if config.getboolean('SMAC', 'adaptiveCapping') and \
-            config.get('SMAC', 'runObj') == "RUNTIME":
+    if config.getboolean('SMAC', 'adaptive_capping') and \
+            config.get('SMAC', 'run_obj') == "RUNTIME":
         call = " ".join([call, '--adaptiveCapping true'])
     
     if config.getboolean('SMAC', 'rf_full_tree_bootstrap'):
@@ -142,7 +143,7 @@ def restore(config, optimizer_dir, **kwargs):
     # Run SMAC in a manner that it restores the files but then exits
     fh = open(optimizer_dir + "smac_restart.out", "w")
     smac_cmd = re.sub('python ' + os.path.dirname(os.path.realpath(__file__)) +
-                      "/" + config.get('SMAC', 'algoExec'), 'pwd',
+                      "/" + config.get('SMAC', 'algo_exec'), 'pwd',
                       kwargs['cmd'])
     smac_cmd = re.sub('--outputDirectory ' + optimizer_dir, '--outputDirectory '
                       + optimizer_dir + "restart_rungroups", smac_cmd)
@@ -224,12 +225,12 @@ def main(config, options, experiment_dir, **kwargs):
         
         # Copy the smac search space and create the instance information
         fh = open(os.path.join(optimizer_dir, 'train.txt'), "w")
-        for i in range(config.getint('HPOLIB', 'numberCV')):
+        for i in range(config.getint('HPOLIB', 'number_cv_folds')):
             fh.write(str(i) + "\n")
         fh.close()
         
         fh = open(os.path.join(optimizer_dir, 'test.txt'), "w")
-        for i in range(config.getint('HPOLIB', 'numberCV')):
+        for i in range(config.getint('HPOLIB', 'number_cv_folds')):
             fh.write(str(i) + "\n")
         fh.close()
         

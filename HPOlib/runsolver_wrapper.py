@@ -141,7 +141,10 @@ def read_run_instance_output(run_instance_output):
             result_array = [value.strip(",") for value in result_array]
             break
 
-    if not result_string:
+    # If we do not find a result string, return the last three lines of the
+    # run_instance output
+    # TODO: there must be some better way to tell the user what happend
+    if not result_string and len(run_instance_content) >= 3:
         result_string = "".join(run_instance_content[-3:])
 
     return result_array, result_string
@@ -214,7 +217,8 @@ def make_command(cfg, fold, param_string, run_instance_output):
     cpu_limit = cfg.getint('HPOLIB', 'cpu_limit')
     fn_filename = get_function_filename(cfg)
     python_cmd = cfg.get("HPOLIB", "leading_algo_info") + " python " + fn_filename
-    python_cmd += " --fold %d --folds %d --params %s" % (fold, cfg.getint("HPOLIB", "numberCV"), param_string)
+    python_cmd += " --fold %d --folds %d --params %s" % (fold, cfg.getint(
+        "HPOLIB", "number_cv_folds"), param_string)
     # Do not write the actual task in quotes because runsolver will not work
     # then; also we need use-pty and timestamp so that the "solver" output
     # is flushed to the output directory

@@ -68,7 +68,7 @@ def build_random_call(config, options, optimizer_dir):
     call = "python " + os.path.dirname(os.path.realpath(__file__)) + \
            "/tpecall.py"
     call = ' '.join([call, '-p', config.get('TPE', 'space'),
-                     "-m", config.get('TPE', 'numberEvals'),
+                     "-m", config.get('TPE', 'number_evals'),
                      "-s", str(options.seed),
                      "--cwd", optimizer_dir, "--random"])
     if options.restore:
@@ -93,7 +93,7 @@ def restore(config, optimizer_dir, **kwargs):
         # Assumes that all states no valid state is marked crashed
         if trial['state'] == 2:
             complete_runs += 1
-    restored_runs = complete_runs * config.getint('HPOLIB', 'numberCV')
+    restored_runs = complete_runs * config.getint('HPOLIB', 'number_cv_folds')
     return restored_runs
 
 

@@ -200,7 +200,7 @@ def main():
             os.remove(os.path.join(optimizer_dir_in_experiment, optimizer + ".pkl.lock"))
         except OSError:
             pass
-    folds = config.getint('HPOLIB', 'numberCV')
+    folds = config.getint('HPOLIB', 'number_cv_folds')
     trials = Experiment.Experiment(optimizer_dir_in_experiment, optimizer, folds=folds,
                                    max_wallclock_time=config.get('HPOLIB',
                                                                  'cpu_limit'),

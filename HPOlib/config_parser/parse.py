@@ -44,9 +44,9 @@ def parse_config(config_files, allow_no_value=True, optimizer_version="",
     # --------------------------------------------------------------------------
     # Check critical values
     # --------------------------------------------------------------------------
-    if not config.has_option('HPOLIB', 'numberOfJobs') or \
-            config.get('HPOLIB', 'numberOfJobs') == '':
-        raise Exception('numberOfJobs not specified in .cfg')
+    if not config.has_option('HPOLIB', 'number_of_jobs') or \
+            config.get('HPOLIB', 'number_of_jobs') == '':
+        raise Exception('number_of_jobs not specified in .cfg')
     if not config.has_option('HPOLIB', 'result_on_terminate') or \
             config.get('HPOLIB', 'result_on_terminate') == '':
         raise Exception('No result_on_terminate specified in .cfg')

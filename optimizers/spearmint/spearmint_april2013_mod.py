@@ -40,11 +40,6 @@ version_info = ("# %76s #\n" %
 
 def check_dependencies():
     try:
-        import networkx
-    except ImportError:
-        raise ImportError("Networkx cannot be imported. Are you sure it's "
-                          "installed?")
-    try:
         import google.protobuf
     except ImportError:
         raise ImportError("Google protobuf cannot be imported. Are you sure "
@@ -66,7 +61,7 @@ def build_spearmint_call(config, options, optimizer_dir):
     call = 'python ' + os.path.join(config.get('SPEARMINT', 'path_to_optimizer'), 'spearmint_sync.py')
     call = ' '.join([call, optimizer_dir,
                     '--config', config.get('SPEARMINT', 'config'),
-                    '--max-concurrent', config.get('HPOLIB', 'numberOfConcurrentJobs'),
+                    '--max-concurrent', config.get('HPOLIB', 'number_of_concurrent_jobs'),
                     '--max-finished-jobs', config.get('SPEARMINT', 'max_finished_jobs'),
                     '--polling-time', config.get('SPEARMINT', 'spearmint_polling_time'),
                     '--grid-size', config.get('SPEARMINT', 'grid_size'),
@@ -99,7 +94,7 @@ def restore(config, optimizer_dir, **kwargs):
     exp_grid = cPickle.load(fh)
     fh.close()
     complete_runs = np.sum(exp_grid['status'] == 3)
-    restored_runs = complete_runs * config.getint('HPOLIB', 'numberCV')
+    restored_runs = complete_runs * config.getint('HPOLIB', 'number_cv_folds')
     try:
         os.remove(os.path.join(optimizer_dir, "expt-grid.pkl.lock"))
     except OSError:

@@ -218,7 +218,7 @@ def main(*args, **kwargs):
     cfg = load_experiment_config_file()
 
     # Load number of folds
-    folds = cfg.getint('HPOLIB', 'numberCV')
+    folds = cfg.getint('HPOLIB', 'number_cv_folds')
 
     params = flatten_parameter_dict(params)
 

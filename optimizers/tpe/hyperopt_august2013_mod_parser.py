@@ -33,8 +33,8 @@ def manipulate_config(config):
     if not config.has_option('TPE', 'space'):
         raise Exception("TPE:space not specified in .cfg")
 
-    if not config.has_option('TPE', 'numberEvals'):
-        config.set('TPE', 'numberEvals', config.get('HPOLIB', 'numberOfJobs'))
+    if not config.has_option('TPE', 'number_evals'):
+        config.set('TPE', 'number_evals', config.get('HPOLIB', 'number_of_jobs'))
 
     path_to_optimizer = config.get('TPE', 'path_to_optimizer')
     if not os.path.isabs(path_to_optimizer):

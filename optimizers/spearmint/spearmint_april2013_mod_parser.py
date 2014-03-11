@@ -33,7 +33,7 @@ def manipulate_config(config):
     # GENERAL
     if not config.has_option('SPEARMINT', 'max_finished_jobs'):
         config.set('SPEARMINT', 'max_finished_jobs',
-                   config.get('HPOLIB', 'numberOfJobs'))
+                   config.get('HPOLIB', 'number_of_jobs'))
 
     path_to_optimizer = config.get('SPEARMINT', 'path_to_optimizer')
     if not os.path.isabs(path_to_optimizer):

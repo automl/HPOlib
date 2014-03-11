@@ -26,19 +26,19 @@ logger = logging.getLogger("HPOlib.optimizers.smac.smac_2_06_01-dev_parser")
 
 
 def manipulate_config(config):
-    if not config.has_option('SMAC', 'cutoffTime'):
-        config.set('SMAC', 'cutoffTime',
+    if not config.has_option('SMAC', 'cutoff_time'):
+        config.set('SMAC', 'cutoff_time',
                    str(config.getint('HPOLIB', 'runsolver_time_limit') + 100))
-    if not config.has_option('SMAC', 'algoExec'):
-        config.set('SMAC', 'algoExec',
+    if not config.has_option('SMAC', 'algo_exec'):
+        config.set('SMAC', 'algo_exec',
                    config.get('HPOLIB', 'run_instance'))
-    if not config.has_option('SMAC', 'totalNumRunsLimit'):
-        config.set('SMAC', 'totalNumRunsLimit',
-                   str(config.getint('HPOLIB', 'numberOfJobs') *
-                       config.getint('HPOLIB', 'numberCV')))
-    if not config.has_option('SMAC', 'numConcurrentAlgoExecs'):
-        config.set('SMAC', 'numConcurrentAlgoExecs',
-                   config.get('HPOLIB', 'numberOfConcurrentJobs'))
+    if not config.has_option('SMAC', 'total_num_runs_limit'):
+        config.set('SMAC', 'total_num_runs_limit',
+                   str(config.getint('HPOLIB', 'number_of_jobs') *
+                       config.getint('HPOLIB', 'number_cv_folds')))
+    if not config.has_option('SMAC', 'num_concurrent_algo_execs'):
+        config.set('SMAC', 'num_concurrent_algo_execs',
+                   config.get('HPOLIB', 'number_of_concurrent_jobs'))
 
     path_to_optimizer = config.get('SMAC', 'path_to_optimizer')
     if not os.path.isabs(path_to_optimizer):
