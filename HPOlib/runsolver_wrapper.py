@@ -141,6 +141,9 @@ def read_run_instance_output(run_instance_output):
             result_array = [value.strip(",") for value in result_array]
             break
 
+    if not result_string:
+        result_string = "".join(run_instance_content[-3:])
+
     return result_array, result_string
 
 
@@ -234,7 +237,13 @@ def parse_output_files(cfg, run_instance_output, runsolver_output_file):
     cpu_time, measured_wallclock_time, error = read_runsolver_output(
         runsolver_output_file)
     result_array, result_string = read_run_instance_output(run_instance_output)
-    instance_wallclock_time = float(result_array[4])
+    if not result_array:
+        logger.critical("We could not find anything matching our regexp. Last lines of your output:\n%s"
+                        % result_string)
+        instance_wallclock_time = cfg.getfloat("HPOLIB", "runsolver_time_limit")
+        result_array = [None]*7
+    else:
+        instance_wallclock_time = float(result_array[4])
 
     if cfg.getboolean("HPOLIB", "use_own_time_measurement") is True:
         wallclock_time = measured_wallclock_time
@@ -312,7 +321,7 @@ def main():
     # Side-effect: removes all additional information like log and applies
     # transformations to the parameters
     params = get_parameters()
-    param_string = " ".join([key + " " + params[key] for key in params])
+    param_string = " ".join([key + " " + str(params[key]) for key in params])
 
     time_string = wrappingUtil.get_time_string()
     run_instance_output = os.path.join(os.getcwd(),
@@ -328,7 +337,7 @@ def main():
     trial_index = get_trial_index(experiment, fold, params)
     experiment.set_one_fold_running(trial_index, fold)
     del experiment  # release Experiment lock
-
+    logger.debug("Calling: %s" % cmd)
     process = subprocess.Popen(cmd, stdout=fh,
                                stderr=fh, shell=True, executable="/bin/bash")
 
@@ -347,6 +356,7 @@ def main():
         result = cfg.getfloat("HPOLIB", "result_on_terminate")
         experiment.set_one_fold_crashed(trial_index, fold, result,
                                         wallclock_time)
+        status = "SAT"
     else:
         # TODO: We need a global stopping mechanism
         pass
