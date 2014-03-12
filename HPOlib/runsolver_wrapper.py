@@ -193,27 +193,9 @@ def parse_command_line():
     return fold, seed
 
 
-def get_function_filename(cfg):
-    exp_dir = os.path.dirname(os.getcwd())
-
-    # Check whether function path is absolute
-    if os.path.isabs(cfg.get("HPOLIB", "function")):
-        fn_path = cfg.get("HPOLIB", "function")
-    else:
-        # We hope to find function in the experiment directory
-        fn_path = os.path.join(exp_dir, cfg.get("HPOLIB", "function"))
-
-    if not os.path.exists(fn_path):
-        logger.critical("%s is not absolute nor in %s. Function cannot be "
-                        "found", cfg.get("HPOLIB", "function"), exp_dir)
-        sys.exit(1)
-
-    return fn_path
-
-
 def make_command(cfg, fold, param_string, run_instance_output):
-    fn_filename = get_function_filename(cfg)
-    python_cmd = cfg.get("HPOLIB", "leading_algo_info") + " python " + fn_filename
+    fn = cfg.get("HPOLIB", "function")
+    python_cmd = cfg.get("HPOLIB", "leading_algo_info") + " " + fn
     python_cmd += " --fold %d --folds %d --params %s" % (fold, cfg.getint(
         "HPOLIB", "number_cv_folds"), param_string)
     # Do not write the actual task in quotes because runsolver will not work
@@ -246,9 +228,12 @@ def parse_output_files(cfg, run_instance_output, runsolver_output_file):
         runsolver_output_file)
     result_array, result_string = read_run_instance_output(run_instance_output)
     if not result_array:
-        logger.critical("We could not find anything matching our regexp. Last lines of your output:\n%s"
+        logger.critical("We could not find anything matching our regexp. "
+                        "Setting the target algorithm runtime to the time "
+                        "measured by the runsolver. Last lines of your "
+                        "output:\n%s"
                         % result_string)
-        instance_wallclock_time = cfg.getfloat("HPOLIB", "runsolver_time_limit")
+        instance_wallclock_time = measured_wallclock_time
         result_array = [None]*7
     else:
         instance_wallclock_time = float(result_array[4])

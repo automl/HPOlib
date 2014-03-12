@@ -81,21 +81,6 @@ def _check_config(experiment_dir):
         raise Exception("There is no config.cfg in %s" % experiment_dir)
 
 
-def _check_function(experiment_dir):
-    # Check whether path function exists
-    config_file = os.path.join(experiment_dir, "config.cfg")
-    config = get_configuration(experiment_dir, None, None)
-
-    path = config.get("HPOLIB", "function")
-
-    if not os.path.isabs(path):
-        path = os.path.join(experiment_dir, path)
-
-    if not os.path.exists(path):
-        raise ValueError("Function: %s does not exist" % path)
-    return
-
-
 def check_optimizer(optimizer):
     path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "optimizers", optimizer)
     if os.path.isdir(path):
@@ -149,11 +134,4 @@ def check_first(experiment_dir):
     logger.info("..passed")
     logger.info("Check python_modules..")
     _check_modules()
-    logger.info("..passed")
-
-
-def check_second(experiment_dir):
-    """ Do remaining tests """
-    logger.info("Check algorithm..",)
-    _check_function(experiment_dir)
     logger.info("..passed")

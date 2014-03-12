@@ -191,9 +191,6 @@ def main():
         config.set("HPOLIB", "is_not_original_config_file", "True")
         wrapping_util.save_config_to_file(f, config, write_nones=True)
 
-    # _check_function
-    check_before_start.check_second(experiment_dir)
-
     # initialize/reload pickle file
     if args.restore:
         try:
@@ -262,6 +259,15 @@ def main():
         logger.info(cmd)
         return 0
     else:
+        # call target_function.setup()
+        fn_setup = config.get("HPOLIB", "function_setup")
+        if fn_setup:
+            try:
+                output = subprocess.check_output(fn_setup, stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError as e:
+                logger.critical(e.output)
+                sys.exit(1)
+
         logger.info(cmd)
         output_file = os.path.join(optimizer_dir_in_experiment, optimizer + ".out")
         fh = open(output_file, "a")
@@ -376,6 +382,15 @@ def main():
 
         logger.info("-----------------------END--------------------------------------")
         fh.close()
+
+        # call target_function.teardown()
+        fn_teardown = config.get("HPOLIB", "function_teardown")
+        if fn_teardown:
+            try:
+                output = subprocess.check_output(fn_teardown, stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError as e:
+                logger.critical(e.output)
+                sys.exit(1)
 
         trials = Experiment.Experiment(optimizer_dir_in_experiment, optimizer)
         trials.endtime.append(time.time())
