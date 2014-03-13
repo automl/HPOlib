@@ -21,10 +21,8 @@
 from argparse import ArgumentParser
 import cPickle
 import sys
-from distutils.version import StrictVersion
 
 import numpy
-from numpy.ma import asarray
 import scipy
 from scipy import stats
 
@@ -124,7 +122,7 @@ def main(pkl_list, name_list):
     # TODO: replace by itertools
     for idx, k in enumerate(keys):
         if len(keys) > 1:
-            for jdx, j in enumerate(keys[idx+1:]):
+            for j in keys[idx+1:]:
                 t_true, p_true = stats.ttest_ind(best_dict[k], best_dict[j])
                 rounded_t_true, rounded_p_true = stats.ttest_ind(numpy.round(best_dict[k], 3),
                                                                  numpy.round(best_dict[j], 3))
@@ -136,7 +134,7 @@ def main(pkl_list, name_list):
                 sys.stdout.write("Rounded:                ")
                 sys.stdout.write("  T: %10.5e, p-value: %10.5e (%5.3f%%)\n" %
                                 (rounded_t_true, rounded_p_true, rounded_p_true*100))
-                if StrictVersion(scipy.__version__) >= StrictVersion('0.11.0'):
+                if tuple(map(int, (scipy.__version__.split(".")))) >= (0, 11, 0):
                     # print scipy.__version__ >= '0.11.0'
                     t_false, p_false = stats.ttest_ind(best_dict[k], best_dict[j], equal_var=False)
                     rounded_t_false, rounded_p_false = stats.ttest_ind(numpy.round(best_dict[k], 3),
@@ -153,21 +151,15 @@ def main(pkl_list, name_list):
 
     sys.stdout.write("Best Value-----------------------------------------------------------\n")
     for k in keys:
-        std_best = numpy.std(best_dict[k])
-        min_best = numpy.min(best_dict[k])
-        max_best = numpy.max(best_dict[k])
-        mean_best = numpy.mean(best_dict[k])
         sys.stdout.write("%10s: %10.5f (min: %10.5f, max: %10.5f, std: %5.3f)\n" %
-                        (k, float(mean_best), float(min_best), max_best, float(std_best)))
+                        (k, float(numpy.mean(best_dict[k])), float(numpy.min(best_dict[k])),
+                         numpy.max(best_dict[k]), float(numpy.std(best_dict[k]))))
 
     sys.stdout.write("Needed Trials--------------------------------------------------------\n")
     for k in keys:
-        std_idx = numpy.std(idx_dict[k])
-        mean_idx = numpy.mean(idx_dict[k])
-        min_idx = numpy.min(idx_dict[k])
-        max_idx = numpy.max(idx_dict[k])
         sys.stdout.write("%10s: %10.5f (min: %10.5f, max: %10.5f, std: %5.3f)\n" %
-                        (k, float(mean_idx), float(min_idx), max_idx, float(std_idx)))
+                        (k, float(numpy.mean(idx_dict[k])), float(numpy.min(idx_dict[k])),
+                         numpy.max(idx_dict[k]), float(numpy.std(idx_dict[k]))))
 
     sys.stdout.write("------------------------------------------------------------------------\n")
 
