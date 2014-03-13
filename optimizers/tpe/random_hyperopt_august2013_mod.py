@@ -38,27 +38,32 @@ version_info = ("# %76s #" % "https://github.com/hyperopt/hyperopt/tree/486aebec
 def check_dependencies():
     try:
         import nose
+        logger.debug("\tNose: %d\n" % str(nose.__version__))
     except ImportError:
         raise ImportError("Nose cannot be imported. Are you sure it's "
                           "installed?")
     try:
         import networkx
+        logger.debug("\tnetworkx: %d\n" % str(networkx.__version__))
     except ImportError:
         raise ImportError("Networkx cannot be imported. Are you sure it's "
                           "installed?")
     try:
         import pymongo
+        logger.debug("\tpymongo: %d\n" % str(pymongo.__version__))
         from bson.objectid import ObjectId
     except ImportError:
         raise ImportError("Pymongo cannot be imported. Are you sure it's"
                           " installed?")
     try:
         import numpy
+        logger.debug("\tnumpy: %d" % str(numpy.__version__))
     except ImportError:
         raise ImportError("Numpy cannot be imported. Are you sure that it's"
                           " installed?")
     try:
         import scipy
+        logger.debug("\tscipy: %d" % str(scipy.__version__))
     except ImportError:
         raise ImportError("Scipy cannot be imported. Are you sure that it's"
                           " installed?")
