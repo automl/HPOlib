@@ -115,27 +115,13 @@ def _mann_whitney_u(x, y=None):
 
 
 def main(pkl_list, name_list):
-
-    best_dict = dict()
-    idx_dict = dict()
-    keys = list()
-
-    for i in range(len(name_list)):
-        keys.append(name_list[i][0])
-        best_dict[name_list[i][0]] = list()
-        idx_dict[name_list[i][0]] = list()
-        for pkl in pkl_list[i]:
-            fh = open(pkl)
-            trial = cPickle.load(fh)
-            fh.close()
-            best, idx = plot_util.get_best_value_and_index(trial, args.cut)
-            best_dict[name_list[i][0]].append(best)
-            idx_dict[name_list[i][0]].append(idx)
+    best_dict, idx_dict, keys = plot_util.read_pickles(name_list, pkl_list)
 
     for k in keys:
         sys.stdout.write("%10s: %s experiment(s)\n" % (k, len(best_dict[k])))
 
     sys.stdout.write("Unpaired t-tests-----------------------------------------------------\n")
+    # TODO: replace by itertools
     for idx, k in enumerate(keys):
         if len(keys) > 1:
             for jdx, j in enumerate(keys[idx+1:]):
@@ -143,26 +129,27 @@ def main(pkl_list, name_list):
                 rounded_t_true, rounded_p_true = stats.ttest_ind(numpy.round(best_dict[k], 3),
                                                                  numpy.round(best_dict[j], 3))
 
+                sys.stdout.write("%10s vs %10s\n" % (k, j))
                 sys.stdout.write("Standard independent 2 sample test, equal population variance\n")
-                sys.stdout.write("%10s vs %10s" % (k, j))
-                sys.stdout.write(": T: %10.5e, p-value: %10.5e (%5.3f%%) \n" % 
+                sys.stdout.write(" "*24 + "  T: %10.5e, p-value: %10.5e (%5.3f%%) \n" %
                                 (t_true, p_true, p_true*100))
                 sys.stdout.write("Rounded:                ")
-                sys.stdout.write(": T: %10.5e, p-value: %10.5e (%5.3f%%)\n" % 
+                sys.stdout.write("  T: %10.5e, p-value: %10.5e (%5.3f%%)\n" %
                                 (rounded_t_true, rounded_p_true, rounded_p_true*100))
                 if StrictVersion(scipy.__version__) >= StrictVersion('0.11.0'):
-                    print scipy.__version__ >= '0.11.0'
+                    # print scipy.__version__ >= '0.11.0'
                     t_false, p_false = stats.ttest_ind(best_dict[k], best_dict[j], equal_var=False)
                     rounded_t_false, rounded_p_false = stats.ttest_ind(numpy.round(best_dict[k], 3),
                                                                        numpy.round(best_dict[j], 3),
                                                                        equal_var=False)
                     sys.stdout.write("Welch's t-test, no equal population variance\n")
-                    sys.stdout.write("%10s vs %10s" % (k, j))
+                    sys.stdout.write(" "*24)
                     sys.stdout.write(": T: %10.5e, p-value: %10.5e (%5.3f%%)\n" %
                                     (t_false, p_false, p_false*100))
                     sys.stdout.write("Rounded:                ")
                     sys.stdout.write(": T: %10.5e, p-value: %10.5e (%5.3f%%)\n" %
                                     (rounded_t_false, rounded_p_false, rounded_p_false*100))
+                sys.stdout.write("\n")
 
     sys.stdout.write("Best Value-----------------------------------------------------------\n")
     for k in keys:

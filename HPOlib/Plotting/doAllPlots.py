@@ -117,6 +117,23 @@ def _box_whisker(pkl_list, name_list, save):
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
+def _generate_tex_table(pkl_list, name_list, save):
+    plotting_dir = os.path.dirname(os.path.realpath(__file__))
+    cur_dir = os.getcwd()
+    # noinspection PyBroadException
+    try:
+        os.chdir(plotting_dir)
+        import generateTexTable
+        table = generateTexTable.main(pkl_list, name_list)
+        with open(save, "w") as fh:
+            fh.write(table)
+        os.chdir(cur_dir)
+        sys.stdout.write("passed\n")
+    except Exception, e:
+        sys.stderr.write(format_traceback(sys.exc_info()))
+        sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
+
+
 def _statistics(pkl_list, name_list, save=""):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
@@ -171,6 +188,9 @@ def main():
 
     pkl_list, name_list = plot_util.get_pkl_and_name_list(unknown)
 
+    if len(pkl_list) == 0:
+        raise ValueError("You must at least provide one experiment pickle.")
+
     time_str = int(time.time() % 1000)
 
     if not os.path.isdir(save_dir) and save_dir is not "":
@@ -209,6 +229,15 @@ def main():
             tmp_save = save_dir
         sys.stdout.write("statistics.py ... %s ..." % tmp_save)
         _statistics(pkl_list=pkl_list, name_list=name_list, save=tmp_save)
+
+        # LaTeX table
+        if save_dir is not "":
+            tmp_save = os.path.join(save_dir, "table_%s.tex" % time_str)
+        else:
+            tmp_save = save_dir
+        sys.stdout.write("generateTexTable.py ... %s ..." % tmp_save)
+        _generate_tex_table(pkl_list, name_list, tmp_save)
+
 
     # We can always plot this
     # OptimizerOverhead

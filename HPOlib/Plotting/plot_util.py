@@ -16,12 +16,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import cPickle
 import os
 import numpy as np
 import sys
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
+
+
+def read_pickles(name_list, pkl_list, cut=sys.maxint):
+    best_dict = dict()
+    idx_dict = dict()
+    keys = list()
+    for i in range(len(name_list)):
+        keys.append(name_list[i][0])
+        best_dict[name_list[i][0]] = list()
+        idx_dict[name_list[i][0]] = list()
+        for pkl in pkl_list[i]:
+            fh = open(pkl)
+            trial = cPickle.load(fh)
+            fh.close()
+            best, idx = get_best_value_and_index(trial, cut)
+            best_dict[name_list[i][0]].append(best)
+            idx_dict[name_list[i][0]].append(idx)
+    return best_dict, idx_dict, keys
 
 
 def get_pkl_and_name_list(argument_list):
