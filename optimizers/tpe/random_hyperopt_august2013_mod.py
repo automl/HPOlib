@@ -50,7 +50,7 @@ def check_dependencies():
                           "installed?")
     try:
         import pymongo
-        logger.debug("\tpymongo: %s\n" % str(pymongo.__version__))
+        logger.debug("\tpymongo: %s\n" % str(pymongo.version))
         from bson.objectid import ObjectId
     except ImportError:
         raise ImportError("Pymongo cannot be imported. Are you sure it's"
