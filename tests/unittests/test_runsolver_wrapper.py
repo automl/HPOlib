@@ -89,7 +89,8 @@ class RunsolverWrapperTest(unittest.TestCase):
     def test_read_run_instance_output_no_result(self):
         result_array, result_string = runsolver_wrapper.\
             read_run_instance_output("run_instance_no_result.txt")
-        self.assertTrue(result_string is None)
+        # We expect some useful output for the user
+        self.assertFalse(result_string is None)
         self.assertTrue(result_array is None)
 
     def test_read_run_instance_output_result(self):
