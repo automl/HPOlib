@@ -134,10 +134,10 @@ def fill_trajectories(trace_list, times_list):
     counter = [1 for i in range(number_exp)]
     finish = False
 
-    # We need to insert the max values
+    # We need to insert the max values in the beginning and the min values in the end
     for i in range(number_exp):
         trace_list[i].insert(0, max_value)
-        trace_list[i].append(0)
+        trace_list[i].append(np.min(trace_list[i]))
         times_list[i].insert(0, 0)
         times_list[i].append(sys.maxint)
 
