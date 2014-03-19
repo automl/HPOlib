@@ -80,8 +80,12 @@ def plot_contour(trial_list, name_list, save="", title=""):
         x = np.zeros(len(trial_list[opt]["trials"]))
         y = np.zeros(len(trial_list[opt]["trials"]))
         for i in range(len(x)):
-            x[i] = float(trial_list[opt]["trials"][i]["params"]["-x"].strip("'"))
-            y[i] = float(trial_list[opt]["trials"][i]["params"]["-y"].strip("'"))
+            if '-x' in trial_list[opt]["trials"][i]["params"]:
+                x[i] = float(trial_list[opt]["trials"][i]["params"]["-x"].strip("'"))
+                y[i] = float(trial_list[opt]["trials"][i]["params"]["-y"].strip("'"))
+            else:
+                x[i] = float(trial_list[opt]["trials"][i]["params"]["x"].strip("'"))
+                y[i] = float(trial_list[opt]["trials"][i]["params"]["y"].strip("'"))
         matplotlib.pyplot.scatter(x[0:10], y[0:10], marker=m,
                                   s=size, facecolors=c, linewidth=0.1)
         matplotlib.pyplot.scatter(x[10:-10], y[10:-10], marker=m,
