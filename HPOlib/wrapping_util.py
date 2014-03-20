@@ -22,6 +22,7 @@ import datetime
 import logging
 import imp
 import math
+import numpy as np
 import traceback
 import os
 from StringIO import StringIO
@@ -34,6 +35,20 @@ __contact__ = "automl.org"
 
 
 logger = logging.getLogger("HPOlib.wrapping_util")
+
+
+def nan_mean(arr):
+    # First: Sum all finite elements
+    arr = np.array(arr)
+    res = sum([ele for ele in arr if np.isfinite(ele)])
+    num_ele = (arr.size - np.count_nonzero(~np.isfinite(arr)))
+    if num_ele == 0:
+        return np.nan
+    if num_ele != 0 and res == 0:
+        return 0
+    # Second: divide with number of finite elements
+    res /= num_ele
+    return res
 
 
 def get_time_string():

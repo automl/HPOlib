@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import ConfigParser
+import numpy as np
 import os
 import shutil
 import sys
@@ -63,7 +64,7 @@ class WrappingTestUtil(unittest.TestCase):
         config.set("HPOLIB", "total_time_limit", None)
         string_stream = StringIO.StringIO()
         wrapping_util.save_config_to_file(string_stream, config,
-                                       write_nones=False)
+                                          write_nones=False)
         file_content = string_stream.getvalue()
         asserted_file_content = "[HPOLIB]\n" \
                                 "number_of_jobs = 1\n" \
@@ -85,3 +86,16 @@ class WrappingTestUtil(unittest.TestCase):
         config_args = wrapping_util.parse_config_values_from_unknown_arguments(
             unknown, config)
         self.assertEqual(vars(config_args)['HPOLIB:number_of_jobs'], '2')
+
+    def test_nan_mean(self):
+        self.assertEqual(wrapping_util.nan_mean(np.array([1, 5])), 3)
+        self.assertEqual(wrapping_util.nan_mean((1, 5)), 3)
+        # self.assertEqual(wrapping_util.nan_mean("abc"), 3)
+        self.assertRaises(TypeError, wrapping_util.nan_mean, ("abc"))
+        self.assertEqual(wrapping_util.nan_mean(np.array([1, 5, np.nan])), 3)
+        self.assertEqual(wrapping_util.nan_mean(np.array([1, 5, np.inf])), 3)
+        self.assertTrue(np.isnan(wrapping_util.nan_mean(np.array([np.inf]))))
+        self.assertEqual(wrapping_util.nan_mean(np.array([-1, 1])), 0)
+        self.assertTrue(np.isnan(wrapping_util.nan_mean(np.array([]))))
+
+unittest.main()

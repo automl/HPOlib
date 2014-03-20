@@ -20,6 +20,7 @@ import cPickle
 import logging
 import os
 import scipy
+from scipy.stats.distributions import wrapcauchy_gen
 import sys
 import tempfile
 
@@ -180,8 +181,7 @@ class Experiment:
             if np.isfinite(trial['result']):
                 tmp_res = trial['result']
             elif np.isfinite(trial['instance_results']).any():
-                tmp_res = np.nansum(trial['instance_results']) / \
-                    (trial['instance_results'].size - np.count_nonzero(~np.isfinite(trial['instance_results'])))
+                tmp_res = wrapping_util.nan_mean(trial['instance_results'])
                 # np.nanmean is not available in older numpy versions
                 # tmp_res = scipy.nanmean(trial['instance_results'])
             else:
