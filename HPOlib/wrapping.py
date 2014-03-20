@@ -364,11 +364,14 @@ def main():
                         tmp_current_best = trials.get_arg_best()
                         if tmp_current_best <= i:
                             current_best = tmp_current_best
-                        res = trials.trials[current_best]["result"] if \
-                            np.isfinite(trials.trials[current_best]["result"]) \
-                            else np.nansum(trials.trials[current_best]["instance_results"]) / \
-                            (trials.trials[current_best]["instance_results"].size -
-                             np.count_nonzero(np.isfinite(trials.trials[current_best]["instance_results"])))
+                        # Calculate current best
+                        # Check if last result is finite, if not calc nanmean over all instances
+                        dct_helper = trials.trials[current_best]
+                        res = dct_helper["result"] if \
+                            np.isfinite(dct_helper["result"]) \
+                            else sum([ele for ele in dct_helper["instance_results"] if np.isfinite(ele)]) / \
+                            (dct_helper["instance_results"].size -
+                             np.count_nonzero(~np.isfinite(dct_helper["instance_results"])))
                             #np.nanmean(trials.trials[current_best]["instance_results"])
                             # nanmean does not work for all numpy version
                         logger.info("Result %10f, current best %10f",
