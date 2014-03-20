@@ -366,8 +366,11 @@ def main():
                             current_best = tmp_current_best
                         res = trials.trials[current_best]["result"] if \
                             np.isfinite(trials.trials[current_best]["result"]) \
-                            else np.nanmean(trials.trials[current_best][
-                                "instance_results"])
+                            else np.nansum(trials.trials[current_best]["instance_results"]) / \
+                            (trials.trials[current_best]["instance_results"].size -
+                             np.count_nonzero(np.isfinite(trials.trials[current_best]["instance_results"])))
+                            #np.nanmean(trials.trials[current_best]["instance_results"])
+                            # nanmean does not work for all numpy version
                         logger.info("Result %10f, current best %10f",
                                     last_result, res)
                         printed_end_configuration.append(i)
