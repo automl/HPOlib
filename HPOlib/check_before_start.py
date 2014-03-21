@@ -75,7 +75,7 @@ def _check_config(experiment_dir):
     # check whether config file exists
     config_file = os.path.join(experiment_dir, "config.cfg")
     if not os.path.exists(config_file):
-        logging.warn("There is no config.cfg in %s, all options need to be provided by CLI arguments" % experiment_dir)
+        logger.warn("There is no config.cfg in %s, all options need to be provided by CLI arguments" % experiment_dir)
 
 
 def check_optimizer(optimizer):
