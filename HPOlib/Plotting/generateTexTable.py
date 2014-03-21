@@ -37,8 +37,9 @@ __contact__ = "automl.org"
 
 
 template_string = \
-"""\\documentclass{article} % For LaTeX2
+"""\\documentclass[landscape]{article} % For LaTeX2
 
+\\usepackage[landscape]{geometry}
 \\usepackage{multirow}           % import command \multicolmun
 \\usepackage{tabularx}           % Convenient table formatting
 \\usepackage{booktabs}           % provides \toprule, \midrule and \bottomrule
@@ -46,7 +47,7 @@ template_string = \
 \\begin{document}
 
 \\begin{table}[t]
-\\begin{tabularx}{\\textwidth}{lr|Xr|Xr|Xr}
+\\begin{tabularx}{\\textwidth}{lr{%- for name in result_values -%}|Xr{%- endfor -%}}
 \\toprule
 \multicolumn{2}{l}{}
 {%- for name in result_values -%}
@@ -62,7 +63,7 @@ template_string = \
 {{ experiment }} & {{ evals }}
 {%- for name in result_values -%}
 {%- set results = result_values[name] -%}
-{{ ' & ' }}{{ results['mean'] }}$\\pm${{ results['std'] }} & {{ results['min'] }}
+{{ ' & ' }}{{ results['mean']|round(3, 'floor') }}$\\pm${{ results['std']|round(3, 'floor')}} & {{ results['min']|round(3, 'floor') }}
 {%- endfor %} \\\\
 \\bottomrule
 \\end{tabularx}
