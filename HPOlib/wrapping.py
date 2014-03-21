@@ -378,6 +378,10 @@ def main():
                 if proc.poll() is not None:       # the end condition for the
                     minimal_runs_to_go -= 1       # do-while loop
 
+            elif args.verbose or args.silent:
+                if proc.poll() is not None:
+                    minimal_runs_to_go -= 1
+
         ret = proc.returncode
 
         logger.info("-----------------------END--------------------------------------")
