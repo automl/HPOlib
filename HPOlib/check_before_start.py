@@ -62,7 +62,7 @@ def _check_modules():
 
     try:
         import theano
-        logger.debug("\tTheano: %d" % str(theano.__version__))
+        logger.debug("\tTheano: %s" % str(theano.__version__))
     except ImportError:
         logger.warning("Theano not found. You might need this to run some "
                        "more complex benchmarks!")
@@ -75,7 +75,7 @@ def _check_config(experiment_dir):
     # check whether config file exists
     config_file = os.path.join(experiment_dir, "config.cfg")
     if not os.path.exists(config_file):
-        raise Exception("There is no config.cfg in %s" % experiment_dir)
+        logging.warn("There is no config.cfg in %s, all options need to be provided by CLI arguments" % experiment_dir)
 
 
 def check_optimizer(optimizer):

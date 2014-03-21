@@ -37,10 +37,14 @@ def parse_config(config_files, allow_no_value=True, optimizer_version="",
                                 os.getcwd(), config_file))
 
     config = ConfigParser.SafeConfigParser(allow_no_value=allow_no_value)
+
     config.read(config_files)
     if cli_values is not None:
         config.readfp(cli_values)
+    return  config
 
+
+def check_config(config):
     # --------------------------------------------------------------------------
     # Check critical values
     # --------------------------------------------------------------------------
@@ -53,5 +57,4 @@ def parse_config(config_files, allow_no_value=True, optimizer_version="",
     if not config.has_option('HPOLIB', 'function') or \
             config.get('HPOLIB', 'function') == '':
         raise Exception('No function specified in .cfg')
-
-    return config
+    return True

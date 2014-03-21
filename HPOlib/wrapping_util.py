@@ -156,16 +156,18 @@ def get_configuration(experiment_dir, optimizer_version, unknown_arguments):
             sys.exit(1)
 
         optimizer_config_fn = os.path.splitext(optimizer_module_parser
-                                               .__file__)[0][
-                              :-7] + "Default.cfg"
+                                               .__file__)[0][:-7] + "Default.cfg"
         if not os.path.exists(optimizer_config_fn):
             logger.critical("No default config %s found", optimizer_config_fn)
             sys.exit(1)
         config_files.append(optimizer_config_fn)
 
-    config_files.append(os.path.join(experiment_dir, "config.cfg"))
-    # Is the config file really the right place to get the allowed keys for a
-    #  hyperparameter optimizer?
+    path_to_current_config = os.path.join(experiment_dir, "config.cfg")
+    if os.path.exists(path_to_current_config):
+        config_files.append(os.path.join(experiment_dir, "config.cfg"))
+    else:
+        logger.info("No config file found. Only considering CLI arguments.")
+    #TODO Is the config file really the right place to get the allowed keys for a hyperparameter optimizer?
     config = parse.parse_config(config_files, allow_no_value=True,
                                 optimizer_version=optimizer_version)
 
@@ -189,6 +191,9 @@ def get_configuration(experiment_dir, optimizer_version, unknown_arguments):
         fh.close()
     if optimizer_version != "" and optimizer_version is not None:
         config = optimizer_module_parser.manipulate_config(config)
+
+    # Check whether we have all necessary options
+    parse.check_config(config)
     return config
 
 

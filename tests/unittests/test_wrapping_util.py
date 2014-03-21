@@ -98,4 +98,5 @@ class WrappingTestUtil(unittest.TestCase):
         self.assertEqual(wrapping_util.nan_mean(np.array([-1, 1])), 0)
         self.assertTrue(np.isnan(wrapping_util.nan_mean(np.array([]))))
 
-unittest.main()
+if __name__ == "__main__":
+    unittest.main()
