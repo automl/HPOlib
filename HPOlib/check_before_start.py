@@ -23,20 +23,15 @@ import os
 import subprocess
 import sys
 
-from HPOlib.wrapping_util import get_configuration
-
-
 logger = logging.getLogger("HPOlib.check_before_start")
-
-
-"""This script checks whether all dependencies are installed"""
 
 
 def _check_runsolver():
     # check whether runsolver is in path
     process = subprocess.Popen("which runsolver", stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
-    stdoutdata, stderrdata = process.communicate()
+                               stderr=subprocess.PIPE, shell=True,
+                               executable="/bin/bash")
+    stdoutdata, _stderrdata = process.communicate()
 
     if stdoutdata is not None and "runsolver" in stdoutdata:
         pass
@@ -46,8 +41,9 @@ def _check_runsolver():
                         "Your $PATH is: " + os.environ['PATH'])
 
 
-# noinspection PyUnresolvedReferences
 def _check_modules():
+    """Checks whether all dependencies are installed"""
+
     try:
         import numpy
         if numpy.__version__ < "1.6.0":
@@ -66,6 +62,7 @@ def _check_modules():
 
     try:
         import theano
+        logger.debug("\tTheano: %s" % str(theano.__version__))
     except ImportError:
         logger.warning("Theano not found. You might need this to run some "
                        "more complex benchmarks!")
@@ -78,7 +75,7 @@ def _check_config(experiment_dir):
     # check whether config file exists
     config_file = os.path.join(experiment_dir, "config.cfg")
     if not os.path.exists(config_file):
-        raise Exception("There is no config.cfg in %s" % experiment_dir)
+        logging.warn("There is no config.cfg in %s, all options need to be provided by CLI arguments" % experiment_dir)
 
 
 def check_optimizer(optimizer):

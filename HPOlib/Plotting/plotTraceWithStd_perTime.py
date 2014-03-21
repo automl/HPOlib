@@ -35,8 +35,13 @@ __contact__ = "automl.org"
 
 def plot_optimization_trace(trial_list, name_list, times_list, optimum=0, title="",
                             log=True, save="", y_max=0, y_min=0, scale_std=1):
-    # markers = itertools.cycle(['o', 's', 'x', '^'])
-    colors = itertools.cycle(['b', 'g', 'r', 'k'])
+    markers = itertools.cycle(['o', 's', 'x'])
+    colors = itertools.cycle(['b', 'Navy', 'RoyalBlue',
+                              'g', 'DarkGreen', 'SpringGreen',
+                              'r', 'Maroon', 'LightCoral'])
+    colors_alt = itertools.cycle(['Navy', 'RoyalBlue',
+                                  'DarkGreen', 'SpringGreen',
+                                  'Maroon', 'LightCoral'])
     linestyles = itertools.cycle(['-'])
     size = 1
 
@@ -134,10 +139,10 @@ def fill_trajectories(trace_list, times_list):
     counter = [1 for i in range(number_exp)]
     finish = False
 
-    # We need to insert the max values
+    # We need to insert the max values in the beginning and the min values in the end
     for i in range(number_exp):
         trace_list[i].insert(0, max_value)
-        trace_list[i].append(0)
+        trace_list[i].append(np.min(trace_list[i]))
         times_list[i].insert(0, 0)
         times_list[i].append(sys.maxint)
 
