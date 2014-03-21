@@ -16,9 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import time
-
-import numpy as np
 
 import HPOlib.benchmark_util as benchmark_util
 import HPOlib.benchmark_functions as benchmark_functions
@@ -28,17 +25,16 @@ __contact__ = "automl.org"
 __credits__ = ["Jasper Snoek", "Ryan P. Adams", "Hugo Larochelle"]
 
 
-def main(params, **kwargs):
+def main(params, ret_time=False, **kwargs):
     print 'Params: ', params
-    y = benchmark_functions.save_lda_on_grid(params, **kwargs)
+    y = benchmark_functions.save_lda_on_grid(params, ret_time=ret_time, **kwargs)
     print 'Result: ', y
     return y
 
 
 if __name__ == "__main__":
-    starttime = time.time()
     args, params = benchmark_util.parse_cli()
-    result = main(params, **args)
-    duration = time.time() - starttime
+    result = main(params, ret_time=False, **args)
+    duration = main(params, ret_time=True)
     print "Result for ParamILS: %s, %f, 1, %f, %d, %s" % \
         ("SAT", abs(duration), result, -1, str(__file__))
