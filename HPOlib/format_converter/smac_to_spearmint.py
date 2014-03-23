@@ -16,26 +16,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#!/usr/bin/env python
 
 """
-This script reads a SMAC search space and prints out an spearmint searchspace
+This method reads a SMAC search space and returns a spearmint searchspace
 Default value and conditions are lost
 """
 
 import sys
 import os
-path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../optimizers/")
-sys.path.append(path)
-from spearmint_april2013_mod.spearmint_pb2 import Experiment, PYTHON
+
+from spearmint_april2013_mod_spearmint_pb2 import Experiment, PYTHON
 from google.protobuf import text_format
 import numpy as np
 
-def convertSMACToSpearmint(filename):
-    file = open(filename)
+
+def convert_smac_to_spearmint(filename):
+    fl_handle = open(filename)
     
     params = []
-    for line in file:
+    for line in fl_handle:
         line = line.strip()
         if line.strip().find('#') == 0 or line == "":
             continue
@@ -97,11 +96,6 @@ def convertSMACToSpearmint(filename):
     exp.language = PYTHON
     exp.name = "cv"
     exp.variable.extend(params)
-    print text_format.MessageToString(exp)
-        
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        sys.stdout.write("Wrong number of Arguments\nUsage: python SMACSpearmint.py <smac.pcs>")
-        sys.exit(1)
-    convertSMACToSpearmint(sys.argv[1])
+    return text_format.MessageToString(exp)
+
 

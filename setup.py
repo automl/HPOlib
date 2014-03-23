@@ -16,11 +16,12 @@ keywords = 'hyperparameter optimization empirical evaluation black box'
 
 package_dir = {'HPOlib': 'HPOlib',
                'HPOlib.config_parser': 'HPOlib/config_parser',
-               'HPOlib.Plotting': 'HPOlib/Plotting'}
+               'HPOlib.Plotting': 'HPOlib/Plotting',
+               'HPOlib.format_converter': 'HPOlib/format_converter'}
 package_data = {'HPOlib.config_parser': ['*.cfg']}
 
 data_files = []
-scripts = ['scripts/HPOlib-run', 'scripts/HPOlib-plot', 'runsolver/src/runsolver']
+scripts = ['scripts/HPOlib-run', 'scripts/HPOlib-plot', 'runsolver/src/runsolver', 'scripts/HPOlib-convert']
 
 
 def read(fname):
@@ -30,7 +31,8 @@ def read(fname):
 def get_find_packages():
     packages = ['HPOlib',
                 'HPOlib.config_parser',
-                'HPOlib.Plotting']
+                'HPOlib.Plotting',
+                'HPOlib.format_converter']
     return packages
 
 

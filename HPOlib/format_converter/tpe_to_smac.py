@@ -24,6 +24,8 @@ http://www.cs.ubc.ca/labs/beta/Projects/SMAC/
 
 """
 
+from hyperopt.pyll import base as base
+
 """ Partly taken from https://github.com/jaberg/hyperopt/blob/smacout/hyperopt/smac.py """
 
 
@@ -32,8 +34,6 @@ import sys
 import os
 
 from functools import partial
-
-import hyperopt
 
 
 class Cond(object):
@@ -60,7 +60,7 @@ EQ = partial(Cond, op='=')
 def expr_to_config(expr, conditions, hps):
     if conditions is None:
         conditions = ()
-    assert isinstance(expr, hyperopt.pyll.base.Apply)
+    assert isinstance(expr, base.Apply)
     if expr.name == 'switch':
         idx = expr.inputs()[0]
         options = expr.inputs()[1:]
@@ -87,7 +87,7 @@ def expr_to_config(expr, conditions, hps):
             expr_to_config(ii, conditions, hps)
 
 
-def expr_to_smac_config(filename):
+def convert_tpe_to_smac_from_file(filename):
 
     space_name, ext = os.path.splitext(os.path.basename(filename))
     #noinspection PyBroadException
@@ -102,29 +102,30 @@ def expr_to_smac_config(filename):
 
     search_space = space.space
 
-    expr = hyperopt.pyll.as_apply(search_space)
+    expr = base.as_apply(search_space)
 
     hps = {}
     expr_to_config(expr, (True,), hps)
+    new_space = ""
     # print expr
     for label, dct in hps.items():
         if dct['node'].name == "randint":
             assert len(dct['node'].inputs()) == 1
             #randint['x', 5] -> x [0, 4]i [0]
             upper = dct['node'].inputs()[0].eval()
-            print '%s {%s} [0]' % \
+            new_space += '%s {%s} [0]\n' % \
                   (label, ", ".join(["%s" % (i,) for i in range(upper)]))
         elif dct['node'].name == "categorical":
             # No difference to a randint node
             upper = dct['node'].inputs()[1].eval()
-            print '%s {%s} [0]' % \
-                        (label, ", ".join(["%s" % (i,) for i in range(upper)]))
+            new_space += '%s {%s} [0]\n' % \
+                  (label, ", ".join(["%s" % (i,) for i in range(upper)]))
         elif dct['node'].name == "uniform":
             assert len(dct['node'].inputs()) == 2
             lower = dct['node'].inputs()[0].eval()
             upper = dct['node'].inputs()[1].eval()
             default = (lower+upper)/2.0
-            print '%s [%s, %s] [%s]' % (label, lower, upper, default)
+            new_space += '%s [%s, %s] [%s]\n' % (label, lower, upper, default)
         elif dct['node'].name == "quniform":
             # Assumption: q-value is always the last value
             assert len(dct['node'].inputs()) == 3
@@ -133,14 +134,14 @@ def expr_to_smac_config(filename):
             q = dct['node'].inputs()[2].eval()
             default = (lower+upper)/2.0
             label = "Q%s_%s" % (q, label)
-            print '%s [%s, %s] [%s]' % (label, lower, upper, default)
+            new_space += '%s [%s, %s] [%s]\n' % (label, lower, upper, default)
         elif dct['node'].name == "loguniform":
             assert len(dct['node'].inputs()) == 2
             lower = dct['node'].inputs()[0].eval()
             upper = dct['node'].inputs()[1].eval()
             default = (lower+upper)/2.0
             label = "LOG_%s" % (label,)
-            print '%s [%s, %s] [%s]' % (label, lower, upper, default)
+            new_space += '%s [%s, %s] [%s]\n' % (label, lower, upper, default)
         elif dct['node'].name == "qloguniform":
             assert len(dct['node'].inputs()) == 3
             lower = dct['node'].inputs()[0].eval()
@@ -148,14 +149,14 @@ def expr_to_smac_config(filename):
             q = dct['node'].inputs()[2].eval()
             default = (lower+upper)/2.0
             label = "LOG_Q%s_%s" % (q, label)
-            print '%s [%s, %s] [%s]' % (label, lower, upper, default)
+            new_space += '%s [%s, %s] [%s]\n' % (label, lower, upper, default)
         elif dct['node'].name == "normal":
             assert len(dct['node'].inputs()) == 2
             mu = dct['node'].inputs()[0].eval()
             sigma = dct['node'].inputs()[1].eval()
             lower = mu-3*sigma
             upper = mu+3*sigma
-            print '%s [%s, %s] [%s]' % (label, lower, upper, mu)
+            new_space += '%s [%s, %s] [%s]\n' % (label, lower, upper, mu)
         elif dct['node'].name == "qnormal":
             assert len(dct['node'].inputs()) == 3
             mu = dct['node'].inputs()[0].eval()
@@ -164,7 +165,7 @@ def expr_to_smac_config(filename):
             upper = mu+3*sigma
             q = dct['node'].inputs()[2].eval()
             label = "Q%s_%s" % (q, label)
-            print '%s [%s, %s] [%s]' % (label, lower, upper, mu)
+            new_space += '%s [%s, %s] [%s]\n' % (label, lower, upper, mu)
         elif dct['node'].name == "lognormal":
             assert len(dct['node'].inputs()) == 2
             mu = dct['node'].inputs()[0].eval()
@@ -172,7 +173,7 @@ def expr_to_smac_config(filename):
             lower = mu-3*sigma
             upper = mu+3*sigma
             label = "LOG_%s" % (label, )
-            print '%s [%s, %s] [%s]' % (label, lower, upper, mu)
+            new_space += '%s [%s, %s] [%s]\n' % (label, lower, upper, mu)
         elif dct['node'].name == "qlognormal":
             assert len(dct['node'].inputs()) == 3
             mu = dct['node'].inputs()[0].eval()
@@ -181,7 +182,7 @@ def expr_to_smac_config(filename):
             upper = mu+3*sigma
             q = dct['node'].inputs()[2].eval()   
             label = "Q%s_LOG_%s" % (q, label)
-            print '%s [%s, %s] [%s]' % (label, lower, upper, mu)
+            new_space += '%s [%s, %s] [%s]\n' % (label, lower, upper, mu)
         else:
             raise Exception("Node name %s not known" % dct['node'].name)
 
@@ -224,14 +225,8 @@ def expr_to_smac_config(filename):
         # Start printing conditions
         # print "CCC", varying_param, varying_param_name
         if varying_param_name != "":
-            print '%s | %s in {%s}' % (label, varying_param_name, ",".join(str(i) for i in varying_param))
+            new_space += '%s | %s in {%s}\n' % (label, varying_param_name, ",".join(str(i) for i in varying_param))
         for key in condict.keys():
             if key != varying_param_name:
-                print '%s | %s in {%s}' % (label, key, condict[key])
-
-
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        sys.stdout.write("Wrong number of Arguments\nUsage: python TpeSMAC.py <space.py>\n")
-        sys.exit(1)
-    expr_to_smac_config(sys.argv[1])
+                new_space += '%s | %s in {%s}\n' % (label, key, condict[key])
+    return new_space
