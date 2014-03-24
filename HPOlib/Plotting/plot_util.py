@@ -68,27 +68,27 @@ def get_pkl_and_name_list(argument_list):
     return pkl_list, name_list
 
 
-def extract_trajectory(trials):
+def extract_trajectory(trials, cut=sys.maxint):
     trace = list()
-    currentbest = np.nanmax(np.array([trial["result"] for trial in trials['trials']]))
+    currentbest = trials['trials'][0]
 
-    for result in [trial["result"] for trial in trials['trials']]:
+    for result in [trial["result"] for trial in trials['trials'][:cut]]:
         if result < currentbest:
             currentbest = result
         trace.append(currentbest)
     return trace
 
 
-def extract_trials(trials):
-    trl = [trial["result"] for trial in trials['trials']]
+def extract_trials(trials, cut=sys.maxint):
+    trl = [trial["result"] for trial in trials['trials'][:cut]]
     return trl
 
 
-def extract_runtime_timestamps(trials):
+def extract_runtime_timestamps(trials, cut=sys.maxint):
     # return a list like (20, 53, 101, 200)
     time_list = list()
     time_list.append(0)
-    for trial in trials["trials"]:
+    for trial in trials["trials"][:cut]:
         time_list.append(np.sum(trial["instance_durations"]) + time_list[-1])
     return time_list
 
@@ -111,7 +111,7 @@ def get_best_value_and_index(trials, cut=False):
     best_index = -1
     if cut and 0 < cut < len(traj):
         best_value = traj[cut]
-        best_index = np.argmin(traj[cut])
+        best_index = np.argmin(traj[:cut])
     else:
         best_value = traj[-1]
         best_index = np.argmin(traj)

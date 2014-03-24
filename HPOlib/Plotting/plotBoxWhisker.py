@@ -35,7 +35,8 @@ __license__ = "3-clause BSD License"
 __contact__ = "automl.org"
 
 
-def plot_box_whisker(best_trials, name_list, title="", save="", y_min=0, y_max=0):
+def plot_box_whisker(best_trials, name_list, title="", save="", y_min=0,
+                     y_max=0):
     ratio = 5
     gs = GridSpec(ratio, 1)
     fig = figure(1, dpi=100)
@@ -104,7 +105,7 @@ def plot_box_whisker(best_trials, name_list, title="", save="", y_min=0, y_max=0
         show()
 
 
-def main(pkl_list, name_list, title="", save="", y_min=0, y_max=0):
+def main(pkl_list, name_list, title="", save="", y_min=0, y_max=0, cut=sys.maxint):
 
     best_trials = list()
     for i in range(len(name_list)):
@@ -113,7 +114,7 @@ def main(pkl_list, name_list, title="", save="", y_min=0, y_max=0):
             fh = open(pkl, "r")
             trials = cPickle.load(fh)
             fh.close()
-            best_trials[i].append(plot_util.get_best(trials))
+            best_trials[i].append(plot_util.get_best(trials, cut=cut))
 
     plot_box_whisker(best_trials=best_trials, name_list=name_list,
                      title=title, save=save, y_min=y_min, y_max=y_max)
@@ -138,6 +139,8 @@ if __name__ == "__main__":
                         type=float, help="Minimum of the plot")
     parser.add_argument("-s", "--save", dest="save", default="",
                         help="Where to save plot instead of showing it?")
+    parser.add_argument("-c", "--cut", default=sys.maxint, type=int,
+                        help="Cut experiment pickles after a specified number of trials.")
     args, unknown = parser.parse_known_args()
 
     sys.stdout.write("\nFound " + str(len(unknown)) + " arguments...")
@@ -145,4 +148,4 @@ if __name__ == "__main__":
     pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
 
     main(pkl_list=pkl_list_main, name_list=name_list_main, title=args.title, save=args.save,
-         y_min=args.min, y_max=args.max)
+         y_min=args.min, y_max=args.max, cut=args.cut)

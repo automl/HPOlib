@@ -183,7 +183,8 @@ def fill_trajectories(trace_list, times_list):
     return trajectories, times
 
 
-def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False, y_min=0, y_max=0, scale_std=1):
+def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
+         log=False, y_min=0, y_max=0, scale_std=1, cut=sys.maxint):
 
     trial_list = list()
     times_list = list()

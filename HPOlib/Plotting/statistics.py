@@ -112,8 +112,9 @@ def _mann_whitney_u(x, y=None):
 """
 
 
-def main(pkl_list, name_list):
-    best_dict, idx_dict, keys = plot_util.read_pickles(name_list, pkl_list)
+def main(pkl_list, name_list, cut=sys.maxint):
+    best_dict, idx_dict, keys = plot_util.read_pickles(name_list, pkl_list,
+                                                       cut=cut)
 
     for k in keys:
         sys.stdout.write("%10s: %s experiment(s)\n" % (k, len(best_dict[k])))
@@ -169,9 +170,9 @@ if __name__ == "__main__":
 
     parser = ArgumentParser(description=description, prog=prog)
 
-    parser.add_argument("-c", "--c", dest="cut", default=False,
+    parser.add_argument("-c", "--cut", dest="cut", default=sys.maxint,
                         type=int, help="Only consider that many evaluations")
     args, unknown = parser.parse_known_args()
 
     pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
-    main(pkl_list=pkl_list_main, name_list=name_list_main)
+    main(pkl_list=pkl_list_main, name_list=name_list_main, cut=args.cut)

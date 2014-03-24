@@ -117,7 +117,8 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="",
         show()
 
 
-def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False, y_min=0, y_max=0, scale_std=1):
+def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
+         y_min=0, y_max=0, scale_std=1, cut=sys.maxint):
 
     trial_list = list()
     for i in range(len(pkl_list)):
@@ -127,7 +128,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
             trials = cPickle.load(fh)
             fh.close()
 
-            trace = plot_util.extract_trajectory(trials)
+            trace = plot_util.extract_trajectory(trials, cut=cut)
             trial_list[-1].append(np.array(trace))
 
     for i in range(len(trial_list)):

@@ -124,7 +124,7 @@ if __name__ == "__main__":
 
     parser = ArgumentParser(description=description, prog=prog)
 
-    parser.add_argument("-c", "--c", dest="cut", default=sys.maxint,
+    parser.add_argument("-c", "--cut", dest="cut", default=sys.maxint,
                         type=int, help="Only consider that many evaluations")
     args, unknown = parser.parse_known_args()
     # TODO-list:
