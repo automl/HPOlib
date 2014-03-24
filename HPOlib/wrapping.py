@@ -169,10 +169,6 @@ def main():
     # hold of the new optimizer directory
     wrapping_dir = os.path.dirname(os.path.realpath(__file__))
 
-    # TODO: We don't need this anymore, if we install HPOlib
-    # Try adding runsolver to path
-    os.putenv('PATH', os.environ['PATH'] + ":" + wrapping_dir + "/../runsolver/src/")
-
     # Load optimizer
     try:
         optimizer_dir = os.path.dirname(os.path.realpath(optimizer_version))
