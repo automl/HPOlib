@@ -34,8 +34,8 @@ __contact__ = "automl.org"
 
 
 def plot_time_trace(time_dict, name_list, title="", log=True, save="", y_max=0, y_min=0):
-    colors = itertools.cycle(['b', 'g', 'r', 'k'])
-    markers = itertools.cycle(['o', 's', 'x', '^'])
+    colors = plot_util.get_plot_colors()
+    markers = plot_util.get_plot_markers()
     linestyles = itertools.cycle(['-'])
 
     size = 5

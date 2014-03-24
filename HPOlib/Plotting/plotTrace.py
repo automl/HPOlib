@@ -36,8 +36,8 @@ __contact__ = "automl.org"
 
 def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=False,
                             save="", y_min=0, y_max=0, cut=sys.maxint):
-    markers = itertools.cycle(['o', 's', '^', 'x'])
-    colors = itertools.cycle(['b', 'g', 'r', 'k'])
+    markers = plot_util.get_plot_markers()
+    colors = plot_util.get_plot_colors()
     linestyles = itertools.cycle(['-'])
     size = 1
 

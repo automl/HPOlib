@@ -17,12 +17,30 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import cPickle
+import itertools
 import os
 import numpy as np
 import sys
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
+
+
+def get_plot_markers():
+    return itertools.cycle(['o', 's', 'x', '^'])
+
+
+def get_plot_colors():
+    # color brewer, 2nd qualitative 9 color scheme (http://colorbrewer2.org/)
+    return itertools.cycle(["#e41a1c",    # Red
+                            "#377eb8",    # Blue
+                            "#4daf4a",    # Green
+                            "#984ea3",    # Purple
+                            "#ff7f00",    # Orange
+                            "#ffff33",    # Yellow
+                            "#a65628",    # Brown
+                            "#f781bf",    # Pink
+                            "#999999"])   # Grey
 
 
 def read_pickles(name_list, pkl_list, cut=sys.maxint):
