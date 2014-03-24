@@ -40,11 +40,11 @@ def download_source(download_url, md5, save_as):
     try:
         urllib.urlretrieve(download_url, filename=save_as)
     except Exception, e:
-        print("Error downloading %s: %s" % (download_url, e))
+        sys.stdout.write("Error downloading %s: %s\n" % (download_url, e))
         return False
     md5_new = hashlib.md5(open(save_as).read()).hexdigest()
     if md5_new != md5:
-        print "md5 checksum has changed: %s to %s" % (md5, md5_new)
+        sys.stdout.write("md5 checksum has changed: %s to %s\n" % (md5, md5_new))
         return False
     return True
 
@@ -55,7 +55,7 @@ def extract_source(fn_name, extract_as):
             tfile = tarfile.open(fn_name)
             tfile.extractall(extract_as)
         except Exception, e:
-            print("Error occurred during extraction: %s" % e)
+            sys.stdout.write("Error occurred during extraction: %s\n" % e)
             return False
         return True
     return False
@@ -103,19 +103,19 @@ class AdditionalInstall(install):
             if os.access(p, flags) and not os.path.isdir(p):
                 if not os.path.isdir(os.path.join(os.getcwd(), 'runsolver/src/')):
                     os.mkdir(os.path.join(os.getcwd(), 'runsolver/src/'))
-                print "Copy runsolver from %s to runsolver/src/runsolver" % p
+                sys.stdout.write("Copy runsolver from %s to runsolver/src/runsolver\n" % p)
                 shutil.copy(p, os.path.join(os.getcwd(), 'runsolver/src/runsolver'))
                 return p
         return False
 
     def _build(self, build_dir):
-        print("Building runsolver")
+        sys.stdout.write("Building runsolver\n")
         cur_pwd = os.getcwd()
         os.chdir(build_dir)
         try:
             subprocess.check_call("make")
         except subprocess.CalledProcessError, e:
-            print "Error during building runsolver: %s" % e
+            sys.stdout.write("Error while building runsolver: %s\n" % e)
             os.chdir(cur_pwd)
             return False
         os.chdir(cur_pwd)
@@ -141,8 +141,8 @@ class AdditionalInstall(install):
     def run(self):
         # RUNSOLVER STUFF
         here_we_are = os.getcwd()
-        runsolver_tar_name = "runsolver-3.3.2.tar.bz2"
-        runsolver_name = "runsolver-3.3.2"
+        runsolver_tar_name = "runsolver-3.3.4.tar.bz2"
+        runsolver_name = "runsolver-3.3.4"
         if sys.version_info < (2, 7, 0) or sys.version_info >= (2, 8, 0):
             sys.stderr.write("HPOlib requires Python 2.7.0\n")
             sys.exit(-1)
@@ -152,32 +152,35 @@ class AdditionalInstall(install):
 
         runsolver_path = self._check_for_runsolver()
         if not runsolver_path:
-            sys.stdout.write("[INFO] 'runsolver' not found, so we try to install it")
+            sys.stdout.write("[INFO] 'runsolver' not found, so we try to install it\n")
             runsolver_needs_to_be_installed = True
 
         if runsolver_needs_to_be_installed:
-            sys.stdout.write("Downloading runsolver from %s%s, saving to %s/%s" %
+            sys.stdout.write("Downloading runsolver from %s%s, saving to %s/%s\n" %
                              ('http://www.cril.univ-artois.fr/~roussel/runsolver/',
                               runsolver_tar_name, os.getcwd(), runsolver_tar_name))
             downloaded = download_source(download_url='http://www.cril.univ-artois.fr/~roussel/runsolver/%s' %
                                                       runsolver_tar_name,
-                                         md5="62d139a6d2b1b376eb9ed59ccb5d6726",
+                                         md5="5a9511266489c87f4a276b9e54ea4082",
                                          save_as=os.path.join(here_we_are, runsolver_tar_name))
 
         if runsolver_needs_to_be_installed and downloaded:
-            print("Extracting runsolver to %s" % os.path.join(here_we_are, runsolver_name))
+            sys.stdout.write("Extracting runsolver to %s\n" % os.path.join(here_we_are, runsolver_name))
             extracted = extract_source(fn_name=os.path.join(here_we_are, runsolver_tar_name), extract_as=here_we_are)
 
         if runsolver_needs_to_be_installed and extracted:
-            print("Building runsolver")
-            built = self._build(build_dir=os.path.join(here_we_are, "runsolver", "src"))
-            if not built:
-                print "Try a second time and replace '/usr/include/asm/unistd.h' with '/usr/include/unistd.h'"
-                call = "sed -i 's/\/usr\/include\/asm\/unistd/\/usr\/include\/unistd/g' runsolver/src/Makefile"
-                try:
-                    subprocess.check_call(call, shell=True)
-                except subprocess.CalledProcessError, e:
-                    print "Replacing did not work: %s" % e
+            sys.stdout.write("Building runsolver\n")
+            sys.stdout.write("Replace a line, which seems to cause trouble on 32 bit systems'\n")
+            call = "sed -i 's|gnu/asm/unistd_$(WSIZE).h|gnu/asm/unistd_$(WSIZE).h  /usr/include/i386-linux-gnu/asm/unistd_$(WSIZE).h|' runsolver/src/Makefile"
+            try:
+                subprocess.check_call(call, shell=True)
+            except subprocess.CalledProcessError, e:
+                sys.stdout.write("Replacing did not work: %s\n" % e)
+            md5_new = hashlib.md5(open("runsolver/src/Makefile").read()).hexdigest()
+            runsolver_md5 = "4870722e47a6f74d5167376d371f1730"
+            if md5_new != runsolver_md5:
+                sys.stdout.write("md5 checksum has changed: %s to %s, not compiling runsolver\n" % (runsolver_md5, md5_new))
+            else:
                 built = self._build(build_dir=os.path.join(here_we_are, "runsolver", "src"))
 
         # COPY/DOWNLOAD OPTIMIZER TO ROOT FOLDER
@@ -208,7 +211,6 @@ class AdditionalInstall(install):
         # if anyone knows a better way, feel free to change
         install.do_egg_install(self)
 
-
         # Give detailed output to user
         if not tpe or not smac or not spearmint:
             sys.stderr.write("[ERROR] Something went wrong while copying and downloading optimizers." +
@@ -224,13 +226,14 @@ class AdditionalInstall(install):
                              "mv spearmint_april2013_mod_src spearmint/ \n\n" +
                              "Thank You!\n")
         if runsolver_needs_to_be_installed and not built:
-            print "[ERROR] Please install runsolver on your own! You can download it from:\n%s%s" % \
-                  ('http://www.cril.univ-artois.fr/~roussel/runsolver/%s', runsolver_tar_name)
-            print "[ERROR] Be sure 'runsolver' can be found during runtime in your $PATH variable!"
+            sys.stdout.write("[ERROR] Please install runsolver on your own! You can download it from:\n%s%s\n" % \
+                  ('http://www.cril.univ-artois.fr/~roussel/runsolver/%s', runsolver_tar_name))
+            sys.stdout.write("[ERROR] Be sure 'runsolver' can be found during runtime in your $PATH variable!\n")
         if not runsolver_needs_to_be_installed and not built:
-            print "[INFO] 'runsolver' has been found on this system and was copied from: %s" % runsolver_path
+            sys.stdout.write("[INFO] 'runsolver' has been found on this system and was copied from: %s\n" %
+                             runsolver_path)
         if built:
-            print "'runsolver' has been downloaded and installed"
+            sys.stdout.write("'runsolver' has been downloaded and installed\n")
 
 setup(
     name='HPOlib',
