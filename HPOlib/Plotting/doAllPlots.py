@@ -128,9 +128,7 @@ def _generate_tex_table(pkl_list, name_list, save="", cut=sys.maxint,
     try:
         os.chdir(plotting_dir)
         import generateTexTable
-        table = generateTexTable.main(pkl_list, name_list, cut)
-        with open(save, "w") as fh:
-            fh.write(table)
+        generateTexTable.main(pkl_list, name_list, save, cut)
         os.chdir(cur_dir)
         sys.stdout.write("passed\n")
     except Exception, e:

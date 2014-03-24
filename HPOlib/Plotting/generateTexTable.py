@@ -71,7 +71,7 @@ template_string = \
 \\end{document}
 """
 
-def main(pkl_list, name_list, cut=sys.maxint):
+def main(pkl_list, name_list, save, cut=sys.maxint):
     tex = StringIO()
     result_values = OrderedDict([(name[0], dict()) for name in name_list])
 
@@ -114,8 +114,12 @@ def main(pkl_list, name_list, cut=sys.maxint):
 
     tex.seek(0)
     table = tex.getvalue()
-    print table
-    return table
+
+    if save != "":
+        with open(save, "w") as fh:
+            fh.write(table)
+    else:
+        print table
 
 
 if __name__ == "__main__":
@@ -126,6 +130,8 @@ if __name__ == "__main__":
 
     parser.add_argument("-c", "--cut", dest="cut", default=sys.maxint,
                         type=int, help="Only consider that many evaluations")
+    parser.add_argument("-s", "--save", dest="save", default="",
+                        help="Where to save plot instead of showing it?")
     args, unknown = parser.parse_known_args()
     # TODO-list:
     # 1. Add statistical relevance
@@ -135,6 +141,6 @@ if __name__ == "__main__":
     # 4. Determine the experiment name and number of evaluations
 
     pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
-    main(pkl_list_main, name_list_main, args.cut)
+    main(pkl_list_main, name_list_main, args.save, args.cut)
 
 
