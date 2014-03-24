@@ -133,7 +133,7 @@ def main(pkl_list, name_list, optimum=0, title="", log=False, save="", y_max=0,
 
     sys.stdout.write("Plotting trace\n")
     plot_optimization_trace(trial_list=trial_list, name_list=name_list, optimum=optimum,
-                            title=title, log=not log, save=save, y_max=y_max,
+                            title=title, log=log, save=save, y_max=y_max,
                             y_min=y_min, cut=cut)
 
     if save != "":
@@ -151,8 +151,8 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--optimum", type=float, dest="optimum",
                         default=0, help="If not set, the optimum is supposed to be zero")
     # General Options
-    parser.add_argument("-l", "--nolog", action="store_true", dest="log",
-                        default=False, help="Do NOT plot on log scale")
+    parser.add_argument("-l", "--log", action="store_true", dest="log",
+                        default=False, help="Plot on log scale")
     parser.add_argument("--max", dest="max", type=float,
                         default=0, help="Maximum of the plot")
     parser.add_argument("--min", dest="min", type=float,

@@ -50,8 +50,8 @@ def _plot_trace(pkl_list, name_list, save="", cut=sys.maxint, log=False):
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def _trace_with_std_per_eval(pkl_list, name_list, save="", log=False,
-                             cut=sys.maxint):
+def _trace_with_std_per_eval(pkl_list, name_list, save="",
+                             cut=sys.maxint, log=False):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
 
@@ -68,8 +68,8 @@ def _trace_with_std_per_eval(pkl_list, name_list, save="", log=False,
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def _trace_with_std_per_time(pkl_list, name_list, save="", log=False,
-                             cut=sys.maxint):
+def _trace_with_std_per_time(pkl_list, name_list, save="",
+                             cut=sys.maxint, log=False):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
 
@@ -86,7 +86,8 @@ def _trace_with_std_per_time(pkl_list, name_list, save="", log=False,
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def _optimizer_overhead(pkl_list, name_list, save, log, cut=sys.maxint):
+def _optimizer_overhead(pkl_list, name_list, save="",
+                        cut=sys.maxint, log=False):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
 
@@ -103,7 +104,7 @@ def _optimizer_overhead(pkl_list, name_list, save, log, cut=sys.maxint):
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def _box_whisker(pkl_list, name_list, save, cut=sys.maxint):
+def _box_whisker(pkl_list, name_list, save="", cut=sys.maxint, log=False):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
 
@@ -119,7 +120,8 @@ def _box_whisker(pkl_list, name_list, save, cut=sys.maxint):
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def _generate_tex_table(pkl_list, name_list, save, cut=sys.maxint):
+def _generate_tex_table(pkl_list, name_list, save="", cut=sys.maxint,
+                        log=False):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
     # noinspection PyBroadException
@@ -136,7 +138,7 @@ def _generate_tex_table(pkl_list, name_list, save, cut=sys.maxint):
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def _statistics(pkl_list, name_list, save="", cut=sys.maxint):
+def _statistics(pkl_list, name_list, save="", cut=sys.maxint, log=False):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
 
@@ -172,8 +174,8 @@ def main():
     parser = ArgumentParser(description=description, prog=prog)
 
     # General Options
-    parser.add_argument("-l", "--nolog", action="store_true", dest="log",
-                        default=False, help="Do NOT plot on log scale")
+    parser.add_argument("-l", "--log", action="store_true", dest="log",
+                        default=False, help="Plot on log scale")
     parser.add_argument("-s", "--save", dest="save",
                         default="", help="Where to save plots? (directory)")
     parser.add_argument("-f", "--file", dest="file",
@@ -225,7 +227,7 @@ def main():
             tmp_save = save_dir
         sys.stdout.write("plotBoxWhisker.py ... %s ..." % tmp_save)
         _box_whisker(pkl_list=pkl_list, name_list=name_list, save=tmp_save,
-                     cut=args.cut)
+                     log=log, cut=args.cut)
 
         # statistics
         if save_dir is not "":
@@ -234,7 +236,7 @@ def main():
             tmp_save = save_dir
         sys.stdout.write("statistics.py ... %s ..." % tmp_save)
         _statistics(pkl_list=pkl_list, name_list=name_list, save=tmp_save,
-                    cut=args.cut)
+                    log=log, cut=args.cut)
 
         # LaTeX table
         if save_dir is not "":
@@ -242,7 +244,8 @@ def main():
         else:
             tmp_save = save_dir
         sys.stdout.write("generateTexTable.py ... %s ..." % tmp_save)
-        _generate_tex_table(pkl_list, name_list, tmp_save, cut=args.cut)
+        _generate_tex_table(pkl_list=pkl_list, name_list=name_list,
+                            save=tmp_save, log=log, cut=args.cut)
 
 
     # We can always plot this
@@ -252,8 +255,8 @@ def main():
     else:
         tmp_save = save_dir
     sys.stdout.write("plotOptimizerOverhead.py ... %s ..." % tmp_save)
-    _optimizer_overhead(pkl_list=pkl_list, name_list=name_list,
-                        save=tmp_save, log=log, cut=args.cut)
+    _optimizer_overhead(pkl_list=pkl_list, name_list=name_list, save=tmp_save,
+                        log=log, cut=args.cut)
 
     # Error Trace with Std
     if save_dir is not "":

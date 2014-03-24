@@ -162,7 +162,7 @@ def main(pkl_list, name_list, autofill, title="", log=False, save="",
                 raise ValueError("(%s != %s), Traces do not have the same length, please use -a" %
                                  (str(max_len), str(len(times_dict[key][t]))))
 
-    plot_time_trace(times_dict, name_list, title=title, log=not log, save=save,
+    plot_time_trace(times_dict, name_list, title=title, log=log, save=save,
                     y_min=y_min, y_max=y_max)
 
     if save != "":
@@ -179,8 +179,8 @@ if __name__ == "__main__":
     # General Options
     parser.add_argument("-c", "--cut", type=int, default=sys.maxint,
                         help="Cut the experiment pickle length.")
-    parser.add_argument("-l", "--nolog", action="store_true", dest="log",
-                        default=False, help="Do NOT plot on log scale")
+    parser.add_argument("-l", "--log", action="store_true", dest="log",
+                        default=False, help="Plot on log scale")
     parser.add_argument("--max", type=float, dest="max",
                         default=0, help="Maximum of the plot")
     parser.add_argument("--min", type=float, dest="min",
@@ -200,5 +200,5 @@ if __name__ == "__main__":
 
     pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
     main(pkl_list_main, name_list_main, autofill=args.autofill, title=args.title,
-         log=not args.log, save=args.save, y_min=args.min, y_max=args.max,
+         log=args.log, save=args.save, y_min=args.min, y_max=args.max,
          cut=args.cut)
