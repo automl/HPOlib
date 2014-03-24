@@ -57,12 +57,6 @@ def do_cv(params, folds=10):
     optimizer = get_optimizer()
     cfg = load_experiment_config_file()
 
-    # Now evaluate $fold times
-    # TODO This is a bad idea, no one replaces this by the worst possible
-    # value later on
-    if folds < 1:
-        return np.NaN
-    
     # Store the results to hand them back to tpe and spearmint
     results = []
 

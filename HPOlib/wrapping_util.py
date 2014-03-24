@@ -216,8 +216,6 @@ def parse_config_values_from_unknown_arguments(unknown_arguments, config):
         for key in config.options(section):
             further_possible_command_line_arguments.append("--" + section +
                                                            ":" + key)
-    for key in config.defaults():
-        further_possible_command_line_arguments.append("--DEFAULT:" + key)
 
     parser = ArgumentParser()
     for argument in further_possible_command_line_arguments:
@@ -239,13 +237,6 @@ def config_with_cli_arguments(config, config_overrides):
 
 
 def save_config_to_file(file_handle, config, write_nones=True):
-    if len(config.defaults()) > 0:
-        file_handle.write("[DEFAULT]\n")
-        for key in config.defaults():
-            if (config.get("DEFAULT", key) is None and write_nones) or \
-                    config.get("DEFAULT", key) is not None:
-                file_handle.write(key + " = " + config.get("DEFAULT", key) + "\n")
-
     for section in config.sections():
         file_handle.write("[" + section + "]\n")
         for key in config.options(section):
