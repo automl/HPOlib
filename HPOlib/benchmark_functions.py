@@ -442,7 +442,7 @@ def lda_on_grid(kappa, tau, s, ret_time=False):
     if ret_time:
         return config_tree[kappa_values[kappa]][tau_values[tau]][s_values[s]][1]
     else:
-        return config_tree[kappa_values[kappa]][tau_values[tau]][s_values[s]][1]
+        return config_tree[kappa_values[kappa]][tau_values[tau]][s_values[s]][0]
 
 
 def save_svm_on_grid(params, ret_time=False, **kwargs):
