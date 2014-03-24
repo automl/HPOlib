@@ -35,9 +35,9 @@ __contact__ = "automl.org"
 
 
 def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=False,
-                            save="", y_min=0, y_max=0):
-    markers = itertools.cycle(['o', 's', '^', 'x'])
-    colors = itertools.cycle(['b', 'g', 'r', 'k'])
+                            save="", y_min=0, y_max=0, cut=sys.maxint):
+    markers = plot_util.get_plot_markers()
+    colors = plot_util.get_plot_colors()
     linestyles = itertools.cycle(['-'])
     size = 1
 
@@ -55,10 +55,13 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=Fals
     # This might not do what we actually want; Ideally it would only take the
     # ones that where actually run according to instance_order
     for i in range(len(name_list)):
-        x = range(len(trial_list[i]))
-        y = np.zeros((len(trial_list[i])))
-        line = np.zeros((len(trial_list[i])))
-        for j, inst_res in enumerate(trial_list[i]):
+        print cut, len(trial_list[i])
+        num_plotted_trials = np.min([cut, len(trial_list[i])])
+        print num_plotted_trials
+        x = range(num_plotted_trials)
+        y = np.zeros((num_plotted_trials))
+        line = np.zeros((num_plotted_trials))
+        for j, inst_res in enumerate(trial_list[i][:num_plotted_trials]):
             if j >= len(y):
                 break
             if type(inst_res) == np.ndarray and not np.isfinite(inst_res).any():
@@ -86,8 +89,8 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=Fals
             min_val = min(y)
         if max(y) > max_val:
             max_val = max(y)
-        if len(trial_list[i]) > max_trials:
-            max_trials = len(trial_list[i])
+        if num_plotted_trials > max_trials:
+            max_trials = num_plotted_trials
 
     # Describe and label the stuff
     ax.set_xlabel("#Function evaluations")
@@ -116,7 +119,8 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=Fals
         show()
 
 
-def main(pkl_list, name_list, optimum=0, title="", log=False, save="", y_max=0, y_min=0):
+def main(pkl_list, name_list, optimum=0, title="", log=False, save="", y_max=0,
+         y_min=0, cut=sys.maxint):
 
     trial_list = list()
     for i in range(len(pkl_list)):
@@ -129,8 +133,8 @@ def main(pkl_list, name_list, optimum=0, title="", log=False, save="", y_max=0, 
 
     sys.stdout.write("Plotting trace\n")
     plot_optimization_trace(trial_list=trial_list, name_list=name_list, optimum=optimum,
-                            title=title, log=not log,
-                            save=save, y_max=y_max, y_min=y_min)
+                            title=title, log=log, save=save, y_max=y_max,
+                            y_min=y_min, cut=cut)
 
     if save != "":
         sys.stdout.write("Saved plot to " + save + "\n")
@@ -147,8 +151,8 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--optimum", type=float, dest="optimum",
                         default=0, help="If not set, the optimum is supposed to be zero")
     # General Options
-    parser.add_argument("-l", "--nolog", action="store_true", dest="log",
-                        default=False, help="Do NOT plot on log scale")
+    parser.add_argument("-l", "--log", action="store_true", dest="log",
+                        default=False, help="Plot on log scale")
     parser.add_argument("--max", dest="max", type=float,
                         default=0, help="Maximum of the plot")
     parser.add_argument("--min", dest="min", type=float,
@@ -157,6 +161,8 @@ if __name__ == "__main__":
                         default="", help="Where to save plot instead of showing it?")
     parser.add_argument("-t", "--title", dest="title",
                         default="", help="Optional supertitle for plot")
+    parser.add_argument("-c", "--cut", default=sys.maxint, type=int,
+                        help="Cut experiment pickles after a specified number of trials.")
 
     args, unknown = parser.parse_known_args()
 
@@ -165,4 +171,5 @@ if __name__ == "__main__":
     pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
 
     main(pkl_list=pkl_list_main, name_list=name_list_main, optimum=args.optimum,
-         title=args.title, log=args.log, save=args.save, y_max=args.max, y_min=args.min)
+         title=args.title, log=args.log, save=args.save, y_max=args.max,
+         y_min=args.min, cut=args.cut)

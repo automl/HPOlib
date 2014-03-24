@@ -169,10 +169,6 @@ def main():
     # hold of the new optimizer directory
     wrapping_dir = os.path.dirname(os.path.realpath(__file__))
 
-    # TODO: We don't need this anymore, if we install HPOlib
-    # Try adding runsolver to path
-    os.putenv('PATH', os.environ['PATH'] + ":" + wrapping_dir + "/../runsolver/src/")
-
     # Load optimizer
     try:
         optimizer_dir = os.path.dirname(os.path.realpath(optimizer_version))
@@ -204,29 +200,7 @@ def main():
                                    title=args.title)
     trials.optimizer = optimizer_version
 
-    # TODO: We do not have any old runs anymore. DELETE this!
     if args.restore:
-        # Old versions did store NaNs instead of the worst possible result for
-        # crashed runs in the instance_results. In order to be able to load
-        # these files, these NaNs are replaced
-        for i, trial in enumerate(trials.instance_order):
-            _id, fold = trial
-            instance_result = trials.get_trial_from_id(_id)['instance_results'][fold]
-            if not np.isfinite(instance_result):
-                # Make sure that we do delete the last job which was running but
-                # did not finish
-                if i == len(trials.instance_order) - 1 and \
-                        len(trials.cv_starttime) != len(trials.cv_endtime):
-                    # The last job obviously did not finish correctly, do not
-                    # replace it
-                    pass
-                else:
-                    trials.get_trial_from_id(_id)['instance_results'][fold] = \
-                        config.getfloat('HPOLIB', 'result_on_terminate')
-                    # Pretty sure we need this here:
-                    trials.get_trial_from_id(_id)['instance_status'][fold] = \
-                        Experiment.BROKEN_STATE
-
         #noinspection PyBroadException
         try:
             restored_runs = optimizer_module.restore(config=config,

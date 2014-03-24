@@ -32,7 +32,7 @@ __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 
-def _plot_trace(pkl_list, name_list, save="", log=False):
+def _plot_trace(pkl_list, name_list, save="", cut=sys.maxint, log=False):
     # We have one pkl per experiment
 
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
@@ -42,7 +42,7 @@ def _plot_trace(pkl_list, name_list, save="", log=False):
     try:
         os.chdir(plotting_dir)
         import plotTrace
-        plotTrace.main(pkl_list, name_list, save=save, log=log)
+        plotTrace.main(pkl_list, name_list, save=save, log=log, cut=cut)
         os.chdir(cur_dir)
         sys.stdout.write("passed\n")
     except Exception, e:
@@ -50,7 +50,8 @@ def _plot_trace(pkl_list, name_list, save="", log=False):
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def _trace_with_std_per_eval(pkl_list, name_list, save="", log=False):
+def _trace_with_std_per_eval(pkl_list, name_list, save="",
+                             cut=sys.maxint, log=False):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
 
@@ -59,7 +60,7 @@ def _trace_with_std_per_eval(pkl_list, name_list, save="", log=False):
         os.chdir(plotting_dir)
         import plotTraceWithStd_perEval
         plotTraceWithStd_perEval.main(pkl_list, name_list, autofill=True,
-                                      optimum=0, save=save, log=log)
+                                      optimum=0, save=save, log=log, cut=cut)
         os.chdir(cur_dir)
         sys.stdout.write("passed\n")
     except Exception, e:
@@ -67,7 +68,8 @@ def _trace_with_std_per_eval(pkl_list, name_list, save="", log=False):
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def _trace_with_std_per_time(pkl_list, name_list, save="", log=False):
+def _trace_with_std_per_time(pkl_list, name_list, save="",
+                             cut=sys.maxint, log=False):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
 
@@ -76,7 +78,7 @@ def _trace_with_std_per_time(pkl_list, name_list, save="", log=False):
         os.chdir(plotting_dir)
         import plotTraceWithStd_perTime
         plotTraceWithStd_perTime.main(pkl_list, name_list, autofill=True,
-                                      optimum=0, save=save, log=log)
+                                      optimum=0, save=save, log=log, cut=cut)
         os.chdir(cur_dir)
         sys.stdout.write("passed\n")
     except Exception, e:
@@ -84,7 +86,8 @@ def _trace_with_std_per_time(pkl_list, name_list, save="", log=False):
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def _optimizer_overhead(pkl_list, name_list, save, log):
+def _optimizer_overhead(pkl_list, name_list, save="",
+                        cut=sys.maxint, log=False):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
 
@@ -93,7 +96,7 @@ def _optimizer_overhead(pkl_list, name_list, save, log):
         os.chdir(plotting_dir)
         import plotOptimizerOverhead
         plotOptimizerOverhead.main(pkl_list, name_list, autofill=True,
-                                   log=log, save=save)
+                                   log=log, save=save, cut=cut)
         os.chdir(cur_dir)
         sys.stdout.write("passed\n")
     except Exception, e:
@@ -101,7 +104,7 @@ def _optimizer_overhead(pkl_list, name_list, save, log):
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def _box_whisker(pkl_list, name_list, save):
+def _box_whisker(pkl_list, name_list, save="", cut=sys.maxint, log=False):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
 
@@ -109,7 +112,7 @@ def _box_whisker(pkl_list, name_list, save):
     try:
         os.chdir(plotting_dir)
         import plotBoxWhisker
-        plotBoxWhisker.main(pkl_list, name_list, save=save)
+        plotBoxWhisker.main(pkl_list, name_list, save=save, cut=cut)
         os.chdir(cur_dir)
         sys.stdout.write("passed\n")
     except Exception, e:
@@ -117,16 +120,15 @@ def _box_whisker(pkl_list, name_list, save):
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def _generate_tex_table(pkl_list, name_list, save):
+def _generate_tex_table(pkl_list, name_list, save="", cut=sys.maxint,
+                        log=False):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
     # noinspection PyBroadException
     try:
         os.chdir(plotting_dir)
         import generateTexTable
-        table = generateTexTable.main(pkl_list, name_list)
-        with open(save, "w") as fh:
-            fh.write(table)
+        generateTexTable.main(pkl_list, name_list, save, cut)
         os.chdir(cur_dir)
         sys.stdout.write("passed\n")
     except Exception, e:
@@ -134,14 +136,14 @@ def _generate_tex_table(pkl_list, name_list, save):
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def _statistics(pkl_list, name_list, save=""):
+def _statistics(pkl_list, name_list, save="", cut=sys.maxint, log=False):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
 
     # noinspection PyBroadException
     try:
         os.chdir(plotting_dir)
-        cmd = ["python statistics.py"]
+        cmd = ["python statistics.py", "--cut %d" % cut]
         for i in range(len(name_list)):
             cmd.append(name_list[i][0])
             for pkl in pkl_list[i]:
@@ -170,13 +172,14 @@ def main():
     parser = ArgumentParser(description=description, prog=prog)
 
     # General Options
-    parser.add_argument("-l", "--nolog", action="store_true", dest="log",
-                        default=False, help="Do NOT plot on log scale")
+    parser.add_argument("-l", "--log", action="store_true", dest="log",
+                        default=False, help="Plot on log scale")
     parser.add_argument("-s", "--save", dest="save",
                         default="", help="Where to save plots? (directory)")
-
     parser.add_argument("-f", "--file", dest="file",
                         default="png", help="File ending")
+    parser.add_argument("-c", "--cut", dest="cut", default=sys.maxint,
+                        type=int, help="Cut experiment pickles after a specified number of trials.")
 
     args, unknown = parser.parse_known_args()
 
@@ -210,7 +213,8 @@ def main():
         else:
             tmp_save = save_dir
         sys.stdout.write("plotTrace.py ... %s ..." % tmp_save)
-        _plot_trace(pkl_list=pkl_list, name_list=name_list, save=tmp_save, log=log)
+        _plot_trace(pkl_list=pkl_list, name_list=name_list, save=tmp_save,
+                    log=log, cut=args.cut)
 
     if len(name_list) > 1:
         # Some plots only make sense, if there are many experiments
@@ -220,7 +224,8 @@ def main():
         else:
             tmp_save = save_dir
         sys.stdout.write("plotBoxWhisker.py ... %s ..." % tmp_save)
-        _box_whisker(pkl_list=pkl_list, name_list=name_list, save=tmp_save)
+        _box_whisker(pkl_list=pkl_list, name_list=name_list, save=tmp_save,
+                     log=log, cut=args.cut)
 
         # statistics
         if save_dir is not "":
@@ -228,7 +233,8 @@ def main():
         else:
             tmp_save = save_dir
         sys.stdout.write("statistics.py ... %s ..." % tmp_save)
-        _statistics(pkl_list=pkl_list, name_list=name_list, save=tmp_save)
+        _statistics(pkl_list=pkl_list, name_list=name_list, save=tmp_save,
+                    log=log, cut=args.cut)
 
         # LaTeX table
         if save_dir is not "":
@@ -236,7 +242,8 @@ def main():
         else:
             tmp_save = save_dir
         sys.stdout.write("generateTexTable.py ... %s ..." % tmp_save)
-        _generate_tex_table(pkl_list, name_list, tmp_save)
+        _generate_tex_table(pkl_list=pkl_list, name_list=name_list,
+                            save=tmp_save, log=log, cut=args.cut)
 
 
     # We can always plot this
@@ -246,7 +253,8 @@ def main():
     else:
         tmp_save = save_dir
     sys.stdout.write("plotOptimizerOverhead.py ... %s ..." % tmp_save)
-    _optimizer_overhead(pkl_list=pkl_list, name_list=name_list, save=tmp_save, log=log)
+    _optimizer_overhead(pkl_list=pkl_list, name_list=name_list, save=tmp_save,
+                        log=log, cut=args.cut)
 
     # Error Trace with Std
     if save_dir is not "":
@@ -254,14 +262,16 @@ def main():
     else:
         tmp_save = save_dir
     sys.stdout.write("TraceWithStd_perEval.py ... %s ..." % tmp_save)
-    _trace_with_std_per_eval(pkl_list=pkl_list, name_list=name_list, save=tmp_save, log=log)
+    _trace_with_std_per_eval(pkl_list=pkl_list, name_list=name_list,
+                             save=tmp_save, log=log, cut=args.cut)
 
     if save_dir is not "":
         tmp_save = os.path.join(save_dir, "TraceWithStd_perTime_%s.%s" % (time_str, args.file))
     else:
         tmp_save = save_dir
     sys.stdout.write("TraceWithStd_perTime.py ... %s ..." % tmp_save)
-    _trace_with_std_per_time(pkl_list=pkl_list, name_list=name_list, save=tmp_save, log=log)
+    _trace_with_std_per_time(pkl_list=pkl_list, name_list=name_list,
+                             save=tmp_save, log=log, cut=args.cut)
 
 if __name__ == "__main__":
     main()

@@ -34,8 +34,8 @@ __contact__ = "automl.org"
 
 
 def plot_time_trace(time_dict, name_list, title="", log=True, save="", y_max=0, y_min=0):
-    colors = itertools.cycle(['b', 'g', 'r', 'k'])
-    markers = itertools.cycle(['o', 's', 'x', '^'])
+    colors = plot_util.get_plot_colors()
+    markers = plot_util.get_plot_markers()
     linestyles = itertools.cycle(['-'])
 
     size = 5
@@ -106,7 +106,9 @@ def plot_time_trace(time_dict, name_list, title="", log=True, save="", y_max=0, 
         plt.show()
 
 
-def main(pkl_list, name_list, autofill, title="", log=False, save="", y_min=0, y_max=0):
+def main(pkl_list, name_list, autofill, title="", log=False, save="",
+         y_min=0, y_max=0, cut=sys.maxint):
+
     times_dict = dict()
     for exp in range(len(name_list)):
         times_dict[name_list[exp][0]] = list()
@@ -115,34 +117,38 @@ def main(pkl_list, name_list, autofill, title="", log=False, save="", y_min=0, y
             trials = cPickle.load(fh)
             fh.close()
 
+            # Get all variables from the trials object
+            cv_starttime = trials["cv_starttime"][:cut]
+            cv_endtime = trials["cv_endtime"][:cut]
+
             # Get optimizer duration times
             time_list = list()
             # First duration
-            time_list.append(trials["cv_starttime"][0] - trials["starttime"][0])
+            time_list.append(cv_starttime[0] - trials["starttime"][0])
             time_idx = 0
-            for i in range(len(trials["cv_starttime"][1:])):
+            for i in range(len(cv_starttime[1:])):
                 # Is there a next restored run?
                 # if yes, does next cvstart belong to a restored run?
                 if len(trials["endtime"]) > time_idx and \
-                        trials["cv_starttime"][i+1] > trials["endtime"][time_idx]:
+                        cv_starttime[i+1] > trials["endtime"][time_idx]:
                     # Check whether run crashed/terminated during cv
                     # Equals means that the run crashed
-                    if trials["cv_endtime"][i] < trials["endtime"][time_idx]:
+                    if cv_endtime[i] < trials["endtime"][time_idx]:
                         # No .. everything is fine
-                        time_list.append((trials["endtime"][time_idx] - trials["cv_endtime"][i]))
-                        time_list.append((trials["cv_starttime"][i + 1] - trials["starttime"][time_idx+1]))
-                    elif trials["endtime"][time_idx] == trials["cv_endtime"][i]:
+                        time_list.append((trials["endtime"][time_idx] - cv_endtime[i]))
+                        time_list.append((cv_starttime[i + 1] - trials["starttime"][time_idx+1]))
+                    elif trials["endtime"][time_idx] == cv_endtime[i]:
                         # Yes, but BBoM managed to set an endtime
                         pass
                     else:
                         # Yes ... trouble
                         print "Help"
                         print trials["endtime"][time_idx]
-                        print trials["cv_endtime"][i]
+                        print cv_endtime[i]
                     time_idx += 1
                 # everything ...
                 else:
-                    time_list.append(trials["cv_starttime"][i + 1] - trials["cv_endtime"][i])
+                    time_list.append(cv_starttime[i + 1] - cv_endtime[i])
             times_dict[name_list[exp][0]].append(time_list)
 
     for key in times_dict.keys():
@@ -156,7 +162,7 @@ def main(pkl_list, name_list, autofill, title="", log=False, save="", y_min=0, y
                 raise ValueError("(%s != %s), Traces do not have the same length, please use -a" %
                                  (str(max_len), str(len(times_dict[key][t]))))
 
-    plot_time_trace(times_dict, name_list, title=title, log=not log, save=save,
+    plot_time_trace(times_dict, name_list, title=title, log=log, save=save,
                     y_min=y_min, y_max=y_max)
 
     if save != "":
@@ -171,8 +177,10 @@ if __name__ == "__main__":
     parser = ArgumentParser(description=description, prog=prog)
 
     # General Options
-    parser.add_argument("-l", "--nolog", action="store_true", dest="log",
-                        default=False, help="Do NOT plot on log scale")
+    parser.add_argument("-c", "--cut", type=int, default=sys.maxint,
+                        help="Cut the experiment pickle length.")
+    parser.add_argument("-l", "--log", action="store_true", dest="log",
+                        default=False, help="Plot on log scale")
     parser.add_argument("--max", type=float, dest="max",
                         default=0, help="Maximum of the plot")
     parser.add_argument("--min", type=float, dest="min",
@@ -191,5 +199,6 @@ if __name__ == "__main__":
     sys.stdout.write("\nFound " + str(len(unknown)) + " arguments\n")
 
     pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
-    main(pkl_list_main, name_list_main, autofill=args.autofill, title=args.title, log=not args.log, save=args.save,
-         y_min=args.min, y_max=args.max)
+    main(pkl_list_main, name_list_main, autofill=args.autofill, title=args.title,
+         log=args.log, save=args.save, y_min=args.min, y_max=args.max,
+         cut=args.cut)

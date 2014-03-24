@@ -57,4 +57,6 @@ def check_config(config):
     if not config.has_option('HPOLIB', 'function') or \
             config.get('HPOLIB', 'function') == '':
         raise Exception('No function specified in .cfg')
+    if config.getint('HPOLIB', "number_cv_folds") < 1:
+        raise Exception("The number of crossvalidation folds must be at least one!")
     return True

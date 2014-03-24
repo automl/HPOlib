@@ -35,8 +35,8 @@ __contact__ = "automl.org"
 
 def plot_optimization_trace(trial_list, name_list, optimum=0, title="",
                             log=True, save="", y_max=0, y_min=0, scale_std=1):
-    markers = itertools.cycle(['o', 's', 'x', '^'])
-    colors = itertools.cycle(['b', 'g', 'r', 'k'])
+    markers =plot_util.get_plot_markers()
+    colors = plot_util.get_plot_colors()
     linestyles = itertools.cycle(['-'])
     size = 1
 
@@ -117,7 +117,8 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="",
         show()
 
 
-def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False, y_min=0, y_max=0, scale_std=1):
+def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
+         y_min=0, y_max=0, scale_std=1, cut=sys.maxint):
 
     trial_list = list()
     for i in range(len(pkl_list)):
@@ -127,7 +128,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
             trials = cPickle.load(fh)
             fh.close()
 
-            trace = plot_util.extract_trajectory(trials)
+            trace = plot_util.extract_trajectory(trials, cut=cut)
             trial_list[-1].append(np.array(trace))
 
     for i in range(len(trial_list)):
@@ -141,7 +142,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
                 raise ValueError("(%s != %s), Traces do not have the same length, please use -a" %
                                  (str(max_len), str(len(trial_list[i][t]))))
 
-    plot_optimization_trace(trial_list, name_list, optimum, title=title, log=not log,
+    plot_optimization_trace(trial_list, name_list, optimum, title=title, log=log,
                             save=save, y_min=y_min, y_max=y_max, scale_std=scale_std)
 
     if save != "":
@@ -165,8 +166,8 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--scale", type=float, dest="scale",
                         default=1, help="Multiply std to get a nicer plot")
     # General Options
-    parser.add_argument("-l", "--nolog", action="store_true", dest="log",
-                        default=False, help="Do NOT plot on log scale")
+    parser.add_argument("-l", "--log", action="store_true", dest="log",
+                        default=False, help="Plot on log scale")
     parser.add_argument("--max", dest="max", type=float,
                         default=0, help="Maximum of the plot")
     parser.add_argument("--min", dest="min", type=float,
