@@ -1,5 +1,16 @@
 *.py[cod]
 
+# Optimizers
+HPOlib/optimizers/smac_2_06_01-dev/*
+HPOlib/optimizers/spearmint_april2013_mod/*
+HPOlib/optimizers/hyperopt_august2013_mod/*
+
+# Runsolver
+runsolver/src/*
+
+# benchmark runs
+HPOlib/benchmarks/*/*_*/*
+
 # C extensions
 *.so
 
@@ -34,3 +45,9 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# pycharm
+.idea
+
+# Others
+*~
