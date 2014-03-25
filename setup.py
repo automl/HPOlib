@@ -265,7 +265,7 @@ setup(
     cmdclass={'install': AdditionalInstall},
     classifiers=[
         'Programming Language :: Python :: 2.7',
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'Natural Language :: English',
         'Environment :: Console',
         'Intended Audience :: Developers',
