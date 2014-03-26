@@ -179,8 +179,8 @@ def main():
         logger.critical(traceback.format_exc())
         sys.exit(1)
     optimizer_call, optimizer_dir_in_experiment = optimizer_module.main(config=config,
-                                                          options=args,
-                                                          experiment_dir=experiment_dir)
+                                                                        options=args,
+                                                                        experiment_dir=experiment_dir)
     cmd = optimizer_call
 
     with open(os.path.join(optimizer_dir_in_experiment, "config.cfg"), "w") as f:
@@ -247,6 +247,10 @@ def main():
         fh = open(output_file, "a")
         cmd = shlex.split(cmd)
         print cmd
+
+        # Change into the current experiment directory
+        # Some optimizer might expect this
+        os.chdir(optimizer_dir_in_experiment)
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, preexec_fn=os.setsid)
         logger.info("-----------------------RUNNING----------------------------------")
