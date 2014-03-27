@@ -237,9 +237,14 @@ def main():
         fn_setup = config.get("HPOLIB", "function_setup")
         if fn_setup:
             try:
-                output = subprocess.check_output(fn_setup, stderr=subprocess.STDOUT)
+                output = subprocess.check_output(fn_setup, stderr=subprocess.STDOUT,
+                                                 shell=True, executable="/bin/bash")
             except subprocess.CalledProcessError as e:
                 logger.critical(e.output)
+                sys.exit(1)
+            except OSError as e:
+                logger.critical(e.message)
+                logger.critical(e.filename)
                 sys.exit(1)
 
         logger.info(cmd)
@@ -372,10 +377,16 @@ def main():
         # call target_function.teardown()
         fn_teardown = config.get("HPOLIB", "function_teardown")
         if fn_teardown:
+            fn_teardown += " " + optimizer_dir_in_experiment
             try:
-                output = subprocess.check_output(fn_teardown, stderr=subprocess.STDOUT)
+                output = subprocess.check_output(fn_teardown, stderr=subprocess.STDOUT,
+                                                 shell=True, executable="/bin/bash")
             except subprocess.CalledProcessError as e:
                 logger.critical(e.output)
+                sys.exit(1)
+            except OSError as e:
+                logger.critical(e.message)
+                logger.critical(e.filename)
                 sys.exit(1)
 
         trials = Experiment.Experiment(optimizer_dir_in_experiment, optimizer)
