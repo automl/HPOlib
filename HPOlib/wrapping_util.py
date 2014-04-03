@@ -27,6 +27,7 @@ import traceback
 import os
 from StringIO import StringIO
 import sys
+import types
 
 import config_parser.parse as parse
 
@@ -219,7 +220,7 @@ def parse_config_values_from_unknown_arguments(unknown_arguments, config):
 
     parser = ArgumentParser()
     for argument in further_possible_command_line_arguments:
-        parser.add_argument(argument)
+        parser.add_argument(argument, nargs="+")
 
     return parser.parse_args(unknown_arguments)
 
@@ -230,7 +231,10 @@ def config_with_cli_arguments(config, config_overrides):
         for key in config.options(section):
             cli_key = "%s:%s" % (section, key)
             if cli_key in arg_dict:
-                config.set(section, key, arg_dict[cli_key])
+                value = arg_dict[cli_key]
+                if value is not None and not isinstance(value, types.StringTypes):
+                    value = " ".join(value)
+                config.set(section, key, value)
             else:
                 config.remove_option(section, key)
     return config
