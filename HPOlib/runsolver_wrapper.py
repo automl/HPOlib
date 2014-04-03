@@ -275,7 +275,7 @@ def parse_output_files(cfg, run_instance_output, runsolver_output_file):
                 error + " Please have a look at " +
                 runsolver_output_file)
         # It is useful to have the run_instance_output for debugging
-        os.remove(run_instance_output)
+        # os.remove(run_instance_output)
 
     return rval
 
