@@ -60,7 +60,7 @@ def build_spearmint_call(config, options, optimizer_dir):
     print
     call = 'python ' + os.path.join(config.get('SPEARMINT', 'path_to_optimizer'), 'spearmint_sync.py')
     call = ' '.join([call, optimizer_dir,
-                    '--config', config.get('SPEARMINT', 'config'),
+                    '--config', os.path.join(optimizer_dir, os.path.basename(config.get('SPEARMINT', 'config'))),
                     '--max-concurrent', config.get('HPOLIB', 'number_of_concurrent_jobs'),
                     '--max-finished-jobs', config.get('SPEARMINT', 'max_finished_jobs'),
                     '--polling-time', config.get('SPEARMINT', 'spearmint_polling_time'),
@@ -128,10 +128,20 @@ def main(config, options, experiment_dir, **kwargs):
     if not os.path.exists(optimizer_dir):
         os.mkdir(optimizer_dir)
         # Make a link to the Protocol-Buffer config file
-        configpb = config.get('SPEARMINT', 'config')
-        if not os.path.exists(os.path.join(optimizer_dir, configpb)):
-            os.symlink(os.path.join(experiment_dir, optimizer_str, configpb),
-                       os.path.join(optimizer_dir, configpb))
+        space = config.get('SPEARMINT', 'config')
+        abs_space = os.path.abspath(space)
+        parent_space = os.path.join(experiment_dir, optimizer_str, space)
+        if os.path.exists(abs_space):
+            space = abs_space
+        elif os.path.exists(parent_space):
+            space = parent_space
+        else:
+            raise Exception("Spearmint search space not found. Searched at %s and "
+                            "%s" % (abs_space, parent_space))
+        # Copy the hyperopt search space
+        if not os.path.exists(os.path.join(optimizer_dir, os.path.basename(space))):
+            os.symlink(os.path.join(experiment_dir, optimizer_str, space),
+                       os.path.join(optimizer_dir, os.path.basename(space)))
     logger.info("### INFORMATION ################################################################")
     logger.info("# You're running %40s                      #" % path_to_optimizer)
     logger.info("%s" % version_info)

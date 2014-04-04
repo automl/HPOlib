@@ -73,7 +73,7 @@ def check_dependencies():
 def build_random_call(config, options, optimizer_dir):
     call = "python " + os.path.dirname(os.path.realpath(__file__)) + \
            "/tpecall.py"
-    call = ' '.join([call, '-p', config.get('TPE', 'space'),
+    call = ' '.join([call, '-p', os.path.join(optimizer_dir, os.path.basename(config.get('TPE', 'space'))),
                      "-m", config.get('TPE', 'number_evals'),
                      "-s", str(options.seed),
                      "--cwd", optimizer_dir, "--random"])
@@ -137,10 +137,19 @@ def main(config, options, experiment_dir, **kwargs):
     if not os.path.exists(optimizer_dir):
         os.mkdir(optimizer_dir)
         space = config.get('TPE', 'space')
+        abs_space = os.path.abspath(space)
+        parent_space = os.path.join(experiment_dir, optimizer_str, space)
+        if os.path.exists(abs_space):
+            space = abs_space
+        elif os.path.exists(parent_space):
+            space = parent_space
+        else:
+            raise Exception("TPE search space not found. Searched at %s and "
+                            "%s" % (abs_space, parent_space))
         # Copy the hyperopt search space
-        if not os.path.exists(os.path.join(optimizer_dir, space)):
+        if not os.path.exists(os.path.join(optimizer_dir, os.path.basename(space))):
             os.symlink(os.path.join(experiment_dir, optimizer_str, space),
-                       os.path.join(optimizer_dir, space))
+                       os.path.join(optimizer_dir, os.path.basename(space)))
 
     import hyperopt
     path_to_loaded_optimizer = os.path.abspath(os.path.dirname(os.path.dirname(hyperopt.__file__)))

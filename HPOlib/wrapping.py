@@ -44,6 +44,20 @@ hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.wrapping")
 
 
+def kill_children(signum, frame):
+    try:
+        os.killpg(child_process_pid, signal.SIGTERM)
+        # TODO: add a real shutdown function. This just kills the child which
+        #  is in turn recognized by the main loop in wrapping.py. The main
+        # loop then terminates after a while.
+    except:
+        logger.critical("There are no child processes to terminate!")
+
+signal.signal(signal.SIGTERM, kill_children)
+signal.signal(signal.SIGABRT, kill_children)
+signal.signal(signal.SIGINT, kill_children)
+
+
 def calculate_wrapping_overhead(trials):
     wrapping_time = 0
     for times in zip(trials.cv_starttime, trials.cv_endtime):
@@ -237,9 +251,14 @@ def main():
         fn_setup = config.get("HPOLIB", "function_setup")
         if fn_setup:
             try:
-                output = subprocess.check_output(fn_setup, stderr=subprocess.STDOUT)
+                output = subprocess.check_output(fn_setup, stderr=subprocess.STDOUT,
+                                                 shell=True, executable="/bin/bash")
             except subprocess.CalledProcessError as e:
                 logger.critical(e.output)
+                sys.exit(1)
+            except OSError as e:
+                logger.critical(e.message)
+                logger.critical(e.filename)
                 sys.exit(1)
 
         logger.info(cmd)
@@ -253,6 +272,10 @@ def main():
         os.chdir(optimizer_dir_in_experiment)
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, preexec_fn=os.setsid)
+
+        global child_process_pid
+        child_process_pid = proc.pid
+
         logger.info("-----------------------RUNNING----------------------------------")
         # http://stackoverflow.com/questions/375427/non-blocking-read-on-a-subprocess-pipe-in-python
         # How often is the experiment pickle supposed to be opened?
@@ -260,6 +283,8 @@ def main():
             optimizer_end_time = time.time() + config.getint("HPOLIB", "total_time_limit")
         else:
             optimizer_end_time = sys.float_info.max
+
+        console_output_delay = config.getfloat("HPOLIB", "console_output_delay")
 
         last_output = time.time()
         printed_start_configuration = list()
@@ -321,9 +346,9 @@ def main():
 
             fh.flush()
             # necessary, otherwise HPOlib-run takes 100% of one processor
-            time.sleep(0.1)
+            time.sleep(0.2)
 
-            if not (args.verbose or args.silent) and time.time() - last_output > 1:
+            if not (args.verbose or args.silent) and time.time() - last_output > console_output_delay:
                 trials = Experiment.Experiment(optimizer_dir_in_experiment,
                                                optimizer)
 
@@ -372,10 +397,16 @@ def main():
         # call target_function.teardown()
         fn_teardown = config.get("HPOLIB", "function_teardown")
         if fn_teardown:
+            fn_teardown += " " + optimizer_dir_in_experiment
             try:
-                output = subprocess.check_output(fn_teardown, stderr=subprocess.STDOUT)
+                output = subprocess.check_output(fn_teardown, stderr=subprocess.STDOUT,
+                                                 shell=True, executable="/bin/bash")
             except subprocess.CalledProcessError as e:
                 logger.critical(e.output)
+                sys.exit(1)
+            except OSError as e:
+                logger.critical(e.message)
+                logger.critical(e.filename)
                 sys.exit(1)
 
         trials = Experiment.Experiment(optimizer_dir_in_experiment, optimizer)

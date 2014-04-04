@@ -52,22 +52,22 @@ def remove_param_metadata(params):
     """
     for para in params:
         new_name = para
+
+        if isinstance(params[para], str):
+            params[para] = params[para].strip("'")
         if "LOG10_" in para:
             pos = para.find("LOG10")
             new_name = para[0:pos] + para[pos + 6:]
-            # new_name = new_name.strip("_")
             params[new_name] = np.power(10, float(params[para]))
             del params[para]
         elif "LOG2" in para:
             pos = para.find("LOG2_")
             new_name = para[0:pos] + para[pos + 5:]
-            # new_name = new_name.strip("_")
             params[new_name] = np.power(2, float(params[para]))
             del params[para]
         elif "LOG_" in para:
             pos = para.find("LOG")
             new_name = para[0:pos] + para[pos + 4:]
-            # new_name = new_name.strip("_")
             params[new_name] = np.exp(float(params[para]))
             del params[para]
             #Check for Q value, returns round(x/q)*q
@@ -75,7 +75,6 @@ def remove_param_metadata(params):
         if m is not None:
             pos = new_name.find(m.group(0))
             tmp = new_name[0:pos] + new_name[pos + len(m.group(0)):]
-            #tmp = tmp.strip("_")
             q = float(m.group(0)[1:-1])
             params[tmp] = round(float(params[new_name]) / q) * q
             del params[new_name]
@@ -276,7 +275,7 @@ def parse_output_files(cfg, run_instance_output, runsolver_output_file):
                 error + " Please have a look at " +
                 runsolver_output_file)
         # It is useful to have the run_instance_output for debugging
-        os.remove(run_instance_output)
+        # os.remove(run_instance_output)
 
     return rval
 

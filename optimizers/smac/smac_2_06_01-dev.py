@@ -92,7 +92,7 @@ def build_smac_call(config, options, optimizer_dir):
                     '--algoExec',  '"python', os.path.join(algo_exec_dir,
                                     config.get('SMAC', 'algo_exec')) + '"',
                     '--execDir', optimizer_dir,
-                    '-p', config.get('SMAC', 'p'),
+                    '-p', os.path.join(optimizer_dir, os.path.basename(config.get('SMAC', 'p'))),
                     # The experiment dir MUST not be specified when restarting, it is set
                     # further down in the code
                     # '--experimentDir', optimizer_dir,
@@ -221,7 +221,20 @@ def main(config, options, experiment_dir, **kwargs):
         os.mkdir(optimizer_dir)
         # TODO: This can cause huge problems when the files are located
         # somewhere else?
-        params = os.path.split(config.get('SMAC', "p"))[1]
+        space = config.get('SMAC', "p")
+        abs_space = os.path.abspath(space)
+        parent_space = os.path.join(experiment_dir, optimizer_str, space)
+        if os.path.exists(abs_space):
+            space = abs_space
+        elif os.path.exists(parent_space):
+            space = parent_space
+        else:
+            raise Exception("SMAC search space not found. Searched at %s and "
+                            "%s" % (abs_space, parent_space))
+
+        if not os.path.exists(os.path.join(optimizer_dir, os.path.basename(space))):
+            os.symlink(os.path.join(experiment_dir, optimizer_str, space),
+                       os.path.join(optimizer_dir, os.path.basename(space)))
         
         # Copy the smac search space and create the instance information
         fh = open(os.path.join(optimizer_dir, 'train.txt'), "w")
@@ -236,10 +249,7 @@ def main(config, options, experiment_dir, **kwargs):
         
         fh = open(os.path.join(optimizer_dir, "scenario.txt"), "w")
         fh.close()
-                        
-        if not os.path.exists(os.path.join(optimizer_dir, params)):
-            os.symlink(os.path.join(experiment_dir, optimizer_str, params),
-                       os.path.join(optimizer_dir, params))
+
     logger.info("### INFORMATION ################################################################")
     logger.info("# You're running %40s                      #" % config.get('SMAC', 'path_to_optimizer'))
     for v in version_info:
