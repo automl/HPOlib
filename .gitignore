@@ -1,9 +1,7 @@
 *.py[cod]
 
 # Optimizers
-HPOlib/optimizers/smac_2_06_01-dev/*
-HPOlib/optimizers/spearmint_april2013_mod/*
-HPOlib/optimizers/hyperopt_august2013_mod/*
+*_src*
 
 # Runsolver
 runsolver/src/*
