@@ -76,7 +76,9 @@ class WrappingTestUtil(unittest.TestCase):
         self.assertEqual(asserted_file_content, file_content)
         string_stream.close()
 
-    def test_use_option_parser_with_config(self):
+    def test_parse_config_values_from_unknown_arguments(self):
+        """Test if we can convert a config with Sections and variables into an
+        argparser."""
         sys.argv = ['wrapping.py', '-s', '1', '-t', 'DBNet', '-o', 'SMAC',
                     '--HPOLIB:number_of_jobs', '2']
         args, unknown = wrapping.use_arg_parser()
@@ -85,7 +87,26 @@ class WrappingTestUtil(unittest.TestCase):
         config.read("dummy_config.cfg")
         config_args = wrapping_util.parse_config_values_from_unknown_arguments(
             unknown, config)
-        self.assertEqual(vars(config_args)['HPOLIB:number_of_jobs'], '2')
+        self.assertListEqual(vars(config_args)['HPOLIB:number_of_jobs'], ['2'])
+        self.assertIs(vars(config_args)['GRIDSEARCH:params'], None)
+        self.assertIs(vars(config_args)['HPOLIB:function'], None)
+        self.assertIs(vars(config_args)['HPOLIB:result_on_terminate'], None)
+
+    def test_parse_config_values_from_unknown_arguments2(self):
+        """Test if we can convert a config with Sections and variables into an
+        argparser. Test for arguments with whitespaces"""
+        sys.argv = ['wrapping.py', '-s', '1', '-t', 'DBNet', '-o', 'SMAC',
+                    '--HPOLIB:function', 'python', '../branin.py']
+        args, unknown = wrapping.use_arg_parser()
+        self.assertEqual(len(unknown), 3)
+        config = ConfigParser.SafeConfigParser(allow_no_value=True)
+        config.read("dummy_config.cfg")
+        config_args = wrapping_util.parse_config_values_from_unknown_arguments(
+            unknown, config)
+        self.assertListEqual(vars(config_args)['HPOLIB:function'], ['python',
+            '../branin.py'])
+        self.assertIs(vars(config_args)['GRIDSEARCH:params'], None)
+        self.assertIs(vars(config_args)['HPOLIB:result_on_terminate'], None)
 
     def test_nan_mean(self):
         self.assertEqual(wrapping_util.nan_mean(np.array([1, 5])), 3)

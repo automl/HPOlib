@@ -208,7 +208,8 @@ def parse_config_values_from_unknown_arguments(unknown_arguments, config):
         config: A ConfigParser.SafeConfigParser object which contains all keys
            should be parsed from the unknown_arguments list.
     Returns:
-        an argparse.Namespace object containing the parsed values.
+        an argparse.Namespace object containing the parsed values. These are
+        packed inside a python list or None if not present.
     Raises:
         an error if an argument from unknown_arguments is not a key in config
     """
