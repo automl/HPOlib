@@ -52,7 +52,8 @@ class Experiment:
         if folds < 1:
             folds = 1
 
-        self.jobs_pkl = os.path.join(expt_dir, expt_name + ".pkl")
+        self.jobs_pkl = os.path.abspath(
+            os.path.join(expt_dir, expt_name + ".pkl"))
         self.locker = Locker.Locker()
 
         # Only one process at a time is allowed to have access to this.
@@ -199,7 +200,13 @@ class Experiment:
         return self.trials[best_idx]
 
     def get_trial_from_id(self, _id):
-        return self.trials[_id]
+        try:
+            return self.trials[_id]
+        except IndexError as e:
+            logger.critical("IndexError in get_trial_from_id. len(trials): "
+                            "%d, accessed index: %d" % (len(self.trials), _id))
+            raise e
+
 
     # Add a job to the list of all jobs
     def add_job(self, params):
