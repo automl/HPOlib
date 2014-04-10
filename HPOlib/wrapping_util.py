@@ -109,7 +109,8 @@ def load_experiment_config_file():
         if not config.has_option("HPOLIB", "is_not_original_config_file"):
             logger.critical("Config file in directory %s seems to be an"
                 " original config which was not created by wrapping.py. "
-                "Please contact the HPOlib maintainer to solve this issue.")
+                "Are you sure that you are in the right directory?" %
+                            os.getcwd())
             sys.exit(1)
         return config
     except IOError as e:

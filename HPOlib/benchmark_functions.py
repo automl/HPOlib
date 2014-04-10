@@ -461,7 +461,7 @@ def save_svm_on_grid(params, ret_time=False, **kwargs):
 
 
 def svm_on_grid(c, alpha, epsilon, ret_time=False):
-    # Values for an 6*8*8 grid search which was performed by Hofman et. al.
+    # Values for an 24*14*4 grid search which was performed by Miller et. al.
     # Values obtained from Jasper Snoek
     # C, alpha, epsilon
     # opt_time: return time instead of performance
