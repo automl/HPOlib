@@ -31,6 +31,7 @@ except ImportError:
     jinja2 = ""
 
 from HPOlib.Plotting import plot_util
+from HPOlib import wrapping_util
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -42,7 +43,7 @@ template_string = \
 \\usepackage[landscape]{geometry}
 \\usepackage{multirow}           % import command \multicolmun
 \\usepackage{tabularx}           % Convenient table formatting
-\\usepackage{booktabs}           % provides \toprule, \midrule and \bottomrule
+\\usepackage{booktabs}           % provides \\toprule, \midrule and \\bottomrule
 
 \\begin{document}
 
@@ -63,43 +64,57 @@ template_string = \
 {{ experiment }} & {{ evals }}
 {%- for name in result_values -%}
 {%- set results = result_values[name] -%}
-{{ ' & ' }}{{ results['mean']|round(3, 'floor') }}$\\pm${{ results['std']|round(3, 'floor')}} & {{ results['min']|round(3, 'floor') }}
-{%- endfor %} \\\\
+{{ ' & ' }}{% if results['mean_best'] == True %}\\textbf{ {%- endif %}{{results['mean']|round(3, 'floor') }}{% if results['mean_best'] == True %}}{% endif %}$\\pm${{ results['std']|round(3, 'floor')}} & {{results['min']|round(3, 'floor') }}{%- endfor %} \\\\
 \\bottomrule
 \\end{tabularx}
 \\end{table}
 \\end{document}
 """
 
-def main(pkl_list, name_list, save, cut=sys.maxint):
+def main(pkl_list, name_list, save="", cut=sys.maxint,
+         template_string=template_string, experiment_name="Name",
+         num_evals="\\#eval"):
+    pickles = plot_util.load_pickles(name_list, pkl_list)
+    best_dict, idx_dict, keys = plot_util.get_best_dict(name_list, pickles, cut)
+    return generate_tex_template(best_dict, name_list,
+                          template_string=template_string, save=save,
+                          num_evals=num_evals, experiment_name=experiment_name)
+
+
+def generate_tex_template(best_dict, name_list, save="",
+         template_string=template_string, experiment_name="Name",
+         num_evals="\\#eval"):
     tex = StringIO()
     result_values = OrderedDict([(name[0], dict()) for name in name_list])
 
-    best_dict, idx_dict, keys = plot_util.read_pickles(name_list, pkl_list, cut)
+    means = [np.mean(best_dict[name]) for name in result_values]
+    stds = [np.std(best_dict[name]) for name in result_values]
+    mins = [np.min(best_dict[name]) for name in result_values]
+    maxs = [np.max(best_dict[name]) for name in result_values]
 
     for name in result_values:
         values = result_values[name]
 
         values["mean"] = np.mean(best_dict[name])
-        values["mean_bold"] = False
-        values["mean_italic"] = False
+        values["mean_best"] = True if \
+            wrapping_util.float_eq(values["mean"], min(means)) else False
 
         values["std"] = np.std(best_dict[name])
-        values["std_bold"] = False
-        values["std_italic"] = False
+        values["std_best"] = True if \
+            wrapping_util.float_eq(values["std"], min(stds)) else False
 
         values["min"] = np.min(best_dict[name])
-        values["min_bold"] = False
-        values["min_italic"] = False
+        values["min_best"] = True if\
+            wrapping_util.float_eq(values["min"], min(mins)) else False
 
-        values["max"] = np.min(best_dict[name])
-        values["max_bold"] = False
-        values["max_italic"] = False
+        values["max"] = np.max(best_dict[name])
+        values["max_best"] = True if\
+            wrapping_util.float_eq(values["max"], min(maxs)) else False
 
     if jinja2:
         template = Template(template_string)
         tex.write(template.render(result_values=result_values,
-                                  experiment="Name", evals="\\#evals"))
+                                  experiment=experiment_name, evals=num_evals))
     else:
         tex.write("Name & #evals")
         for name in result_values:
@@ -119,7 +134,7 @@ def main(pkl_list, name_list, save, cut=sys.maxint):
         with open(save, "w") as fh:
             fh.write(table)
     else:
-        print table
+        return table
 
 
 if __name__ == "__main__":

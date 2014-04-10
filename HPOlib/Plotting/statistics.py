@@ -113,7 +113,8 @@ def _mann_whitney_u(x, y=None):
 
 
 def main(pkl_list, name_list, cut=sys.maxint):
-    best_dict, idx_dict, keys = plot_util.read_pickles(name_list, pkl_list,
+    pickles = plot_util.load_pickles(name_list, pkl_list)
+    best_dict, idx_dict, keys = plot_util.get_best_dict(name_list, pickles,
                                                        cut=cut)
 
     for k in keys:

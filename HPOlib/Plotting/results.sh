@@ -88,7 +88,7 @@ then
       then
         num=`cat ${directory}/hyperopt_august2013_mod.out | grep " -----------------------RUNNING RUNSOLVER" | wc -l`
 
-        per=`cat ${directory}/hyperopt_august2013_mod.out | grep "Result for ParamILS:" | sort -r | tail -1`
+        per=`cat ${directory}/hyperopt_august2013_mod.out | grep "Result for ParamILS:" | cut -d" " -f 9 | sort -r | tail -1`
 	per=`echo $per | cut -d' ' -f9`
 	per=`echo $per | sed 's/,//'`
 
@@ -116,7 +116,7 @@ then
       then
         num=`cat ${directory}/random_hyperopt_august2013_mod.out | grep " -----------------------RUNNING RUNSOLVER" | wc -l`
 
-        per=`cat ${directory}/random_hyperopt_august2013_mod.out | grep "Result for ParamILS:" | sort -r | tail -1`
+        per=`cat ${directory}/random_hyperopt_august2013_mod.out | grep "Result for ParamILS:" | cut -d" " -f 9 | sort -r | tail -1`
         per=`echo $per | cut -d' ' -f9`
         per=`echo $per | sed 's/,//'`
 
