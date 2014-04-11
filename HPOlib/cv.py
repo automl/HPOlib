@@ -72,7 +72,8 @@ def do_cv(params, folds=10):
             # Cutofftime, cutofflength and seed can be safely ignored since they
             # are read in runsolver_wrapper
             runsolver_wrapper_script = "python " + \
-                os.path.join(os.path.dirname(os.path.realpath(__file__)), "runsolver_wrapper.py")
+                os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                             "dispatcher/dispatcher.py")
             cmd = "%s %d %s %d %d %d %s" % \
                 (runsolver_wrapper_script, fold, optimizer, 0, 0, 0, param_string)
             logger.info("Calling command:\n%s", cmd)

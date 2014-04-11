@@ -84,7 +84,6 @@ class Locker:
         else:
             lockname = filename
 
-        logger.info("Trying to lock %s", filename)
         if self.locks.has_key(filename):
             self.locks[filename] += 1
             return True
@@ -101,7 +100,6 @@ class Locker:
         else:
             lockname = filename
 
-        logger.info("Trying to unlock %s", filename)
         if not self.locks.has_key(filename):
             logger.info("Trying to unlock not-locked file %s.\n", filename)
             return True

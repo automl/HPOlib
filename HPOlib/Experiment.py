@@ -19,8 +19,6 @@
 import cPickle
 import logging
 import os
-import scipy
-from scipy.stats.distributions import wrapcauchy_gen
 import sys
 import tempfile
 
@@ -42,6 +40,13 @@ INCOMPLETE_STATE = 1
 RUNNING_STATE = 2
 COMPLETE_STATE = 3
 BROKEN_STATE = -1
+
+
+
+def load_experiment_file():
+    optimizer = wrapping_util.get_optimizer()
+    experiment = Experiment(".", optimizer)
+    return experiment
 
 
 class Experiment:
