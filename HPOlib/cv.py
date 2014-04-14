@@ -195,11 +195,13 @@ def main(*args, **kwargs):
         for arg in args:
             if type(arg) == dict:
                 params = arg
+                break
 
     if params is None:
         logger.critical("No parameter dict found in cv.py.\n"
                         "args: %s\n kwargs: %s", args, kwargs)
-        sys.exit(1)
+        # TODO: Hack for TPE and AUTOWeka
+        params = args
 
     # Load the experiment to do time-keeping
     cv_starttime = time.time()
