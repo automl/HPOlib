@@ -131,6 +131,7 @@ def main():
         cv_starttime = time.time()
         experiment = Experiment.load_experiment_file()
         experiment.start_cv(cv_starttime)
+        experiment._save_jobs()
         del experiment
 
     fold, seed = parse_command_line()
@@ -142,6 +143,7 @@ def main():
     # Side-effect: adds a job if it is not yet in the experiments file
     trial_index = get_trial_index(experiment, fold, params)
     experiment.set_one_fold_running(trial_index, fold)
+    experiment._save_jobs()
     del experiment  # release Experiment lock
 
     dispatch_function = cfg.get("HPOLIB", "dispatcher")
@@ -170,6 +172,7 @@ def main():
     else:
         # TODO: We need a global stopping mechanism
         pass
+    experiment._save_jobs()
     del experiment  # release lock
 
     return_string = format_return_string(status, wallclock_time, 1, result,
@@ -178,6 +181,7 @@ def main():
     if not called_from_cv:
         experiment = Experiment.load_experiment_file()
         experiment.end_cv(time.time())
+        experiment._save_jobs()
         del experiment
 
     logger.info(return_string)

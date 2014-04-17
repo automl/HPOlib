@@ -52,10 +52,11 @@ class ExperimentTest(unittest.TestCase):
 
     def test_init(self):
         # TODO: Somehow test in which folder the experiment is created
-        # TODO: Remove the case that it is always saved automatically
+        # TODO: Remove the case that it is saved
         exp = Experiment.Experiment(".", "test_exp")
         _sanity_check(exp)
         exp.title = "test"
+        exp._save_jobs()
         del exp
 
         # Make sure reloading works

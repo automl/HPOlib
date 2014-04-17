@@ -209,6 +209,7 @@ def main(*args, **kwargs):
     experiment = load_experiment_file()
     # experiment.next_iteration()
     experiment.start_cv(cv_starttime)
+    experiment._save_jobs()
     del experiment
 
     # cfg_filename = "config.cfg"
@@ -225,6 +226,7 @@ def main(*args, **kwargs):
     # Load the experiment to do time-keeping
     experiment = load_experiment_file()
     experiment.end_cv(time.time())
+    experiment._save_jobs()
     del experiment
     
     return res
