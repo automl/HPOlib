@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from argparse import ArgumentParser
+import functools
 import imp
 import logging
 import os
@@ -56,6 +57,7 @@ def kill_children(signum, frame):
 signal.signal(signal.SIGTERM, kill_children)
 signal.signal(signal.SIGABRT, kill_children)
 signal.signal(signal.SIGINT, kill_children)
+signal.signal(signal.SIGHUP, kill_children)
 
 
 def calculate_wrapping_overhead(trials):
@@ -270,8 +272,14 @@ def main():
         # Change into the current experiment directory
         # Some optimizer might expect this
         os.chdir(optimizer_dir_in_experiment)
+        # See man 7 credentials for the meaning of a process group id
+        # This makes wrapping.py useable with SGEs default behaviour,
+        # where qdel sends a SIGKILL to a whole process group
+        logger.info(os.getpid())
+        os.setpgid(os.getpid(), os.getpid())
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, preexec_fn=os.setsid)
+                                stderr=subprocess.PIPE)#,
+                                # preexec_fn=preexec_fn)
 
         global child_process_pid
         child_process_pid = proc.pid
