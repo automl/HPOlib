@@ -17,7 +17,8 @@ keywords = 'hyperparameter optimization empirical evaluation black box'
 package_dir = {'HPOlib': 'HPOlib',
                'HPOlib.config_parser': 'HPOlib/config_parser',
                'HPOlib.Plotting': 'HPOlib/Plotting',
-               'HPOlib.format_converter': 'HPOlib/format_converter'}
+               'HPOlib.format_converter': 'HPOlib/format_converter',
+               'HPOlib.disptacher': 'HPOlib/dispatcher'}
 package_data = {'HPOlib.config_parser': ['*.cfg']}
 
 data_files = []
@@ -32,7 +33,8 @@ def get_find_packages():
     packages = ['HPOlib',
                 'HPOlib.config_parser',
                 'HPOlib.Plotting',
-                'HPOlib.format_converter']
+                'HPOlib.format_converter',
+                'HPOlib.dispatcher']
     return packages
 
 

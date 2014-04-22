@@ -80,7 +80,7 @@ def do_cv(params, folds=10):
 
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
-            logger.info("--------------RUNNING RUNSOLVER_WRAPPER--------------")
+            logger.info("-------------- DISPATCHING JOB --------------")
             stdoutdata, stderrdata = process.communicate()
             if stdoutdata:
                 logger.info(stdoutdata)
