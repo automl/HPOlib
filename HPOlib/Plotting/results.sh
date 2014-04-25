@@ -86,9 +86,9 @@ then
       directory=`ls | grep "^hyperopt_august2013_mod_${i}_"`
       if [ -a "${directory}/hyperopt_august2013_mod.out" ]
       then
-        num=`cat ${directory}/hyperopt_august2013_mod.out | grep " -----------------------RUNNING RUNSOLVER" | wc -l`
+        num=`cat ${directory}/hyperopt_august2013_mod.out | grep "Result:" | wc -l`
 
-        per=`cat ${directory}/hyperopt_august2013_mod.out | grep "Result for ParamILS:" | cut -d" " -f 9 | sort -r | tail -1`
+        per=`cat ${directory}/hyperopt_august2013_mod.out | grep "Result:" | cut -d" " -f 4 | sort -r -n | tail -1`
 	per=`echo $per | cut -d' ' -f9`
 	per=`echo $per | sed 's/,//'`
 
@@ -114,9 +114,9 @@ then
       directory=`ls | grep "^random_hyperopt_august2013_mod_${i}_"`
       if [ -a "${directory}/random_hyperopt_august2013_mod.out" ]
       then
-        num=`cat ${directory}/random_hyperopt_august2013_mod.out | grep " -----------------------RUNNING RUNSOLVER" | wc -l`
+        num=`cat ${directory}/random_hyperopt_august2013_mod.out | grep "Result:" | wc -l`
 
-        per=`cat ${directory}/random_hyperopt_august2013_mod.out | grep "Result for ParamILS:" | cut -d" " -f 9 | sort -r | tail -1`
+        per=`cat ${directory}/random_hyperopt_august2013_mod.out | grep "Result:" | cut -d" " -f 4 | sort -r -n | tail -1`
         per=`echo $per | cut -d' ' -f9`
         per=`echo $per | sed 's/,//'`
 
