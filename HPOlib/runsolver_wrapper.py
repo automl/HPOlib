@@ -330,6 +330,8 @@ def main():
     experiment.set_one_fold_running(trial_index, fold)
     del experiment  # release Experiment lock
     logger.debug("Calling: %s" % cmd)
+    #sys.stdout.write(cmd + "\n")
+    #sys.stdout.flush()
     process = subprocess.Popen(cmd, stdout=fh,
                                stderr=fh, shell=True, executable="/bin/bash")
 
