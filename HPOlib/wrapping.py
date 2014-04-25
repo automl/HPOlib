@@ -251,8 +251,10 @@ def main():
         fn_setup = config.get("HPOLIB", "function_setup")
         if fn_setup:
             try:
+                logger.info(fn_setup)
                 output = subprocess.check_output(fn_setup, stderr=subprocess.STDOUT,
                                                  shell=True, executable="/bin/bash")
+                logger.debug(output)
             except subprocess.CalledProcessError as e:
                 logger.critical(e.output)
                 sys.exit(1)
@@ -269,6 +271,7 @@ def main():
 
         # Change into the current experiment directory
         # Some optimizer might expect this
+        dir_before_exp = os.getcwd()
         os.chdir(optimizer_dir_in_experiment)
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, preexec_fn=os.setsid)
@@ -393,6 +396,9 @@ def main():
 
         logger.info("-----------------------END--------------------------------------")
         fh.close()
+
+        # Change back into to directory
+        os.chdir(dir_before_exp)
 
         # call target_function.teardown()
         fn_teardown = config.get("HPOLIB", "function_teardown")
