@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from argparse import ArgumentParser
-import functools
 import imp
 import logging
 import os
@@ -27,12 +26,13 @@ import shlex
 import subprocess
 import sys
 from threading import Thread
+import thread
 import time
 
 import HPOlib
 import HPOlib.check_before_start as check_before_start
 import HPOlib.wrapping_util as wrapping_util
-# Experiment is imported after we check for numpy
+# Import experiment only after the check for numpy succeeded
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -97,6 +97,49 @@ def calculate_optimizer_time(trials):
     # We need to import numpy again
     import numpy as np
     return np.nansum(optimizer_time)
+
+
+def output_experiment_pickle(console_output_delay,
+                             printed_start_configuration,
+                             printed_end_configuration,
+                             optimizer_dir_in_experiment,
+                             optimizer, lock, Experiment, np, exit):
+    while True:
+        trials = Experiment.Experiment(optimizer_dir_in_experiment,
+                                       optimizer)
+
+        with lock:
+            for i in range(len(printed_end_configuration), len(trials.instance_order)):
+                configuration = trials.instance_order[i][0]
+                fold = trials.instance_order[i][1]
+                if i + 1 > len(printed_start_configuration):
+                    logger.info("Starting configuration %5d, fold %2d",
+                                configuration, fold)
+                    printed_start_configuration.append(i)
+
+                if np.isfinite(trials.trials[configuration]
+                               ["instance_results"][fold]):
+                    last_result = trials.trials[configuration] \
+                        ["instance_results"][fold]
+                    tmp_current_best = trials.get_arg_best()
+                    if tmp_current_best <= i:
+                        current_best = tmp_current_best
+                    # Calculate current best
+                    # Check if last result is finite, if not calc nanmean over all instances
+                    dct_helper = trials.trials[current_best]
+                    res = dct_helper["result"] if \
+                        np.isfinite(dct_helper["result"]) \
+                        else wrapping_util.nan_mean(dct_helper["instance_results"])
+                        #np.nanmean(trials.trials[current_best]["instance_results"])
+                        # nanmean does not work for all numpy version
+                    logger.info("Result %10f, current best %10f",
+                                last_result, res)
+                    printed_end_configuration.append(i)
+
+            del trials
+        time.sleep(console_output_delay)
+        if exit:
+            break
 
 
 def use_arg_parser():
@@ -294,7 +337,6 @@ def main():
 
         console_output_delay = config.getfloat("HPOLIB", "console_output_delay")
 
-        last_output = time.time()
         printed_start_configuration = list()
         printed_end_configuration = list()
         current_best = -1
@@ -317,7 +359,15 @@ def main():
         stdout_thread.daemon = True
         stderr_thread.start()
         stdout_thread.start()
-        logger.info('Optimizer runs with PID: %d', proc.pid)
+        if not (args.verbose or args.silent):
+            lock = thread.allocate_lock()
+            thread.start_new_thread(output_experiment_pickle,
+                                    (console_output_delay,
+                                     printed_start_configuration,
+                                     printed_end_configuration,
+                                     optimizer_dir_in_experiment,
+                                     optimizer, lock, Experiment, np, False))
+            logger.info('Optimizer runs with PID: %d', proc.pid)
 
         while minimal_runs_to_go > 0:     # Think of this as a do-while loop...
             try:
@@ -356,48 +406,16 @@ def main():
             # necessary, otherwise HPOlib-run takes 100% of one processor
             time.sleep(0.2)
 
-            if not (args.verbose or args.silent) and time.time() - last_output > console_output_delay:
-                trials = Experiment.Experiment(optimizer_dir_in_experiment,
-                                               optimizer)
-
-                for i in range(len(printed_end_configuration), len(trials.instance_order)):
-                    configuration = trials.instance_order[i][0]
-                    fold = trials.instance_order[i][1]
-                    if i + 1 > len(printed_start_configuration):
-                        logger.info("Starting configuration %5d, fold %2d",
-                                    configuration, fold)
-                        printed_start_configuration.append(i)
-
-                    if np.isfinite(trials.trials[configuration]
-                                   ["instance_results"][fold]):
-                        last_result = trials.trials[configuration] \
-                            ["instance_results"][fold]
-                        tmp_current_best = trials.get_arg_best()
-                        if tmp_current_best <= i:
-                            current_best = tmp_current_best
-                        # Calculate current best
-                        # Check if last result is finite, if not calc nanmean over all instances
-                        dct_helper = trials.trials[current_best]
-                        res = dct_helper["result"] if \
-                            np.isfinite(dct_helper["result"]) \
-                            else wrapping_util.nan_mean(dct_helper["instance_results"])
-                            #np.nanmean(trials.trials[current_best]["instance_results"])
-                            # nanmean does not work for all numpy version
-                        logger.info("Result %10f, current best %10f",
-                                    last_result, res)
-                        printed_end_configuration.append(i)
-
-                del trials
-                last_output = time.time()
-
-                if proc.poll() is not None:       # the end condition for the
-                    minimal_runs_to_go -= 1       # do-while loop
-
-            elif args.verbose or args.silent:
-                if proc.poll() is not None:
-                    minimal_runs_to_go -= 1
+            if proc.poll() is not None:
+                minimal_runs_to_go -= 1
 
         ret = proc.returncode
+        if not (args.verbose or args.silent):
+            output_experiment_pickle(console_output_delay,
+                                     printed_start_configuration,
+                                     printed_end_configuration,
+                                     optimizer_dir_in_experiment,
+                                     optimizer, lock, Experiment, np, True)
 
         logger.info("-----------------------END--------------------------------------")
         fh.close()
