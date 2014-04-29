@@ -19,6 +19,7 @@
 from argparse import ArgumentParser
 import imp
 import logging
+import psutil
 import os
 from Queue import Queue, Empty
 import signal
@@ -45,19 +46,57 @@ hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.wrapping")
 
 
-def kill_children(signum, frame):
-    try:
-        os.killpg(child_process_pid, signal.SIGTERM)
-        # TODO: add a real shutdown function. This just kills the child which
-        #  is in turn recognized by the main loop in wrapping.py. The main
-        # loop then terminates after a while.
-    except:
-        logger.critical("There are no child processes to terminate!")
+def get_all_p_for_pgid():
+    current_pgid = os.getpgid(os.getpid())
+    pids = psutil.pids()
+    running_pid = []
+    for pid in pids:
+        try:
+            pgid = os.getpgid(pid)
+        except:
+            continue
 
-signal.signal(signal.SIGTERM, kill_children)
-signal.signal(signal.SIGABRT, kill_children)
-signal.signal(signal.SIGINT, kill_children)
-signal.signal(signal.SIGHUP, kill_children)
+        # Don't try to kill HPOlib-run
+        if pgid == current_pgid and pid != os.getpid():
+            # This solves the problem that a Zombie process counts
+            # towards the number of process which have to be killed
+            running_pid.append(pid)
+    return running_pid
+
+
+def kill_children(sig):
+    # TODO: somehow wait, until the Experiment pickle is written to disk
+    running_pid = get_all_p_for_pgid()
+
+    logger.critical("Running %s" % str(running_pid))
+    for pid in running_pid:
+        try:
+            os.kill(pid, sig)
+        except Exception as e:
+            logger.error(type(e))
+            logger.error(e)
+
+
+class Exit:
+    def __init__(self):
+        self.exit_flag = False
+        self.signal = None
+
+    def true(self):
+        self.exit_flag = True
+
+    def false(self):
+        self.exit_flag = False
+
+    def set_exit_flag(self, exit):
+        self.exit_flag = exit
+
+    def get_exit(self):
+        return self.exit_flag
+
+    def signal_callback(self, signal, frame):
+        self.true()
+        self.signal = signal
 
 
 def calculate_wrapping_overhead(trials):
@@ -104,9 +143,15 @@ def output_experiment_pickle(console_output_delay,
                              printed_end_configuration,
                              optimizer_dir_in_experiment,
                              optimizer, lock, Experiment, np, exit):
+    current_best = -1
     while True:
-        trials = Experiment.Experiment(optimizer_dir_in_experiment,
+        try:
+            trials = Experiment.Experiment(optimizer_dir_in_experiment,
                                        optimizer)
+        except Exception as e:
+            logger.error(e)
+            time.sleep(console_output_delay)
+            continue
 
         with lock:
             for i in range(len(printed_end_configuration), len(trials.instance_order)):
@@ -312,6 +357,14 @@ def main():
         cmd = shlex.split(cmd)
         print cmd
 
+        # Use a flag which is set to true as soon as all children are
+        # supposed to be killed
+        exit_ = Exit()
+        signal.signal(signal.SIGTERM, exit_.signal_callback)
+        signal.signal(signal.SIGABRT, exit_.signal_callback)
+        signal.signal(signal.SIGINT, exit_.signal_callback)
+        signal.signal(signal.SIGHUP, exit_.signal_callback)
+
         # Change into the current experiment directory
         # Some optimizer might expect this
         os.chdir(optimizer_dir_in_experiment)
@@ -339,12 +392,8 @@ def main():
 
         printed_start_configuration = list()
         printed_end_configuration = list()
-        current_best = -1
-        sent_SIGTERM = False
+        sent_SIGINT = False
         sent_SIGKILL = False
-        # After the evaluation finished, we scan the experiment pickle twice
-        # to print everything!
-        minimal_runs_to_go = 2
 
         def enqueue_output(out, queue):
             for line in iter(out.readline, b''):
@@ -369,7 +418,19 @@ def main():
                                      optimizer, lock, Experiment, np, False))
             logger.info('Optimizer runs with PID: %d', proc.pid)
 
-        while minimal_runs_to_go > 0:     # Think of this as a do-while loop...
+        while True:
+            # TODO: change this to the shutdown utility which is seen below
+            if time.time() > optimizer_end_time and not sent_SIGINT:
+                os.killpg(proc.pid, signal.SIGINT)
+                sent_SIGINT = True
+
+            if time.time() > optimizer_end_time + 200 and not sent_SIGKILL:
+                os.killpg(proc.pid, signal.SIGKILL)
+                sent_SIGKILL = True
+
+            # necessary, otherwise HPOlib-run takes 100% of one processor
+            time.sleep(0.2)
+
             try:
                 while True:
                     line = stdout_queue.get_nowait()
@@ -394,22 +455,20 @@ def main():
             except Empty:
                 pass
 
-            if time.time() > optimizer_end_time and not sent_SIGTERM:
-                os.killpg(proc.pid, signal.SIGTERM)
-                sent_SIGTERM = True
+            ret = proc.poll()
 
-            if time.time() > optimizer_end_time + 200 and not sent_SIGKILL:
-                os.killpg(proc.pid, signal.SIGKILL)
-                sent_SIGKILL = True
+            running = get_all_p_for_pgid()
+            if ret is not None and len(running) == 0:
+                break
+            # TODO: what happens if we have a ret but something is still
+            # running?
 
-            fh.flush()
-            # necessary, otherwise HPOlib-run takes 100% of one processor
-            time.sleep(0.2)
-
-            if proc.poll() is not None:
-                minimal_runs_to_go -= 1
+            if exit_.get_exit() == True:
+                kill_children(signal.SIGINT)
 
         ret = proc.returncode
+        del proc
+
         if not (args.verbose or args.silent):
             output_experiment_pickle(console_output_delay,
                                      printed_start_configuration,

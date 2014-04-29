@@ -61,7 +61,7 @@ class Locker:
         if self.locks[filename] == 1:
             success = safe_delete('%s.lock' % (filename))
             if not success:
-                logger.log("Could not unlock file: %s.\n", filename)
+                logger.error("Could not unlock file: %s.\n", filename)
             del self.locks[filename]
             return success
         else:
