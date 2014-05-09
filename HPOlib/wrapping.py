@@ -297,6 +297,7 @@ def main():
         if fn_setup:
             try:
                 logger.info(fn_setup)
+                fn_setup = shlex.split(fn_setup)
                 output = subprocess.check_output(fn_setup, stderr=subprocess.STDOUT,
                                                  shell=True, executable="/bin/bash")
                 logger.debug(output)
@@ -429,8 +430,8 @@ def main():
         # call target_function.teardown()
         fn_teardown = config.get("HPOLIB", "function_teardown")
         if fn_teardown:
-            fn_teardown += " " + optimizer_dir_in_experiment
             try:
+                fn_teardown = shlex.split(fn_teardown)
                 output = subprocess.check_output(fn_teardown, stderr=subprocess.STDOUT,
                                                  shell=True, executable="/bin/bash")
             except subprocess.CalledProcessError as e:
