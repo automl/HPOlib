@@ -20,7 +20,6 @@ import cPickle
 import logging
 import os
 import scipy
-from scipy.stats.distributions import wrapcauchy_gen
 import sys
 import tempfile
 
