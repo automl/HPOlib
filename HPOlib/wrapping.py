@@ -298,8 +298,8 @@ def main():
             try:
                 logger.info(fn_setup)
                 fn_setup = shlex.split(fn_setup)
-                output = subprocess.check_output(fn_setup, stderr=subprocess.STDOUT,
-                                                 shell=True, executable="/bin/bash")
+                output = subprocess.check_output(fn_setup, stderr=subprocess.STDOUT) #,
+                                                 #shell=True, executable="/bin/bash")
                 logger.debug(output)
             except subprocess.CalledProcessError as e:
                 logger.critical(e.output)
@@ -432,8 +432,8 @@ def main():
         if fn_teardown:
             try:
                 fn_teardown = shlex.split(fn_teardown)
-                output = subprocess.check_output(fn_teardown, stderr=subprocess.STDOUT,
-                                                 shell=True, executable="/bin/bash")
+                output = subprocess.check_output(fn_teardown, stderr=subprocess.STDOUT) #,
+                                                 #shell=True, executable="/bin/bash")
             except subprocess.CalledProcessError as e:
                 logger.critical(e.output)
                 sys.exit(1)
