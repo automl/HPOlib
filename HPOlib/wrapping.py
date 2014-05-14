@@ -142,12 +142,13 @@ def output_experiment_pickle(console_output_delay,
                              printed_start_configuration,
                              printed_end_configuration,
                              optimizer_dir_in_experiment,
-                             optimizer, lock, Experiment, np, exit):
+                             optimizer, experiment_directory_prefix, lock,
+                             Experiment, np, exit):
     current_best = -1
     while True:
         try:
             trials = Experiment.Experiment(optimizer_dir_in_experiment,
-                                       optimizer)
+                                       experiment_directory_prefix + optimizer)
         except Exception as e:
             logger.error(e)
             time.sleep(console_output_delay)
@@ -282,11 +283,14 @@ def main():
         import traceback
         logger.critical(traceback.format_exc())
         sys.exit(1)
+    experiment_directory_prefix = config.get("HPOLIB", "experiment_directory_prefix")
     optimizer_call, optimizer_dir_in_experiment = optimizer_module.main(config=config,
                                                                         options=args,
-                                                                        experiment_dir=experiment_dir)
+                                                                        experiment_dir=experiment_dir,
+                                                                        experiment_directory_prefix=experiment_directory_prefix)
     cmd = optimizer_call
 
+    config.set("HPOLIB", "seed", str(args.seed))
     with open(os.path.join(optimizer_dir_in_experiment, "config.cfg"), "w") as f:
         config.set("HPOLIB", "is_not_original_config_file", "True")
         wrapping_util.save_config_to_file(f, config, write_nones=True)
@@ -298,7 +302,9 @@ def main():
         except OSError:
             pass
     folds = config.getint('HPOLIB', 'number_cv_folds')
-    trials = Experiment.Experiment(optimizer_dir_in_experiment, optimizer, folds=folds,
+    trials = Experiment.Experiment(optimizer_dir_in_experiment,
+                                   experiment_directory_prefix + optimizer,
+                                   folds=folds,
                                    max_wallclock_time=config.get('HPOLIB',
                                                                  'cpu_limit'),
                                    title=args.title)
@@ -373,9 +379,11 @@ def main():
         # where qdel sends a SIGKILL to a whole process group
         logger.info(os.getpid())
         os.setpgid(os.getpid(), os.getpid())
+        # TODO: figure out why shell=True was removed in commit f47ac4bb3ffe7f70b795d50c0828ca7e109d2879
+        # maybe it has something todo with the previous behaviour where a
+        # session id was set...
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)#,
-                                # preexec_fn=preexec_fn)
+                                stderr=subprocess.PIPE)
 
         global child_process_pid
         child_process_pid = proc.pid
@@ -393,7 +401,12 @@ def main():
         printed_start_configuration = list()
         printed_end_configuration = list()
         sent_SIGINT = False
+        sent_SIGINT_time = np.inf
+        sent_SIGTERM = False
+        sent_SIGTERM_time = np.inf
         sent_SIGKILL = False
+        sent_SIGKILL_time = np.inf
+
 
         def enqueue_output(out, queue):
             for line in iter(out.readline, b''):
@@ -415,18 +428,15 @@ def main():
                                      printed_start_configuration,
                                      printed_end_configuration,
                                      optimizer_dir_in_experiment,
-                                     optimizer, lock, Experiment, np, False))
+                                     optimizer, experiment_directory_prefix,
+                                     lock, Experiment, np, False))
             logger.info('Optimizer runs with PID: %d', proc.pid)
 
         while True:
-            # TODO: change this to the shutdown utility which is seen below
+            # this implements the total runtime limit
             if time.time() > optimizer_end_time and not sent_SIGINT:
-                os.killpg(proc.pid, signal.SIGINT)
-                sent_SIGINT = True
-
-            if time.time() > optimizer_end_time + 200 and not sent_SIGKILL:
-                os.killpg(proc.pid, signal.SIGKILL)
-                sent_SIGKILL = True
+                logger.info("Reached total_time_limit, going to shutdown.")
+                exit_.true()
 
             # necessary, otherwise HPOlib-run takes 100% of one processor
             time.sleep(0.2)
@@ -463,8 +473,25 @@ def main():
             # TODO: what happens if we have a ret but something is still
             # running?
 
-            if exit_.get_exit() == True:
+            if exit_.get_exit() == True and not sent_SIGINT:
+                logger.info("Sending SIGINT")
                 kill_children(signal.SIGINT)
+                sent_SIGINT_time = time.time()
+                sent_SIGINT = True
+
+            if exit_.get_exit() == True and not sent_SIGTERM and time.time() \
+                    > sent_SIGINT_time + 100:
+                logger.info("Sending SIGTERM")
+                kill_children(signal.SIGTERM)
+                sent_SIGTERM_time = time.time()
+                sent_SIGTERM = True
+
+            if exit_.get_exit() == True and not sent_SIGKILL and time.time() \
+                    > sent_SIGTERM_time + 100:
+                logger.info("Sending SIGKILL")
+                kill_children(signal.SIGKILL)
+                sent_SIGKILL_time = time.time()
+                sent_SIGKILL = True
 
         ret = proc.returncode
         del proc
@@ -474,7 +501,8 @@ def main():
                                      printed_start_configuration,
                                      printed_end_configuration,
                                      optimizer_dir_in_experiment,
-                                     optimizer, lock, Experiment, np, True)
+                                     optimizer, experiment_directory_prefix,
+                                     lock, Experiment, np, True)
 
         logger.info("-----------------------END--------------------------------------")
         fh.close()
@@ -494,7 +522,8 @@ def main():
                 logger.critical(e.filename)
                 sys.exit(1)
 
-        trials = Experiment.Experiment(optimizer_dir_in_experiment, optimizer)
+        trials = Experiment.Experiment(optimizer_dir_in_experiment,
+                                       experiment_directory_prefix + optimizer)
         trials.endtime.append(time.time())
         #noinspection PyProtectedMember
         trials._save_jobs()
