@@ -347,8 +347,11 @@ def main():
         fn_setup = config.get("HPOLIB", "function_setup")
         if fn_setup:
             try:
-                output = subprocess.check_output(fn_setup, stderr=subprocess.STDOUT,
-                                                 shell=True, executable="/bin/bash")
+                logger.info(fn_setup)
+                fn_setup = shlex.split(fn_setup)
+                output = subprocess.check_output(fn_setup, stderr=subprocess.STDOUT) #,
+                                                 #shell=True, executable="/bin/bash")
+                logger.debug(output)
             except subprocess.CalledProcessError as e:
                 logger.critical(e.output)
                 sys.exit(1)
@@ -373,6 +376,7 @@ def main():
 
         # Change into the current experiment directory
         # Some optimizer might expect this
+        dir_before_exp = os.getcwd()
         os.chdir(optimizer_dir_in_experiment)
         # See man 7 credentials for the meaning of a process group id
         # This makes wrapping.py useable with SGEs default behaviour,
@@ -507,13 +511,16 @@ def main():
         logger.info("-----------------------END--------------------------------------")
         fh.close()
 
+        # Change back into to directory
+        os.chdir(dir_before_exp)
+
         # call target_function.teardown()
         fn_teardown = config.get("HPOLIB", "function_teardown")
         if fn_teardown:
-            fn_teardown += " " + optimizer_dir_in_experiment
             try:
-                output = subprocess.check_output(fn_teardown, stderr=subprocess.STDOUT,
-                                                 shell=True, executable="/bin/bash")
+                fn_teardown = shlex.split(fn_teardown)
+                output = subprocess.check_output(fn_teardown, stderr=subprocess.STDOUT) #,
+                                                 #shell=True, executable="/bin/bash")
             except subprocess.CalledProcessError as e:
                 logger.critical(e.output)
                 sys.exit(1)

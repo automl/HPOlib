@@ -22,6 +22,8 @@ import os
 import numpy as np
 import sys
 
+import HPOlib.wrapping_util
+
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
@@ -45,6 +47,7 @@ def get_plot_colors():
                             "#a65628",    # Brown
                             "#f781bf",    # Pink
                             "#999999"])   # Grey
+
 
 def load_pickles(name_list, pkl_list):
     pickles = dict()
@@ -166,3 +169,22 @@ def get_best_value_and_index(trials, cut=False):
         best_value = traj[-1]
         best_index = np.argmin(traj)
     return best_value, best_index
+
+
+def get_Trace_cv(trials):
+    trace = list()
+    trials_list = trials['trials']
+    instance_order = trials['instance_order']
+    instance_mean = np.ones([len(trials_list), 1]) * np.inf
+    instance_val = np.ones([len(trials_list), len(trials_list[0]['instance_results'])]) * np.nan
+    for tr_idx, in_idx in instance_order:
+        instance_val[tr_idx, in_idx] = trials_list[tr_idx]['instance_results'][in_idx]
+
+        val = HPOlib.wrapping_util.nan_mean(instance_val[tr_idx, :])
+        if np.isnan(val):
+            val = np.inf
+        instance_mean[tr_idx] = val
+        trace.append(np.min(instance_mean, axis=0)[0])
+    if np.isnan(trace[-1]):
+        del trace[-1]
+    return trace
