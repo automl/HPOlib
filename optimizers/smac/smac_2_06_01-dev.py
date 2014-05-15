@@ -90,7 +90,8 @@ def build_smac_call(config, options, optimizer_dir):
                     '--runObj', config.get('SMAC', 'run_obj'),
                     # '--testInstanceFile', config.get('SMAC', 'testInstanceFile'),
                     '--algoExec',  '"python', os.path.join(algo_exec_dir,
-                                    config.get('SMAC', 'algo_exec')) + '"',
+                        'dispatcher', 'dispatcher.py') + '"',
+                    #                config.get('SMAC', 'algo_exec')) + '"',
                     '--execDir', optimizer_dir,
                     '-p', os.path.join(optimizer_dir, os.path.basename(config.get('SMAC', 'p'))),
                     # The experiment dir MUST not be specified when restarting, it is set

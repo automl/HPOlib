@@ -168,5 +168,4 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
         logger.info("%s" % version_info)
         logger.info("# A newer version might be available, but not yet built in.                    #")
     logger.info("################################################################################")
-
     return cmd, optimizer_dir

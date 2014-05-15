@@ -19,9 +19,11 @@
 # 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import errno
 import logging
 import os
 import time
+import hashlib
 
 
 logger = logging.getLogger("HPOlib.locker")
@@ -38,30 +40,74 @@ class Locker:
     def __init__(self):
         self.locks = {}
 
+        try:
+            try:
+                os.mkdir("/run/lock/HPOlib")
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise e
+            fh = open("/run/lock/HPOlib/HPOlib_test_writeable", "w")
+            fh.close()
+            os.remove("/run/lock/HPOlib/HPOlib_test_writeable")
+            try:
+                os.rmdir("/run/lock/HPOlib")
+            except OSError as e:
+                if e.errno != errno.ENOTEMPTY:
+                    raise e
+            self.ram_lock = True
+        except Exception as e:
+            logger.info("Cannot use /run/lock as locking directory.")
+            logger.info(e.message)
+            self.ram_lock = False
+
     def __del__(self):
         for filename in self.locks.keys():
             self.locks[filename] = 1
             self.unlock(filename)
 
+        try:
+            os.rmdir("/run/lock/HPOlib")
+        except:
+            pass
+
+    def alter_filename(self, filename):
+        md5 = hashlib.md5(filename)
+        return os.path.join("/run/lock/HPOlib", md5.hexdigest())
+
     def lock(self, filename):
+        if self.ram_lock:
+            try:
+                os.mkdir("/run/lock/HPOlib")
+            except:
+                pass
+            lockname = self.alter_filename(filename)
+        else:
+            lockname = filename
+
         if self.locks.has_key(filename):
             self.locks[filename] += 1
             return True
         else:
-            cmd = 'ln -s /dev/null "%s.lock" 2> /dev/null' % filename
+            cmd = 'ln -s /dev/null "%s.lock" 2> /dev/null' % lockname
             fail = os.system(cmd)
             if not fail:
                 self.locks[filename] = 1
             return not fail
 
     def unlock(self, filename):
+        if self.ram_lock:
+            lockname = self.alter_filename(filename)
+        else:
+            lockname = filename
+
         if not self.locks.has_key(filename):
             logger.info("Trying to unlock not-locked file %s.\n", filename)
             return True
         if self.locks[filename] == 1:
-            success = safe_delete('%s.lock' % (filename))
+            success = safe_delete('%s.lock' % lockname)
             if not success:
-                logger.error("Could not unlock file: %s.\n", filename)
+                logger.log("Could not unlock file: %s. Lockfile %s.\n",
+                           filename, lockname)
             del self.locks[filename]
             return success
         else:
