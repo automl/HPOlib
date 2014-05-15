@@ -80,7 +80,7 @@ ls optimizers/smac
 
 ```bash
 cd benchmarks/branin
-HPOlib-run -o ../../optimizers/smac/sma -s 23
+HPOlib-run -o ../../optimizers/smac/smac -s 23
 ```
 
 This takes depending on your machine ~2 minutes. You can now plot the results of your first experiment:
@@ -92,17 +92,20 @@ HPOlib-plot FIRSTRUN smac_2_06_01-dev_23_*/smac_*.pkl -s `pwd`/Plots/
 You can test the other optimizers (spearmint will take quite longer 30min):
 
 ```bash
-    HPOlib-run -o ../../optimizers/tpe/h -s 23
-    HPOlib-run -o ../../optimizers/spearmint/s -s 23
+HPOlib-run -o ../../optimizers/tpe/h -s 23
+HPOlib-run -o ../../optimizers/spearmint/spearmint_april2013 -s 23
 ```
 
 and again:
 
 ```bash
-    HPOlib-plot SMAC smac_2_06_01-dev_23_*/smac_*.pkl TPE hyperopt_august2013_mod_23_*/hyp*.pkl SPEARMINT spearmint_april2013_mod_23_*/spear*.pkl -s `pwd`/Plots/
+HPOlib-plot SMAC smac_2_06_01-dev_23_*/smac_*.pkl TPE hyperopt_august2013_mod_23_*/hyp*.pkl SPEARMINT spearmint_april2013_mod_23_*/spear*.pkl -s `pwd`/Plots/
+```
+
 and to check the general performance on this super complex benchmark:
 
-    HPOlib-plot BRANIN smac_2_06_01-dev_23_*/smac_*.pkl hyperopt_august2013_mod_23_*/hyp*.pkl spearmint_april2013_mod_23_*/spear*.pkl -s `pwd`/Plots/
+```
+HPOlib-plot BRANIN smac_2_06_01-dev_23_*/smac_*.pkl hyperopt_august2013_mod_23_*/hyp*.pkl spearmint_april2013_mod_23_*/spear*.pkl -s `pwd`/Plots/
 ```
 
 Using without installation
@@ -112,21 +115,21 @@ Using without installation
 If you decide to not install HPOlib, you need to download the optimizer code by yourself
 
 ```bash
-    cd optimizers
-    wget http://www.automl.org/hyperopt_august2013_mod_src.tar.gz
-    wget http://www.automl.org/smac_2_06_01-dev_src.tar.gz
-    wget http://www.automl.org/spearmint_april2013_mod_src.tar.gz
+cd optimizers
+wget http://www.automl.org/hyperopt_august2013_mod_src.tar.gz
+wget http://www.automl.org/smac_2_06_01-dev_src.tar.gz
+wget http://www.automl.org/spearmint_april2013_mod_src.tar.gz
 
-    tar -xf hyperopt_august2013_mod_src.tar.gz
-    mv hyperopt_august2013_mod_src tpe/
+tar -xf hyperopt_august2013_mod_src.tar.gz
+mv hyperopt_august2013_mod_src tpe/
 
-    tar -xf smac_2_06_01-dev_src.tar.gz
-    mv smac_2_06_01-dev_src.tar.gz smac/
+tar -xf smac_2_06_01-dev_src.tar.gz
+mv smac_2_06_01-dev_src.tar.gz smac/
 
-    tar -xf spearmint_april2013_mod_src.tar.gz
-    mv spearmint_april2013_mod_src spearmint/
+tar -xf spearmint_april2013_mod_src.tar.gz
+mv spearmint_april2013_mod_src spearmint/
 
-    cd ../
+cd ../
 ```
 
 And you need to install all requirements:
@@ -147,25 +150,25 @@ e.g. with
 Also you need the runsolver
 
 ```bash
-    wget http://www.cril.univ-artois.fr/~roussel/runsolver/runsolver-3.3.2.tar.bz2
-    tar -xf runsolver-3.3.2.tar.bz2
-    cd runsolver/src
+wget http://www.cril.univ-artois.fr/~roussel/runsolver/runsolver-3.3.2.tar.bz2
+tar -xf runsolver-3.3.2.tar.bz2
+cd runsolver/src
     make
 ```
 
 as this might not work, you can change the makefile via
 
 ```bash
-    sed -i 's/\/usr\/include\/asm\/unistd/\/usr\/include\/unistd/g' ./Makefile
-    make
+sed -i 's/\/usr\/include\/asm\/unistd/\/usr\/include\/unistd/g' ./Makefile
+make
 ```
 
 then you need to add runsolver (and HPOlib) to your PATH (PYTHONPATH):
 
 ```bash
-    cd ../../
-    export PATH=$PATH:/path/to/runsolver/src/
-    export PYTHONPATH=$PYTHONPATH:`pwd`
+cd ../../
+export PATH=$PATH:/path/to/runsolver/src/
+export PYTHONPATH=$PYTHONPATH:`pwd`
 ```
 
 then you can run a benchmark like in step 5.) from installing with setup.py with replacing

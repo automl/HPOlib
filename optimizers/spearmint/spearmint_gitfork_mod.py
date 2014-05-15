@@ -33,14 +33,17 @@ __contact__ = "automl.org"
 logger = logging.getLogger("HPOlib.spearmint_april2013_mod")
 
 
-path_to_optimizer = "optimizers/spearmint_april2013_mod/"
-version_info = ("# %76s #\n" %
-                "https://github.com/JasperSnoek/spearmint/tree/613350f2f617de3af5f101b1dc5eccf60867f67e")
+path_to_optimizer = "optimizers/spearmint_march2014_mod/"
+version_info = ("# %76s #\n" % "git version march 2014")
 
 
 def check_dependencies():
     try:
         import google.protobuf
+        try:
+            from google.protobuf.internal import enum_type_wrapper
+        except ImportError:
+            raise ImportError("Installed google.protobuf version is too old, you need at least 2.5.0")
     except ImportError:
         raise ImportError("Google protobuf cannot be imported. Are you sure "
                           "it's  installed?")
@@ -57,17 +60,20 @@ def check_dependencies():
 
 
 def build_spearmint_call(config, options, optimizer_dir):
-    print
-    call = 'python ' + os.path.join(config.get('SPEARMINT', 'path_to_optimizer'), 'spearmint_sync.py')
-    call = ' '.join([call, optimizer_dir,
-                    '--config', os.path.join(optimizer_dir, os.path.basename(config.get('SPEARMINT', 'config'))),
-                    '--max-concurrent', config.get('HPOLIB', 'number_of_concurrent_jobs'),
-                    '--max-finished-jobs', config.get('SPEARMINT', 'max_finished_jobs'),
-                    '--polling-time', config.get('SPEARMINT', 'spearmint_polling_time'),
-                    '--grid-size', config.get('SPEARMINT', 'grid_size'),
-                    '--method',  config.get('SPEARMINT', 'method'),
-                    '--method-args=' + config.get('SPEARMINT', 'method_args'),
-                    '--grid-seed', str(options.seed)])
+    os.environ['PYTHONPATH'] = os.path.join(config.get('SPEARMINT', 'path_to_optimizer'), 'spearmint') + \
+                               os.pathsep + os.environ['PYTHONPATH']
+    print os.environ['PYTHONPATH']
+    call = 'python ' + \
+            os.path.join(config.get('SPEARMINT', 'path_to_optimizer'), 'spearmint', 'spearmint', 'main.py')
+    call = ' '.join([call, os.path.join(optimizer_dir, config.get('SPEARMINT', 'config')),
+                     '--driver=local',
+                     '--max-concurrent', config.get('HPOLIB', 'number_of_concurrent_jobs'),
+                     '--max-finished-jobs', config.get('SPEARMINT', 'max_finished_jobs'),
+                     '--polling-time', config.get('SPEARMINT', 'spearmint_polling_time'),
+                     '--grid-size', config.get('SPEARMINT', 'grid_size'),
+                     '--method',  config.get('SPEARMINT', 'method'),
+                     '--method-args=' + config.get('SPEARMINT', 'method_args'),
+                     '--grid-seed', str(options.seed)])
     if config.get('SPEARMINT', 'method') != "GPEIChooser" and \
             config.get('SPEARMINT', 'method') != "GPEIOptChooser":
         logger.warning('WARNING: This chooser might not work yet\n')
@@ -77,29 +83,7 @@ def build_spearmint_call(config, options, optimizer_dir):
 
 #noinspection PyUnusedLocal
 def restore(config, optimizer_dir, **kwargs):
-    """
-    Returns the number of restored runs. This is the number of different configs
-    tested multiplied by the number of crossvalidation folds.
-    """
-    restore_file = os.path.join(optimizer_dir, "expt-grid.pkl")
-    if not os.path.exists(restore_file):
-        logger.error("Oups, this should have been checked before")
-        raise Exception("%s does not exist" % (restore_file,))
-    sys.path.append(os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), path_to_optimizer))
-    # We need the Grid because otherwise we cannot load the pickle file
-    import ExperimentGrid
-    # Assumes that all not valid states are marked as crashed
-    fh = open(restore_file)
-    exp_grid = cPickle.load(fh)
-    fh.close()
-    complete_runs = np.sum(exp_grid['status'] == 3)
-    restored_runs = complete_runs * config.getint('HPOLIB', 'number_cv_folds')
-    try:
-        os.remove(os.path.join(optimizer_dir, "expt-grid.pkl.lock"))
-    except OSError:
-        pass
-    return restored_runs
+    raise NotImplementedError("Restoring is not possible for this optimizer")
 
 
 #noinspection PyUnusedLocal
@@ -119,8 +103,8 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
         optimizer_dir = options.restore
     else:
         optimizer_dir = os.path.join(experiment_dir,
-                                     experiment_directory_prefix
-                                     + optimizer_str + "_" +
+                                     experiment_directory_prefix +
+                                     optimizer_str + "_" +
                                      str(options.seed) + "_" + time_string)
 
     # Build call
@@ -130,20 +114,10 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
     if not os.path.exists(optimizer_dir):
         os.mkdir(optimizer_dir)
         # Make a link to the Protocol-Buffer config file
-        space = config.get('SPEARMINT', 'config')
-        abs_space = os.path.abspath(space)
-        parent_space = os.path.join(experiment_dir, optimizer_str, space)
-        if os.path.exists(abs_space):
-            space = abs_space
-        elif os.path.exists(parent_space):
-            space = parent_space
-        else:
-            raise Exception("Spearmint search space not found. Searched at %s and "
-                            "%s" % (abs_space, parent_space))
-        # Copy the hyperopt search space
-        if not os.path.exists(os.path.join(optimizer_dir, os.path.basename(space))):
-            os.symlink(os.path.join(experiment_dir, optimizer_str, space),
-                       os.path.join(optimizer_dir, os.path.basename(space)))
+        configpb = config.get('SPEARMINT', 'config')
+        if not os.path.exists(os.path.join(optimizer_dir, configpb)):
+            os.symlink(os.path.join(experiment_dir, optimizer_str, configpb),
+                       os.path.join(optimizer_dir, configpb))
     logger.info("### INFORMATION ################################################################")
     logger.info("# You're running %40s                      #" % path_to_optimizer)
     logger.info("%s" % version_info)

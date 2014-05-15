@@ -227,23 +227,16 @@ def main():
         _box_whisker(pkl_list=pkl_list, name_list=name_list, save=tmp_save,
                      log=log, cut=args.cut)
 
-        # statistics
-        if save_dir is not "":
-            tmp_save = os.path.join(save_dir, "statistics_%s.txt" % time_str)
-        else:
-            tmp_save = save_dir
-        sys.stdout.write("statistics.py ... %s ..." % tmp_save)
-        _statistics(pkl_list=pkl_list, name_list=name_list, save=tmp_save,
-                    log=log, cut=args.cut)
-
         # LaTeX table
         if save_dir is not "":
             tmp_save = os.path.join(save_dir, "table_%s.tex" % time_str)
         else:
             tmp_save = save_dir
         sys.stdout.write("generateTexTable.py ... %s ..." % tmp_save)
-        _generate_tex_table(pkl_list=pkl_list, name_list=name_list,
+        ret = _generate_tex_table(pkl_list=pkl_list, name_list=name_list,
                             save=tmp_save, log=log, cut=args.cut)
+        if ret is not None:
+            print ret
 
 
     # We can always plot this
@@ -255,6 +248,15 @@ def main():
     sys.stdout.write("plotOptimizerOverhead.py ... %s ..." % tmp_save)
     _optimizer_overhead(pkl_list=pkl_list, name_list=name_list, save=tmp_save,
                         log=log, cut=args.cut)
+
+    # statistics
+    if save_dir is not "":
+        tmp_save = os.path.join(save_dir, "statistics_%s.txt" % time_str)
+    else:
+        tmp_save = save_dir
+    sys.stdout.write("statistics.py ... %s ..." % tmp_save)
+    _statistics(pkl_list=pkl_list, name_list=name_list, save=tmp_save,
+                log=log, cut=args.cut)
 
     # Error Trace with Std
     if save_dir is not "":

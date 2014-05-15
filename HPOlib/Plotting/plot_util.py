@@ -22,8 +22,14 @@ import os
 import numpy as np
 import sys
 
+import HPOlib.wrapping_util
+
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
+
+
+# A super-simple cache for unpickled objects...
+cache = dict()
 
 
 def get_plot_markers():
@@ -43,7 +49,39 @@ def get_plot_colors():
                             "#999999"])   # Grey
 
 
-def read_pickles(name_list, pkl_list, cut=sys.maxint):
+def load_pickles(name_list, pkl_list):
+    pickles = dict()
+    for i in range(len(name_list)):
+        key = name_list[i][0]
+        pickles[key] = list()
+
+        for pkl in pkl_list[i]:
+            if cache.get(pkl) is None:
+                fh = open(pkl)
+                pickles[key].append(cPickle.load(fh))
+                fh.close()
+                cache[pkl] = pickles[key][-1]
+            else:
+                pickles[key].append(cache.get(pkl))
+    return pickles
+
+
+def get_best_dict(name_list, pickles, cut=sys.maxint):
+    """
+    Get the best values of many experiments.
+
+    Input
+    * name_list: A list with of tuples of kind (optimizer_name, num_pickles)
+    * pickles: A dictionary with all pickle files for an optimizer_name
+    * cut: How many iterations should be considered
+
+    Returns:
+    * best_dict: A dictionary with the best response value for every optimizer
+    * idx_dict: A dictionary with the number of iterations needed to find the
+        optimum
+    * keys: A list with optimizer names.
+
+    """
     best_dict = dict()
     idx_dict = dict()
     keys = list()
@@ -51,11 +89,8 @@ def read_pickles(name_list, pkl_list, cut=sys.maxint):
         keys.append(name_list[i][0])
         best_dict[name_list[i][0]] = list()
         idx_dict[name_list[i][0]] = list()
-        for pkl in pkl_list[i]:
-            fh = open(pkl)
-            trial = cPickle.load(fh)
-            fh.close()
-            best, idx = get_best_value_and_index(trial, cut)
+        for pkl in pickles[name_list[i][0]]:
+            best, idx = get_best_value_and_index(pkl, cut)
             best_dict[name_list[i][0]].append(best)
             idx_dict[name_list[i][0]].append(idx)
     return best_dict, idx_dict, keys
@@ -69,7 +104,7 @@ def get_pkl_and_name_list(argument_list):
         if not ".pkl" in argument_list[i] and now_data:
             raise ValueError("You need at least on .pkl file per Experiment, %s has none" % name_list[-1])
         elif not ".pkl" in argument_list[i] and not now_data:
-            print "Adding", argument_list[i]
+            # print "Adding", argument_list[i]
             name_list.append([argument_list[i], 0])
             pkl_list.append(list())
             now_data = True
@@ -134,3 +169,22 @@ def get_best_value_and_index(trials, cut=False):
         best_value = traj[-1]
         best_index = np.argmin(traj)
     return best_value, best_index
+
+
+def get_Trace_cv(trials):
+    trace = list()
+    trials_list = trials['trials']
+    instance_order = trials['instance_order']
+    instance_mean = np.ones([len(trials_list), 1]) * np.inf
+    instance_val = np.ones([len(trials_list), len(trials_list[0]['instance_results'])]) * np.nan
+    for tr_idx, in_idx in instance_order:
+        instance_val[tr_idx, in_idx] = trials_list[tr_idx]['instance_results'][in_idx]
+
+        val = HPOlib.wrapping_util.nan_mean(instance_val[tr_idx, :])
+        if np.isnan(val):
+            val = np.inf
+        instance_mean[tr_idx] = val
+        trace.append(np.min(instance_mean, axis=0)[0])
+    if np.isnan(trace[-1]):
+        del trace[-1]
+    return trace

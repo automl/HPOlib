@@ -27,6 +27,7 @@ import traceback
 import os
 from StringIO import StringIO
 import sys
+import types
 
 import config_parser.parse as parse
 
@@ -108,7 +109,8 @@ def load_experiment_config_file():
         if not config.has_option("HPOLIB", "is_not_original_config_file"):
             logger.critical("Config file in directory %s seems to be an"
                 " original config which was not created by wrapping.py. "
-                "Please contact the HPOlib maintainer to solve this issue.")
+                "Are you sure that you are in the right directory?" %
+                            os.getcwd())
             sys.exit(1)
         return config
     except IOError as e:
@@ -207,7 +209,8 @@ def parse_config_values_from_unknown_arguments(unknown_arguments, config):
         config: A ConfigParser.SafeConfigParser object which contains all keys
            should be parsed from the unknown_arguments list.
     Returns:
-        an argparse.Namespace object containing the parsed values.
+        an argparse.Namespace object containing the parsed values. These are
+        packed inside a python list or None if not present.
     Raises:
         an error if an argument from unknown_arguments is not a key in config
     """
@@ -219,7 +222,7 @@ def parse_config_values_from_unknown_arguments(unknown_arguments, config):
 
     parser = ArgumentParser()
     for argument in further_possible_command_line_arguments:
-        parser.add_argument(argument)
+        parser.add_argument(argument, nargs="+")
 
     return parser.parse_args(unknown_arguments)
 
@@ -230,7 +233,10 @@ def config_with_cli_arguments(config, config_overrides):
         for key in config.options(section):
             cli_key = "%s:%s" % (section, key)
             if cli_key in arg_dict:
-                config.set(section, key, arg_dict[cli_key])
+                value = arg_dict[cli_key]
+                if value is not None and not isinstance(value, types.StringTypes):
+                    value = " ".join(value)
+                config.set(section, key, value)
             else:
                 config.remove_option(section, key)
     return config

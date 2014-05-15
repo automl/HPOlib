@@ -251,7 +251,8 @@ setup(
                       'networkx',
                       'protobuf',
                       'scipy>=0.13.2',
-                      'pymongo'
+                      'pymongo',
+                      'psutil'
                       ],
     author_email='eggenspk@informatik.uni-freiburg.de',
     description=desc,
