@@ -6,7 +6,6 @@
 
 === Other ===
 
-* HPOlib/Locker.py now tries to create lockfiles in /run/lock.
 * HPOlib/dispatcher: Replace HPOlib/runsolver_wrapper. Can then choose different dispatcher to run the target experiment. These are:
     * python_file: Import a python file and execute a function
     * runsolver_wrapper: Run a target algorithm through the runsolver wrapper.
