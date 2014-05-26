@@ -31,6 +31,7 @@ import types
 
 import config_parser.parse as parse
 
+
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
@@ -98,6 +99,10 @@ def format_traceback(exc_info):
     # with sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]
 
     return "\n" + traceback.format_exc() + "\n\n" + traceback_template % traceback_details + "\n\n"
+
+
+def get_optimizer():
+    return "_".join(os.getcwd().split("/")[-1].split("_")[0:-2])
 
 
 def load_experiment_config_file():

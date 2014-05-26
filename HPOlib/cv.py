@@ -72,14 +72,15 @@ def do_cv(params, folds=10):
             # Cutofftime, cutofflength and seed can be safely ignored since they
             # are read in runsolver_wrapper
             runsolver_wrapper_script = "python " + \
-                os.path.join(os.path.dirname(os.path.realpath(__file__)), "runsolver_wrapper.py")
+                os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                             "dispatcher/dispatcher.py")
             cmd = "%s %d %s %d %d %d %s" % \
                 (runsolver_wrapper_script, fold, optimizer, 0, 0, 0, param_string)
             logger.info("Calling command:\n%s", cmd)
 
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
-            logger.info("--------------RUNNING RUNSOLVER_WRAPPER--------------")
+            logger.info("-------------- DISPATCHING JOB --------------")
             stdoutdata, stderrdata = process.communicate()
             if stdoutdata:
                 logger.info(stdoutdata)
@@ -208,6 +209,7 @@ def main(*args, **kwargs):
     experiment = load_experiment_file()
     # experiment.next_iteration()
     experiment.start_cv(cv_starttime)
+    experiment._save_jobs()
     del experiment
 
     # cfg_filename = "config.cfg"
@@ -224,6 +226,7 @@ def main(*args, **kwargs):
     # Load the experiment to do time-keeping
     experiment = load_experiment_file()
     experiment.end_cv(time.time())
+    experiment._save_jobs()
     del experiment
     
     return res

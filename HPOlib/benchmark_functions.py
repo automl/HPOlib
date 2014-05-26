@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
+
 import sys
 
 
@@ -25,7 +25,9 @@ def save_branin(params, **kwargs):
         raise ValueError("No params found ['x', 'y']\n")
     x = float(params["x"])
     y = float(params["y"])
-    if type(x) == np.ndarray or type(y) == np.ndarray:
+
+    # Something that has the __len__ attribute is some kind of sequence
+    if hasattr(x, "__len__") or hasattr(y, "__len__"):
         x = x[0]
         y = y[0]
 
@@ -37,6 +39,7 @@ def save_branin(params, **kwargs):
 
 
 def branin(x, y):
+    import math
     """Branin test function
 
     The number of variables n = 2.
@@ -45,8 +48,8 @@ def branin(x, y):
     three global optima:  (-pi, 12.275), (pi, 2.275), (9.42478, 2.475), where
     branin = 0.397887"""
 
-    result = (y-(5.1/(4*np.pi**2))*x**2+5*x/np.pi-6)**2
-    result += 10*(1-1/(8*np.pi))*np.cos(x)+10
+    result = (y-(5.1/(4*math.pi**2))*x**2+5*x/math.pi-6)**2
+    result += 10*(1-1/(8*math.pi))*math.cos(x)+10
     return result
 
 
@@ -54,14 +57,14 @@ def save_har6(params, **kwargs):
     if "x" not in params or "y" not in params or "z" not in params \
        or "a" not in params or "b" not in params or "c" not in params:
         sys.stderr.write("No params found ['x', 'y']\n")
-        return np.NaN
+        return float("NaN")
     x = float(params["x"])
     y = float(params["y"])
     z = float(params["z"])
     a = float(params["a"])
     b = float(params["b"])
     c = float(params["c"])
-    if type(x) == np.ndarray:
+    if hasattr(x, "__len__"):
         x = x[0]
         y = y[0]
         z = z[0]
@@ -78,6 +81,7 @@ def har6(x, y, z, a, b, c):
     0 <= xi <= 1, i = 1..6
     global optimum at (0.20169, 0.150011, 0.476874, 0.275332, 0.311652, 0.6573),
     where har6 = -3.32236"""
+    import numpy as np
 
     value = np.array([x, y, z, a, b, c])
 
@@ -113,15 +117,21 @@ def har6(x, y, z, a, b, c):
 def save_lda_on_grid(params, ret_time=False, **kwargs):
     if "Kappa" not in params or "Tau" not in params or "S" not in params:
         sys.stderr.write("No params found ['Kappa', 'Tau', 'S']: %s\n" % str(params))
-        return np.NaN
-    kappa = int(float(params["Kappa"]))
-    tau = int(float(params["Tau"]))
-    s = int(float(params["S"]))
+        return float("NaN")
 
-    if type(kappa) == np.ndarray:
+    kappa = params["Kappa"]
+    tau = params["Tau"]
+    s = params["Tau"]
+
+    if hasattr(kappa, "__len__"):
         kappa = kappa[0]
         tau = tau[0]
         s = s[0]
+
+    kappa = int(float(kappa))
+    tau = int(float(tau))
+    s = int(float(s))
+
     return lda_on_grid(kappa, tau, s, ret_time=ret_time)
 
 
@@ -130,6 +140,7 @@ def lda_on_grid(kappa, tau, s, ret_time=False):
     # Values obtained from Jasper Snoek
     # Kappa Tau S Value Time
     # ret_time: return time instead of perplexity
+    import numpy as np
     configurations = np.array([[1.000000, 4.000000, 16.000000, 2014.255351, 36393.190000],
                                [0.900000, 1024.000000, 4096.000000, 1680.540179, 36419.510000],
                                [0.600000, 1024.000000, 4096.000000, 1328.191297, 24219.850000],
@@ -448,15 +459,19 @@ def lda_on_grid(kappa, tau, s, ret_time=False):
 def save_svm_on_grid(params, ret_time=False, **kwargs):
     if "C" not in params or "alpha" not in params or "epsilon" not in params:
         sys.stderr.write("No params found ['C', 'alpha', 'epsilon']: %s\n" % str(params))
-        return np.NaN
-    c = int(float(params["C"]))
-    alpha = int(float(params["alpha"]))
-    epsilon = int(float(params["epsilon"]))
+        return float("NaN")
+    c = params["C"]
+    alpha = params["alpha"]
+    epsilon = params["epsilon"]
 
-    if type(c) == np.ndarray:
+    if hasattr(c, "__len__"):
         c = c[0]
         alpha = alpha[0]
         epsilon = epsilon[0]
+
+    c = int(float(c))
+    alpha = int(float(alpha))
+    epsilon = int(float(epsilon))
     return svm_on_grid(c=c, alpha=alpha, epsilon=epsilon, ret_time=ret_time)
 
 
@@ -1901,7 +1916,8 @@ def svm_on_grid(c, alpha, epsilon, ret_time=False):
         for alpha_value in alpha_values:
             config_tree[C_value][alpha_value] = dict()
             for epsilon_value in epsilon_values:
-                config_tree[C_value][alpha_value][epsilon_value] = [np.inf, np.inf]
+                config_tree[C_value][alpha_value][epsilon_value] = \
+                    [float("inf"), float("inf")]
 
     # Populate the tree
     for config in svm_grid_configs:

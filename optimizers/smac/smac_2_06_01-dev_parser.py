@@ -34,9 +34,6 @@ def manipulate_config(config):
         else:
             # SMACs maxint
             config.set('SMAC', 'cutoff_time', "2147483647")
-    if not config.has_option('SMAC', 'algo_exec'):
-        config.set('SMAC', 'algo_exec',
-                   config.get('HPOLIB', 'run_instance'))
     if not config.has_option('SMAC', 'total_num_runs_limit'):
         config.set('SMAC', 'total_num_runs_limit',
                    str(config.getint('HPOLIB', 'number_of_jobs') *

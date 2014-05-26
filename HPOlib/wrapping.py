@@ -19,10 +19,12 @@
 from argparse import ArgumentParser
 import imp
 import logging
+import psutil
 import os
 from Queue import Queue, Empty
 import signal
 import shlex
+import shutil
 import subprocess
 import sys
 from threading import Thread
@@ -45,19 +47,57 @@ hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.wrapping")
 
 
-def kill_children(signum, frame):
-    try:
-        os.killpg(child_process_pid, signal.SIGTERM)
-        # TODO: add a real shutdown function. This just kills the child which
-        #  is in turn recognized by the main loop in wrapping.py. The main
-        # loop then terminates after a while.
-    except:
-        logger.critical("There are no child processes to terminate!")
+def get_all_p_for_pgid():
+    current_pgid = os.getpgid(os.getpid())
+    pids = psutil.pids()
+    running_pid = []
+    for pid in pids:
+        try:
+            pgid = os.getpgid(pid)
+        except:
+            continue
 
-signal.signal(signal.SIGTERM, kill_children)
-signal.signal(signal.SIGABRT, kill_children)
-signal.signal(signal.SIGINT, kill_children)
-signal.signal(signal.SIGHUP, kill_children)
+        # Don't try to kill HPOlib-run
+        if pgid == current_pgid and pid != os.getpid():
+            # This solves the problem that a Zombie process counts
+            # towards the number of process which have to be killed
+            running_pid.append(pid)
+    return running_pid
+
+
+def kill_children(sig):
+    # TODO: somehow wait, until the Experiment pickle is written to disk
+    running_pid = get_all_p_for_pgid()
+
+    logger.critical("Running %s" % str(running_pid))
+    for pid in running_pid:
+        try:
+            os.kill(pid, sig)
+        except Exception as e:
+            logger.error(type(e))
+            logger.error(e)
+
+
+class Exit:
+    def __init__(self):
+        self.exit_flag = False
+        self.signal = None
+
+    def true(self):
+        self.exit_flag = True
+
+    def false(self):
+        self.exit_flag = False
+
+    def set_exit_flag(self, exit):
+        self.exit_flag = exit
+
+    def get_exit(self):
+        return self.exit_flag
+
+    def signal_callback(self, signal, frame):
+        self.true()
+        self.signal = signal
 
 
 def calculate_wrapping_overhead(trials):
@@ -103,10 +143,17 @@ def output_experiment_pickle(console_output_delay,
                              printed_start_configuration,
                              printed_end_configuration,
                              optimizer_dir_in_experiment,
-                             optimizer, lock, Experiment, np, exit):
+                             optimizer, experiment_directory_prefix, lock,
+                             Experiment, np, exit):
+    current_best = -1
     while True:
-        trials = Experiment.Experiment(optimizer_dir_in_experiment,
-                                       optimizer)
+        try:
+            trials = Experiment.Experiment(optimizer_dir_in_experiment,
+                                       experiment_directory_prefix + optimizer)
+        except Exception as e:
+            logger.error(e)
+            time.sleep(console_output_delay)
+            continue
 
         with lock:
             for i in range(len(printed_end_configuration), len(trials.instance_order)):
@@ -237,9 +284,14 @@ def main():
         import traceback
         logger.critical(traceback.format_exc())
         sys.exit(1)
+
+    # So the optimizer module can acces the seed from the config and
+    config.set("HPOLIB", "seed", str(args.seed))
+    experiment_directory_prefix = config.get("HPOLIB", "experiment_directory_prefix")
     optimizer_call, optimizer_dir_in_experiment = optimizer_module.main(config=config,
                                                                         options=args,
-                                                                        experiment_dir=experiment_dir)
+                                                                        experiment_dir=experiment_dir,
+                                                                        experiment_directory_prefix=experiment_directory_prefix)
     cmd = optimizer_call
 
     with open(os.path.join(optimizer_dir_in_experiment, "config.cfg"), "w") as f:
@@ -253,7 +305,9 @@ def main():
         except OSError:
             pass
     folds = config.getint('HPOLIB', 'number_cv_folds')
-    trials = Experiment.Experiment(optimizer_dir_in_experiment, optimizer, folds=folds,
+    trials = Experiment.Experiment(optimizer_dir_in_experiment,
+                                   experiment_directory_prefix + optimizer,
+                                   folds=folds,
                                    max_wallclock_time=config.get('HPOLIB',
                                                                  'cpu_limit'),
                                    title=args.title)
@@ -309,24 +363,60 @@ def main():
                 logger.critical(e.filename)
                 sys.exit(1)
 
+       # Use a flag which is set to true as soon as all children are
+        # supposed to be killed
+        exit_ = Exit()
+        signal.signal(signal.SIGTERM, exit_.signal_callback)
+        signal.signal(signal.SIGABRT, exit_.signal_callback)
+        signal.signal(signal.SIGINT, exit_.signal_callback)
+        signal.signal(signal.SIGHUP, exit_.signal_callback)
+
+        # Change into the current experiment directory
+        # Some optimizer might expect this
+        dir_before_exp = os.getcwd()
+
+        temporary_output_dir = config.get("HPOLIB", "temporary_output_directory")
+        if temporary_output_dir:
+            last_part = os.path.split(optimizer_dir_in_experiment)[1]
+            temporary_output_dir = os.path.join(temporary_output_dir, last_part)
+
+            # Replace any occurence of the path in the command
+            cmd = cmd.replace(optimizer_dir_in_experiment,
+                              temporary_output_dir)
+
+            shutil.copytree(optimizer_dir_in_experiment, temporary_output_dir)
+
+            # shutil.rmtree does not work properly with NFS
+            # https://github.com/hashdist/hashdist/issues/113
+            # Idea from https://github.com/ahmadia/hashdist/
+            for rmtree_iter in range(5):
+                try:
+                    shutil.rmtree(optimizer_dir_in_experiment)
+                    break
+                except OSError, e:
+                    time.sleep(rmtree_iter)
+
+
+            optimizer_dir_in_experiment = temporary_output_dir
+
+        os.chdir(optimizer_dir_in_experiment)
+
         logger.info(cmd)
         output_file = os.path.join(optimizer_dir_in_experiment, optimizer + ".out")
         fh = open(output_file, "a")
         cmd = shlex.split(cmd)
         print cmd
 
-        # Change into the current experiment directory
-        # Some optimizer might expect this
-        dir_before_exp = os.getcwd()
-        os.chdir(optimizer_dir_in_experiment)
         # See man 7 credentials for the meaning of a process group id
         # This makes wrapping.py useable with SGEs default behaviour,
         # where qdel sends a SIGKILL to a whole process group
         logger.info(os.getpid())
         os.setpgid(os.getpid(), os.getpid())
+        # TODO: figure out why shell=True was removed in commit f47ac4bb3ffe7f70b795d50c0828ca7e109d2879
+        # maybe it has something todo with the previous behaviour where a
+        # session id was set...
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)#,
-                                # preexec_fn=preexec_fn)
+                                stderr=subprocess.PIPE)
 
         global child_process_pid
         child_process_pid = proc.pid
@@ -343,12 +433,13 @@ def main():
 
         printed_start_configuration = list()
         printed_end_configuration = list()
-        current_best = -1
+        sent_SIGINT = False
+        sent_SIGINT_time = np.inf
         sent_SIGTERM = False
+        sent_SIGTERM_time = np.inf
         sent_SIGKILL = False
-        # After the evaluation finished, we scan the experiment pickle twice
-        # to print everything!
-        minimal_runs_to_go = 2
+        sent_SIGKILL_time = np.inf
+
 
         def enqueue_output(out, queue):
             for line in iter(out.readline, b''):
@@ -370,10 +461,19 @@ def main():
                                      printed_start_configuration,
                                      printed_end_configuration,
                                      optimizer_dir_in_experiment,
-                                     optimizer, lock, Experiment, np, False))
+                                     optimizer, experiment_directory_prefix,
+                                     lock, Experiment, np, False))
             logger.info('Optimizer runs with PID: %d', proc.pid)
 
-        while minimal_runs_to_go > 0:     # Think of this as a do-while loop...
+        while True:
+            # this implements the total runtime limit
+            if time.time() > optimizer_end_time and not sent_SIGINT:
+                logger.info("Reached total_time_limit, going to shutdown.")
+                exit_.true()
+
+            # necessary, otherwise HPOlib-run takes 100% of one processor
+            time.sleep(0.2)
+
             try:
                 while True:
                     line = stdout_queue.get_nowait()
@@ -398,34 +498,74 @@ def main():
             except Empty:
                 pass
 
-            if time.time() > optimizer_end_time and not sent_SIGTERM:
-                os.killpg(proc.pid, signal.SIGTERM)
+            ret = proc.poll()
+
+            running = get_all_p_for_pgid()
+            if ret is not None and len(running) == 0:
+                break
+            # TODO: what happens if we have a ret but something is still
+            # running?
+
+            if exit_.get_exit() == True and not sent_SIGINT:
+                logger.info("Sending SIGINT")
+                kill_children(signal.SIGINT)
+                sent_SIGINT_time = time.time()
+                sent_SIGINT = True
+
+            if exit_.get_exit() == True and not sent_SIGTERM and time.time() \
+                    > sent_SIGINT_time + 100:
+                logger.info("Sending SIGTERM")
+                kill_children(signal.SIGTERM)
+                sent_SIGTERM_time = time.time()
                 sent_SIGTERM = True
 
-            if time.time() > optimizer_end_time + 200 and not sent_SIGKILL:
-                os.killpg(proc.pid, signal.SIGKILL)
+            if exit_.get_exit() == True and not sent_SIGKILL and time.time() \
+                    > sent_SIGTERM_time + 100:
+                logger.info("Sending SIGKILL")
+                kill_children(signal.SIGKILL)
+                sent_SIGKILL_time = time.time()
                 sent_SIGKILL = True
 
-            fh.flush()
-            # necessary, otherwise HPOlib-run takes 100% of one processor
-            time.sleep(0.2)
-
-            if proc.poll() is not None:
-                minimal_runs_to_go -= 1
-
         ret = proc.returncode
+        del proc
+
         if not (args.verbose or args.silent):
             output_experiment_pickle(console_output_delay,
                                      printed_start_configuration,
                                      printed_end_configuration,
                                      optimizer_dir_in_experiment,
-                                     optimizer, lock, Experiment, np, True)
+                                     optimizer, experiment_directory_prefix,
+                                     lock, Experiment, np, True)
 
         logger.info("-----------------------END--------------------------------------")
         fh.close()
 
         # Change back into to directory
         os.chdir(dir_before_exp)
+        if temporary_output_dir:
+            # We cannot be sure that the directory
+            # optimizer_dir_in_experiment in dir_before_exp got deleted
+            # properly, therefore we append an underscore to the end of the
+            # filename
+            last_part = os.path.split(optimizer_dir_in_experiment)[1]
+            new_dir = os.path.join(dir_before_exp, last_part)
+            try:
+                shutil.copytree(optimizer_dir_in_experiment, new_dir)
+            except OSError as e:
+                new_dir += "_"
+                shutil.copytree(optimizer_dir_in_experiment, new_dir)
+
+            # shutil.rmtree does not work properly with NFS
+            # https://github.com/hashdist/hashdist/issues/113
+            # Idea from https://github.com/ahmadia/hashdist/
+            for rmtree_iter in range(5):
+                try:
+                    shutil.rmtree(optimizer_dir_in_experiment)
+                    break
+                except OSError, e:
+                    time.sleep(rmtree_iter)
+
+            optimizer_dir_in_experiment = new_dir
 
         # call target_function.teardown()
         fn_teardown = config.get("HPOLIB", "function_teardown")
@@ -442,7 +582,8 @@ def main():
                 logger.critical(e.filename)
                 sys.exit(1)
 
-        trials = Experiment.Experiment(optimizer_dir_in_experiment, optimizer)
+        trials = Experiment.Experiment(optimizer_dir_in_experiment,
+                                       experiment_directory_prefix + optimizer)
         trials.endtime.append(time.time())
         #noinspection PyProtectedMember
         trials._save_jobs()

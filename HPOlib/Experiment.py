@@ -19,7 +19,6 @@
 import cPickle
 import logging
 import os
-import scipy
 import sys
 import tempfile
 
@@ -43,6 +42,13 @@ COMPLETE_STATE = 3
 BROKEN_STATE = -1
 
 
+
+def load_experiment_file():
+    optimizer = wrapping_util.get_optimizer()
+    experiment = Experiment(".", optimizer)
+    return experiment
+
+
 class Experiment:
     def __init__(self, expt_dir, expt_name, max_wallclock_time=
                  sys.float_info.max, title=None, folds=1):
@@ -51,7 +57,8 @@ class Experiment:
         if folds < 1:
             folds = 1
 
-        self.jobs_pkl = os.path.join(expt_dir, expt_name + ".pkl")
+        self.jobs_pkl = os.path.abspath(
+            os.path.join(expt_dir, expt_name + ".pkl"))
         self.locker = Locker.Locker()
 
         # Only one process at a time is allowed to have access to this.
@@ -96,7 +103,7 @@ class Experiment:
             self.optimizer_time = []
 
             # Save this out.
-            self._save_jobs()
+            # self._save_jobs()
 
         else:
             # Load in from the pickle.
@@ -123,7 +130,7 @@ class Experiment:
         return trial
 
     def __del__(self):
-        self._save_jobs()
+        # self._save_jobs()
         if self.locker.unlock(self.jobs_pkl):
             pass
             #    sys.stderr.write("Released lock on job grid.\n")
@@ -137,6 +144,7 @@ class Experiment:
     def instance_results_array(self):
         instance_results = np.array([trial['instance_results'] for trial in
                                      self.trials])
+        return instance_results
 
     def status_array(self):
         status = np.array([trial['status'] for trial in self.trials])
@@ -198,7 +206,13 @@ class Experiment:
         return self.trials[best_idx]
 
     def get_trial_from_id(self, _id):
-        return self.trials[_id]
+        try:
+            return self.trials[_id]
+        except IndexError as e:
+            logger.critical("IndexError in get_trial_from_id. len(trials): "
+                            "%d, accessed index: %d" % (len(self.trials), _id))
+            raise e
+
 
     # Add a job to the list of all jobs
     def add_job(self, params):
@@ -207,7 +221,7 @@ class Experiment:
         self.trials.append(trial)
         # Save this out.
         self._sanity_check()
-        self._save_jobs()
+        # self._save_jobs()
         return len(self.trials) - 1
 
     # Set the status of a job to be running
@@ -218,7 +232,7 @@ class Experiment:
         self.get_trial_from_id(_id)['instance_status'][fold] = RUNNING_STATE
         self.instance_order.append((_id, fold))
         self._sanity_check()
-        self._save_jobs()
+        # self._save_jobs()
 
     # Set the status of a job to be crashed
     def set_one_fold_crashed(self, _id, fold, result, duration):
@@ -232,7 +246,7 @@ class Experiment:
         self.check_cv_finished(_id)
         self.total_wallclock_time += duration
         self._sanity_check()
-        self._save_jobs()
+        # self._save_jobs()
 
     # Set the results of one fold of crossvalidation (SMAC)
     def set_one_fold_complete(self, _id, fold, result, duration):
@@ -248,17 +262,17 @@ class Experiment:
         self.check_cv_finished(_id)
         self.total_wallclock_time += duration
         self._sanity_check()
-        self._save_jobs()
+        # self._save_jobs()
         
     # Set the timer for the start of a new cross-validation
     def start_cv(self, time):
         self.cv_starttime.append(time)
-        self._save_jobs()
+        # self._save_jobs()
     
     # Set the timer for the end of a cross validation
     def end_cv(self, time):
         self.cv_endtime.append(time)
-        self._save_jobs()
+        # self._save_jobs()
     
     # Check if one set of cross validations is finished
     def check_cv_finished(self, _id):
@@ -334,7 +348,7 @@ class Experiment:
             (len(self.cv_starttime), len(self.cv_endtime))
         
         self._sanity_check()   
-        self._save_jobs()
+        # self._save_jobs()
 
     def _trial_sanity_check(self, trial):
         assert(len(trial['instance_results']) == len(trial['instance_status'])

@@ -90,7 +90,8 @@ def build_smac_call(config, options, optimizer_dir):
                     '--runObj', config.get('SMAC', 'run_obj'),
                     # '--testInstanceFile', config.get('SMAC', 'testInstanceFile'),
                     '--algoExec',  '"python', os.path.join(algo_exec_dir,
-                                    config.get('SMAC', 'algo_exec')) + '"',
+                        'dispatcher', 'dispatcher.py') + '"',
+                    #                config.get('SMAC', 'algo_exec')) + '"',
                     '--execDir', optimizer_dir,
                     '-p', os.path.join(optimizer_dir, os.path.basename(config.get('SMAC', 'p'))),
                     # The experiment dir MUST not be specified when restarting, it is set
@@ -196,7 +197,7 @@ def restore(config, optimizer_dir, **kwargs):
 
 
 #noinspection PyUnusedLocal
-def main(config, options, experiment_dir, **kwargs):
+def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs):
     # config:           Loaded .cfg file
     # options:          Options containing seed, restore_dir, 
     # experiment_dir:   Experiment directory/Benchmark_directory
@@ -211,7 +212,9 @@ def main(config, options, experiment_dir, **kwargs):
             raise Exception("The restore directory does not exist")
         optimizer_dir = options.restore
     else:
-        optimizer_dir = os.path.join(experiment_dir, optimizer_str + "_" +
+        optimizer_dir = os.path.join(experiment_dir,
+                                     experiment_directory_prefix
+                                     + optimizer_str + "_" +
                                      str(options.seed) + "_" + time_string)
     # Build call
     cmd = build_smac_call(config, options, optimizer_dir)
