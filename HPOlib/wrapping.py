@@ -24,6 +24,7 @@ import os
 from Queue import Queue, Empty
 import signal
 import shlex
+import shutil
 import subprocess
 import sys
 from threading import Thread
@@ -283,6 +284,9 @@ def main():
         import traceback
         logger.critical(traceback.format_exc())
         sys.exit(1)
+
+    # So the optimizer module can acces the seed from the config and
+    config.set("HPOLIB", "seed", str(args.seed))
     experiment_directory_prefix = config.get("HPOLIB", "experiment_directory_prefix")
     optimizer_call, optimizer_dir_in_experiment = optimizer_module.main(config=config,
                                                                         options=args,
@@ -290,7 +294,6 @@ def main():
                                                                         experiment_directory_prefix=experiment_directory_prefix)
     cmd = optimizer_call
 
-    config.set("HPOLIB", "seed", str(args.seed))
     with open(os.path.join(optimizer_dir_in_experiment, "config.cfg"), "w") as f:
         config.set("HPOLIB", "is_not_original_config_file", "True")
         wrapping_util.save_config_to_file(f, config, write_nones=True)
@@ -360,13 +363,7 @@ def main():
                 logger.critical(e.filename)
                 sys.exit(1)
 
-        logger.info(cmd)
-        output_file = os.path.join(optimizer_dir_in_experiment, optimizer + ".out")
-        fh = open(output_file, "a")
-        cmd = shlex.split(cmd)
-        print cmd
-
-        # Use a flag which is set to true as soon as all children are
+       # Use a flag which is set to true as soon as all children are
         # supposed to be killed
         exit_ = Exit()
         signal.signal(signal.SIGTERM, exit_.signal_callback)
@@ -377,7 +374,39 @@ def main():
         # Change into the current experiment directory
         # Some optimizer might expect this
         dir_before_exp = os.getcwd()
+
+        temporary_output_dir = config.get("HPOLIB", "temporary_output_directory")
+        if temporary_output_dir:
+            last_part = os.path.split(optimizer_dir_in_experiment)[1]
+            temporary_output_dir = os.path.join(temporary_output_dir, last_part)
+
+            # Replace any occurence of the path in the command
+            cmd = cmd.replace(optimizer_dir_in_experiment,
+                              temporary_output_dir)
+
+            shutil.copytree(optimizer_dir_in_experiment, temporary_output_dir)
+
+            # shutil.rmtree does not work properly with NFS
+            # https://github.com/hashdist/hashdist/issues/113
+            # Idea from https://github.com/ahmadia/hashdist/
+            for rmtree_iter in range(5):
+                try:
+                    shutil.rmtree(optimizer_dir_in_experiment)
+                    break
+                except OSError, e:
+                    time.sleep(rmtree_iter)
+
+
+            optimizer_dir_in_experiment = temporary_output_dir
+
         os.chdir(optimizer_dir_in_experiment)
+
+        logger.info(cmd)
+        output_file = os.path.join(optimizer_dir_in_experiment, optimizer + ".out")
+        fh = open(output_file, "a")
+        cmd = shlex.split(cmd)
+        print cmd
+
         # See man 7 credentials for the meaning of a process group id
         # This makes wrapping.py useable with SGEs default behaviour,
         # where qdel sends a SIGKILL to a whole process group
@@ -513,6 +542,30 @@ def main():
 
         # Change back into to directory
         os.chdir(dir_before_exp)
+        if temporary_output_dir:
+            # We cannot be sure that the directory
+            # optimizer_dir_in_experiment in dir_before_exp got deleted
+            # properly, therefore we append an underscore to the end of the
+            # filename
+            last_part = os.path.split(optimizer_dir_in_experiment)[1]
+            new_dir = os.path.join(dir_before_exp, last_part)
+            try:
+                shutil.copytree(optimizer_dir_in_experiment, new_dir)
+            except OSError as e:
+                new_dir += "_"
+                shutil.copytree(optimizer_dir_in_experiment, new_dir)
+
+            # shutil.rmtree does not work properly with NFS
+            # https://github.com/hashdist/hashdist/issues/113
+            # Idea from https://github.com/ahmadia/hashdist/
+            for rmtree_iter in range(5):
+                try:
+                    shutil.rmtree(optimizer_dir_in_experiment)
+                    break
+                except OSError, e:
+                    time.sleep(rmtree_iter)
+
+            optimizer_dir_in_experiment = new_dir
 
         # call target_function.teardown()
         fn_teardown = config.get("HPOLIB", "function_teardown")
