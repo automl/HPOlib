@@ -57,13 +57,31 @@ class Cond(object):
 EQ = partial(Cond, op='=')
 
 
-def expr_to_config(expr, conditions, hps):
+def expr_to_config(expr, conditions, hps, name=None):
     if conditions is None:
         conditions = ()
     assert isinstance(expr, base.Apply)
+    print "<", expr.name, type(expr), name, ">"
+    #print base.rec_eval(expr['fix'])
+    print "------"
+    #sys.exit(1)
+    if expr.name == 'literal' and name is not None:
+        #print "lewsdf", expr.arg
+        #expr.arg['label'].obj
+        #print expr[0].inputs()[0]._obj
+        hps[name] = {'node': "FIX",
+                     'value': expr[0].inputs()[0]._obj,
+                     'conditions': conditions
+                    }
     if expr.name == 'switch':
+        print "SWITCH"
         idx = expr.inputs()[0]
         options = expr.inputs()[1:]
+       # for i in options:
+       #     print "-------------", vars(i)
+       #     if type(i._obj) != str:
+       #         raise ValueError("%s %s" % (str(vars(i)), i._obj))
+       # print "**", options[1]._obj
         assert idx.name == 'hyperopt_param'
         assert idx.arg['obj'].name in ('randint',  # - in case of hp.choice
                                        'categorical'  # - in case of hp.pchoice
@@ -74,6 +92,7 @@ def expr_to_config(expr, conditions, hps):
                            conditions + (EQ(idx.arg['label'].obj, opt_idx),),
                            hps)
     elif expr.name == 'hyperopt_param':
+        print "HYPEROPT PARAM"
         label = expr.arg['label'].obj
         if label in hps:
             if hps[label]['node'] != expr.arg['obj']:
@@ -83,8 +102,15 @@ def expr_to_config(expr, conditions, hps):
             hps[label] = {'node': expr.arg['obj'],
                           'conditions': set((conditions,))}
     else:
-        for ii in expr.inputs():
+        print "?", vars(expr)
+        #rval = expr.pos_args + [v for (k, v) in expr.named_args]
+        for ii in expr.pos_args:
+            print "#", ii
             expr_to_config(ii, conditions, hps)
+        for k,v in expr.named_args:
+            print "#", v
+            expr_to_config(v, conditions, hps, name=k)
+
 
 
 #TODO: make this function callable from python
@@ -104,13 +130,17 @@ def convert_tpe_to_smac_from_file(filename):
     search_space = space.space
 
     expr = base.as_apply(search_space)
-
+    #print expr
     hps = {}
     expr_to_config(expr, (True,), hps)
     new_space = ""
-    # print expr
+    print hps.items()
+    #sys.exit(1)
     for label, dct in hps.items():
+        if dct['node'] == "FIX":
+            continue
         if dct['node'].name == "randint":
+            print label, dct['node']
             assert len(dct['node'].inputs()) == 1
             #randint['x', 5] -> x [0, 4]i [0]
             upper = dct['node'].inputs()[0].eval()
