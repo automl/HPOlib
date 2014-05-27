@@ -59,6 +59,7 @@ def dispatch(cfg, fold, params):
     except Exception as e:
         status = "UNSAT"
         logger.error("Target function evaluation raised exception %s.", str(e))
+        logger.error(wrapping_util.format_traceback(sys.exc_info()))
 
     if wallclock_time is None:
         wallclock_time = time.time() - starttime

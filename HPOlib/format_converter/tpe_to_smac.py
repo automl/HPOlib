@@ -87,6 +87,7 @@ def expr_to_config(expr, conditions, hps):
             expr_to_config(ii, conditions, hps)
 
 
+#TODO: make this function callable from python
 def convert_tpe_to_smac_from_file(filename):
 
     space_name, ext = os.path.splitext(os.path.basename(filename))

@@ -67,12 +67,18 @@ def get_all_p_for_pgid():
 
 def kill_children(sig):
     # TODO: somehow wait, until the Experiment pickle is written to disk
-    running_pid = get_all_p_for_pgid()
+    # running_pid = get_all_p_for_pgid()
+    process = psutil.Process(os.getpid())
+    children = process.children()
 
-    logger.critical("Running %s" % str(running_pid))
-    for pid in running_pid:
+    pids_with_commands = []
+    for child in children:
+        pids_with_commands.append((child.pid, child.cmdline()))
+
+    logger.critical("Running %s" % str(pids_with_commands))
+    for child in children:
         try:
-            os.kill(pid, sig)
+            os.kill(child.pid, sig)
         except Exception as e:
             logger.error(type(e))
             logger.error(e)
@@ -95,9 +101,13 @@ class Exit:
     def get_exit(self):
         return self.exit_flag
 
-    def signal_callback(self, signal, frame):
+    def signal_callback(self, signal_, frame):
+        SIGNALS_TO_NAMES_DICT = dict((getattr(signal, n), n) \
+            for n in dir(signal) if n.startswith('SIG') and '_' not in n )
+
+        logger.critical("Received signal %s" % SIGNALS_TO_NAMES_DICT[signal_])
         self.true()
-        self.signal = signal
+        self.signal = signal_
 
 
 def calculate_wrapping_overhead(trials):
@@ -184,9 +194,10 @@ def output_experiment_pickle(console_output_delay,
                     printed_end_configuration.append(i)
 
             del trials
-        time.sleep(console_output_delay)
         if exit:
             break
+        else:
+            time.sleep(console_output_delay)
 
 
 def use_arg_parser():
@@ -273,7 +284,7 @@ def main():
 
     # Saving the config file is down further at the bottom, as soon as we get
     # hold of the new optimizer directory
-    wrapping_dir = os.path.dirname(os.path.realpath(__file__))
+    # wrapping_dir = os.path.dirname(os.path.realpath(__file__))
 
     # Load optimizer
     try:
@@ -346,6 +357,14 @@ def main():
         logger.info(cmd)
         return 0
     else:
+        # Use a flag which is set to true as soon as all children are
+        # supposed to be killed
+        exit_ = Exit()
+        signal.signal(signal.SIGTERM, exit_.signal_callback)
+        signal.signal(signal.SIGABRT, exit_.signal_callback)
+        signal.signal(signal.SIGINT, exit_.signal_callback)
+        signal.signal(signal.SIGHUP, exit_.signal_callback)
+
         # call target_function.setup()
         fn_setup = config.get("HPOLIB", "function_setup")
         if fn_setup:
@@ -362,14 +381,6 @@ def main():
                 logger.critical(e.message)
                 logger.critical(e.filename)
                 sys.exit(1)
-
-       # Use a flag which is set to true as soon as all children are
-        # supposed to be killed
-        exit_ = Exit()
-        signal.signal(signal.SIGTERM, exit_.signal_callback)
-        signal.signal(signal.SIGABRT, exit_.signal_callback)
-        signal.signal(signal.SIGINT, exit_.signal_callback)
-        signal.signal(signal.SIGHUP, exit_.signal_callback)
 
         # Change into the current experiment directory
         # Some optimizer might expect this
@@ -396,7 +407,6 @@ def main():
                 except OSError, e:
                     time.sleep(rmtree_iter)
 
-
             optimizer_dir_in_experiment = temporary_output_dir
 
         os.chdir(optimizer_dir_in_experiment)
@@ -410,8 +420,8 @@ def main():
         # See man 7 credentials for the meaning of a process group id
         # This makes wrapping.py useable with SGEs default behaviour,
         # where qdel sends a SIGKILL to a whole process group
-        logger.info(os.getpid())
-        os.setpgid(os.getpid(), os.getpid())
+        # logger.info(os.getpid())
+        # os.setpgid(os.getpid(), os.getpid())    # same as os.setpgid(0, 0)
         # TODO: figure out why shell=True was removed in commit f47ac4bb3ffe7f70b795d50c0828ca7e109d2879
         # maybe it has something todo with the previous behaviour where a
         # session id was set...
@@ -499,7 +509,7 @@ def main():
                 pass
 
             ret = proc.poll()
-
+            # This does not include wrapping.py
             running = get_all_p_for_pgid()
             if ret is not None and len(running) == 0:
                 break
@@ -507,26 +517,28 @@ def main():
             # running?
 
             if exit_.get_exit() == True and not sent_SIGINT:
-                logger.info("Sending SIGINT")
+                logger.critical("Shutdown procedure: Sending SIGINT")
                 kill_children(signal.SIGINT)
                 sent_SIGINT_time = time.time()
                 sent_SIGINT = True
 
             if exit_.get_exit() == True and not sent_SIGTERM and time.time() \
-                    > sent_SIGINT_time + 100:
-                logger.info("Sending SIGTERM")
+                    > sent_SIGINT_time + 5:
+                logger.critical("Shutdown procedure: Sending SIGTERM")
                 kill_children(signal.SIGTERM)
                 sent_SIGTERM_time = time.time()
                 sent_SIGTERM = True
 
             if exit_.get_exit() == True and not sent_SIGKILL and time.time() \
-                    > sent_SIGTERM_time + 100:
-                logger.info("Sending SIGKILL")
+                    > sent_SIGTERM_time + 5:
+                logger.critical("Shutdown procedure: Sending SIGKILL")
                 kill_children(signal.SIGKILL)
                 sent_SIGKILL_time = time.time()
                 sent_SIGKILL = True
 
+        logger.info("-----------------------END--------------------------------------")
         ret = proc.returncode
+        logger.info("Finished with return code: %d", ret)
         del proc
 
         if not (args.verbose or args.silent):
@@ -536,8 +548,6 @@ def main():
                                      optimizer_dir_in_experiment,
                                      optimizer, experiment_directory_prefix,
                                      lock, Experiment, np, True)
-
-        logger.info("-----------------------END--------------------------------------")
         fh.close()
 
         # Change back into to directory
@@ -572,15 +582,14 @@ def main():
         if fn_teardown:
             try:
                 fn_teardown = shlex.split(fn_teardown)
-                output = subprocess.check_output(fn_teardown, stderr=subprocess.STDOUT) #,
-                                                 #shell=True, executable="/bin/bash")
+                output = subprocess.check_output(fn_teardown, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as e:
                 logger.critical(e.output)
                 sys.exit(1)
             except OSError as e:
                 logger.critical(e.message)
                 logger.critical(e.filename)
-                sys.exit(1)
+                logger.critical(os.getcwd())
 
         trials = Experiment.Experiment(optimizer_dir_in_experiment,
                                        experiment_directory_prefix + optimizer)
