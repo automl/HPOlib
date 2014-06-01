@@ -47,27 +47,8 @@ hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.wrapping")
 
 
-def get_all_p_for_pgid():
-    current_pgid = os.getpgid(os.getpid())
-    pids = psutil.pids()
-    running_pid = []
-    for pid in pids:
-        try:
-            pgid = os.getpgid(pid)
-        except:
-            continue
-
-        # Don't try to kill HPOlib-run
-        if pgid == current_pgid and pid != os.getpid():
-            # This solves the problem that a Zombie process counts
-            # towards the number of process which have to be killed
-            running_pid.append(pid)
-    return running_pid
-
-
 def kill_children(sig):
     # TODO: somehow wait, until the Experiment pickle is written to disk
-    # running_pid = get_all_p_for_pgid()
     process = psutil.Process(os.getpid())
     children = process.children()
 
@@ -510,8 +491,9 @@ def main():
 
             ret = proc.poll()
             # This does not include wrapping.py
-            running = get_all_p_for_pgid()
-            if ret is not None and len(running) == 0:
+            process = psutil.Process(os.getpid())
+            children = process.children()
+            if ret is not None and len(children) == 0:
                 break
             # TODO: what happens if we have a ret but something is still
             # running?
@@ -536,11 +518,6 @@ def main():
                 sent_SIGKILL_time = time.time()
                 sent_SIGKILL = True
 
-        logger.info("-----------------------END--------------------------------------")
-        ret = proc.returncode
-        logger.info("Finished with return code: %d", ret)
-        del proc
-
         if not (args.verbose or args.silent):
             output_experiment_pickle(console_output_delay,
                                      printed_start_configuration,
@@ -548,6 +525,13 @@ def main():
                                      optimizer_dir_in_experiment,
                                      optimizer, experiment_directory_prefix,
                                      lock, Experiment, np, True)
+
+        logger.info("-----------------------END--------------------------------------")
+        ret = proc.returncode
+        logger.info("Finished with return code: %d", ret)
+        del proc
+
+
         fh.close()
 
         # Change back into to directory

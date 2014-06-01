@@ -6,9 +6,14 @@ import urllib
 import os
 import subprocess
 import sys
+import socket
 import tarfile
 
 import HPOlib
+
+# Otherwise installing the HPOlib when having no internet connection can take
+# very long because urllib will block while trying to download a file
+socket.setdefaulttimeout(10)
 
 here = os.path.abspath(os.path.dirname(__file__))
 desc = 'A software that can be used to evaluate either black boxes or hyperparameter optimization algorithms'

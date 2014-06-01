@@ -12,6 +12,9 @@
 * HPOlib/wrapping.py: One can now specify a temporary output directory where the experiment output is temporarily stored and 
     transfered back to the experiment directory when the experiment is finished. This is useful for fast (<1s) jobs which are executed
     in high number in parallel (>100) when all computers write to a central file system.
+* HPOlib/wrapping.py Enhanced cluster stability by removing setpgid() of wrapping.py.
+    Thus, a qdel on a SGE cluster kills the whole process tree except the
+    runsolver target process, which should end itself after some time.
     
 === Internals ===
 
