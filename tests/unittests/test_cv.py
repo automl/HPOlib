@@ -28,7 +28,7 @@ except:
     # TODO: Remove this Hackiness when installation fully works!
     import HPOlib
     hyperopt_path = os.path.join(os.path.dirname(os.path.abspath(
-        HPOlib.__file__)), "optimizers/hyperopt_august2013_mod")
+        HPOlib.__file__)), "../optimizers/tpe/hyperopt_august2013_mod_src")
     print hyperopt_path
     sys.path.append(hyperopt_path)
     import hyperopt
