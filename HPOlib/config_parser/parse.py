@@ -54,9 +54,24 @@ def check_config(config):
     if not config.has_option('HPOLIB', 'result_on_terminate') or \
             config.get('HPOLIB', 'result_on_terminate') == '':
         raise Exception('No result_on_terminate specified in .cfg')
-    if not config.has_option('HPOLIB', 'function') or \
-            config.get('HPOLIB', 'function') == '':
-        raise Exception('No function specified in .cfg')
     if config.getint('HPOLIB', "number_cv_folds") < 1:
         raise Exception("The number of crossvalidation folds must be at least one!")
+
+    # -----------
+    # Check function
+    # -----------
+    if config.has_option('HPOLIB', 'dispatcher'):
+        if config.get('HPOLIB', 'dispatcher') == 'runsolver_wrapper.py' and \
+            (not config.has_option('HPOLIB', 'function') or \
+             config.get('HPOLIB', 'function') == ''):
+            raise Exception('No function specified in .cfg')
+        elif config.get('HPOLIB', 'dispatcher') == 'python_function.py' and \
+            (not config.has_option('HPOLIB', 'python_module') or \
+             config.get('HPOLIB', 'python_module') == '') or \
+            (not config.has_option('HPOLIB', 'python_function') or \
+             config.get('HPOLIB', 'python_function') == '') :
+            raise Exception('No python_function and/or python_module specified in .cfg')
+    else:
+        raise Exception('No dispatcher given: %s')
+
     return True
