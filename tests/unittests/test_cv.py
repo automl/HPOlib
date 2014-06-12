@@ -82,8 +82,10 @@ class CVTest(unittest.TestCase):
             return _new_dict
 
         # Branin
-        import HPOlib.benchmarks.branin.tpe.space
-        space = HPOlib.benchmarks.branin.tpe.space.space
+        #import HPOlib.benchmarks.branin.tpe.space
+
+        import search_spaces.branin
+        space = search_spaces.branin.space
 
         for i in range(100):
             sample = hyperopt.pyll.stochastic.sample(space)
@@ -96,8 +98,8 @@ class CVTest(unittest.TestCase):
             self.assertEqual(flatten, flatten_old)
 
         # HPNnet
-        import tests.search_spaces.nips2011
-        space = tests.search_spaces.nips2011.space
+        import search_spaces.nips2011
+        space = search_spaces.nips2011.space
 
         for i in range(100):
             sample = hyperopt.pyll.stochastic.sample(space)
@@ -111,14 +113,24 @@ class CVTest(unittest.TestCase):
             self.assertEqual(flatten, flatten_old)
 
         # AutoWEKA
-        import tests.search_spaces.autoweka
-        space = tests.search_spaces.autoweka.space
+        import search_spaces.autoweka
+        space = search_spaces.autoweka.space
         for i in range(100):
             sample = hyperopt.pyll.stochastic.sample(space)
             flatten = cv.flatten_parameter_dict(sample)
             self.assertIn("attributesearch", flatten.keys())
             self.assertIn("targetclass", flatten.keys())
             # print flatten
+
+        # spearmint config
+        space = {"INT_array": [1, 3, 5],  
+               "FLOAT_array": [1.5, 3.6, 5.7],
+               "ENUM_array": ["Yes", "No", "Maybe"]}
+        space_flat = cv.flatten_parameter_dict(space)
+        test_space = {'FLOAT_array_0': 1.5, 'FLOAT_array_1': 3.6, 'FLOAT_array_2': 5.7, 'INT_array_2': 5, 'INT_array_1': 3, 'INT_array_0': 1, 'ENUM_array_0': 'Yes', 'ENUM_array_1': 'No', 'ENUM_array_2': 'Maybe'}
+        self.assertEqual(test_space, space_flat)
+        
+        
 
 
 if __name__ == "__main__":
