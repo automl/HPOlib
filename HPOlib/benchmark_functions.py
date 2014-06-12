@@ -54,10 +54,12 @@ def branin(x, y):
 
 
 def save_har6(params, **kwargs):
-    if "x" not in params or "y" not in params or "z" not in params \
-       or "a" not in params or "b" not in params or "c" not in params:
-        sys.stderr.write("No params found ['x', 'y']\n")
-        return float("NaN")
+    for param in ['x', 'y', 'z', 'a', 'b', 'c']:
+        if param not in params:
+            raise ValueError("Required parameter '%s' not found" % param)
+        if 0 > params[param] > 1:
+            raise ValueError("%s=%s not in between 0 and 1" % (params, params[param]))   
+        
     x = float(params["x"])
     y = float(params["y"])
     z = float(params["z"])
@@ -84,13 +86,6 @@ def har6(x, y, z, a, b, c):
     import numpy as np
 
     value = np.array([x, y, z, a, b, c])
-
-    if 0 > x or x > 1 or 0 > y or y > 1 or 0 > z or z > 1:
-        raise ValueError("x=%s, y=%s or z=%s not in between 0 and 1" %
-                         (x, y, z))
-    if 0 > a or a > 1 or 0 > b or b > 1 or 0 > c or c > 1:
-        raise ValueError("a=%s, b=%s or c=%s not in between 0 and 1" %
-                         (a, b, c))
 
     a = np.array([[10.0,   3.0, 17.0,   3.5,  1.7,  8.0],
                [ 0.05, 10.0, 17.0,   0.1,  8.0, 14.0],

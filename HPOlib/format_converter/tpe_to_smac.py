@@ -113,6 +113,7 @@ def expr_to_config(expr, conditions, hps, name=None):
 
 
 
+#TODO: make this function callable from python
 def convert_tpe_to_smac_from_file(filename):
 
     space_name, ext = os.path.splitext(os.path.basename(filename))
