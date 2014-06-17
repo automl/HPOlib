@@ -66,10 +66,10 @@ def check_config(config):
              config.get('HPOLIB', 'function') == ''):
             raise Exception('No function specified in .cfg')
         elif config.get('HPOLIB', 'dispatcher') == 'python_function.py' and \
-            (not config.has_option('HPOLIB', 'python_module') or \
+            ((not config.has_option('HPOLIB', 'python_module') or \
              config.get('HPOLIB', 'python_module') == '') or \
             (not config.has_option('HPOLIB', 'python_function') or \
-             config.get('HPOLIB', 'python_function') == '') :
+             config.get('HPOLIB', 'python_function') == '')) :
             raise Exception('No python_function and/or python_module specified in .cfg')
     else:
         raise Exception('No dispatcher given: %s')
