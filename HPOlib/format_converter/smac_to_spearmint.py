@@ -94,7 +94,7 @@ def convert_smac_to_spearmint(filename):
     exp = Experiment()
     # Assumption: Algo is written in Python called cv.py, only works for BBoM
     exp.language = PYTHON
-    exp.name = "cv"
+    exp.name = "HPOlib.cv"
     exp.variable.extend(params)
     return text_format.MessageToString(exp)
 
