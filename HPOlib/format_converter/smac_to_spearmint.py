@@ -49,8 +49,11 @@ def convert_smac_to_spearmint(filename):
         param = Experiment.ParameterSpec()
         # We only allow variables of size 1
         param.size = 1
-        pos = line.find(" ")
-        param.name = line[0:pos]
+        pos = line.find("[")
+        tmp_pos = line.find("{")
+        if pos > -1 and tmp_pos > -1 and tmp_pos < pos:
+            pos = tmp_pos
+        param.name = line[0:pos].strip()
         line = line[pos:].strip()
         if '{' in line:
             # Found an ENUM
@@ -94,7 +97,7 @@ def convert_smac_to_spearmint(filename):
     exp = Experiment()
     # Assumption: Algo is written in Python called cv.py, only works for BBoM
     exp.language = PYTHON
-    exp.name = "cv"
+    exp.name = "HPOlib.cv"
     exp.variable.extend(params)
     return text_format.MessageToString(exp)
 
