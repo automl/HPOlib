@@ -31,7 +31,7 @@ import configuration_space
 
 # Build pyparsing expressions for params
 pp_param_name = pyparsing.Word(pyparsing.alphanums + "_" + "-" + "@" + "." + ":" + ";" + "\\" + "/" + "?" + "!" +
-                               "$" + "%" + "&" + "*" + "+" + "#" + "<" + ">")
+                               "$" + "%" + "&" + "*" + "+" + "<" + ">")
 pp_digits = "0123456789"
 pp_plusorminus = pyparsing.Literal('+') | pyparsing.Literal('-')
 pp_int = pyparsing.Combine(pyparsing.Optional(pp_plusorminus) + pyparsing.Word(pp_digits))
@@ -147,6 +147,8 @@ def read(pcs_string, debug=False):
         try:
             param_list = pp_cont_param.parseString(line)
             il = param_list[9:]
+            if len(il) > 0:
+                il = il[0]
             param_list = param_list[:9]
             name = param_list[0]
             lower = float(param_list[2])
@@ -205,7 +207,7 @@ def read(pcs_string, debug=False):
         print "#Invalid lines: %d ( of %d )" % (line_ct - len(conditions) - ct, line_ct)
         print "#Parameter: %d" % len(searchspace)
         print "#Conditions: %d" % len(conditions)
-        print "#Conditioned params: %d" % sum([1 if len(searchspace[j].conditions) > 0 else 0 for j in searchspace])
+        print "#Conditioned params: %d" % sum([1 if len(searchspace[j].conditions[0]) > 0 else 0 for j in searchspace])
         print "#Categorical: %d" % cat_ct
         print "#Continuous: %d" % cont_ct
     return searchspace
