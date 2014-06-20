@@ -70,7 +70,7 @@ def build_continuous(param):
                 raise ValueError("This is no log domain: %s" % param.name)
         else:
             if int(param.domain.base) != param.domain.base:
-                raise NotImplementedError("We cannot yet handle non-int bases: %s (%s)" %
+                raise NotImplementedError("We cannot handle non-int bases: %s (%s)" %
                                           (str(param.domain.base), param.name))
             # HPOlib has to take care of this
             param.name = "LOG%d_%s" % (int(param.domain.base), param.name)
@@ -230,14 +230,14 @@ def write(searchspace):
                                       (str(searchspace[para_name].conditions), para_name))
         for condition in searchspace[para_name].conditions[0]:
             lines.append(build_condition(para_name, condition))
-    return lines
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":
     fh = open(sys.argv[1])
     orig_pcs = fh.readlines()
     sp = read(orig_pcs, debug=True)
-    created_pcs = write(sp)
+    created_pcs = write(sp).split("\n")
     print "============== Writing Results"
     print "#Lines: ", len(created_pcs)
     print "#LostLines: ", len(orig_pcs) - len(created_pcs)
