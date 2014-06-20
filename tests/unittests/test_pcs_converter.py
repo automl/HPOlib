@@ -24,6 +24,9 @@ __contact__ = "automl.org"
 import StringIO
 import unittest
 
+import sys
+print sys.path
+
 import HPOlib.format_converter.configuration_space as configuration_space
 import HPOlib.format_converter.pcs_parser as pcs_parser
 
@@ -66,7 +69,7 @@ easy_space = {"float_a": float_a,
               }
 
 
-class TestSmacConverter(unittest.TestCase):
+class TestPCSConverter(unittest.TestCase):
     def test_read_configuration_space_basic(self):
         float_a_copy = configuration_space.create_float("float_a", -1.23, 6.45)
         a_copy = {"a": float_a_copy, "b": int_a}
@@ -133,13 +136,13 @@ class TestSmacConverter(unittest.TestCase):
         value = pcs_parser.write(sp)
         self.assertEqual(expected, value)
 
-    def test_write_LOG23(self):
+    def test_write_log23(self):
         expected = "LOG23_a [1.0, 5.0] [3.0]"
         sp = {"a": configuration_space.create_float("a", 23**1, 23**5, base=23)}
         value = pcs_parser.write(sp)
         self.assertEqual(expected, value)
 
-    def test_write_LOG10(self):
+    def test_write_log10(self):
         expected = "a [10.0, 1000.0] [505.0]l"
         sp = {"a": configuration_space.create_float("a", 10, 1000, base=10)}
         value = pcs_parser.write(sp)
