@@ -39,7 +39,15 @@ def create_categorical(name, choices, conditions=None):
     theta.name = name
     theta.domain = domain
     if conditions is None:
-        theta.conditions = []
+        theta.conditions = [[]]
+    else:
+        # Hopefully this is a array of arrays
+        if type(conditions) != list:
+            raise ValueError("Conditions are not a list: %s" % str(conditions))
+        for o_r in conditions:
+            if type(o_r) != list:
+                raise ValueError("This conditions are not a list: %s" % str(o_r))
+        theta.conditions = conditions
     return theta
 
 
@@ -58,7 +66,15 @@ def create_float(name, lower, upper, q=None, base=None, conditions=None):
     theta.name = name
     theta.domain = domain
     if conditions is None:
-        theta.conditions = []
+        theta.conditions = [[]]
+    else:
+        # Hopefully this is a array of arrays
+        if type(conditions) != list:
+            raise ValueError("Conditions are not a list: %s" % str(conditions))
+        for o_r in conditions:
+            if type(o_r) != list:
+                raise ValueError("This conditions are not a list: %s" % str(o_r))
+        theta.conditions = conditions
     return theta
 
 
@@ -80,5 +96,13 @@ def create_int(name, lower, upper, q=None, base=None, conditions=None):
     theta.name = name
     theta.domain = domain
     if conditions is None:
-        theta.conditions = []
+        theta.conditions = [[]]
+    else:
+        # Hopefully this is a array of arrays
+        if type(conditions) != list:
+            raise ValueError("Conditions are not a list: %s" % str(conditions))
+        for o_r in conditions:
+            if type(o_r) != list:
+                raise ValueError("This conditions are not a list: %s" % str(o_r))
+        theta.conditions = conditions
     return theta
