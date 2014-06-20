@@ -70,7 +70,7 @@ def build_continuous(param):
                 raise ValueError("This is no log domain: %s" % param.name)
         else:
             if int(param.domain.base) != param.domain.base:
-                raise NotImplementedError("We cannot yet handle non-int bases: %s (%s)" %
+                raise NotImplementedError("We cannot handle non-int bases: %s (%s)" %
                                           (str(param.domain.base), param.name))
             # HPOlib has to take care of this
             param.name = "LOG%d_%s" % (int(param.domain.base), param.name)
@@ -95,9 +95,12 @@ def build_continuous(param):
 def build_condition(name, condition):
     condition_template = "%s | %s in {%s}"
     condition = condition.split(" ")
-    if condition[1] != "==":
+    if condition[1] != "==" and condition[1] != "in":
         raise NotImplementedError("SMAC cannot handle >< conditions: %s (%s)" % (condition, name))
-    return condition_template % (name, condition[0], condition[2].replace(",", ", "))
+    if condition[1] == "in":
+        return condition_template % (name, condition[0], condition[2][1:-1].replace(",", ", "))
+    if condition[1] == "==":
+        return condition_template % (name, condition[0], condition[2])
 
 
 def read(pcs_string, debug=False):
@@ -191,7 +194,12 @@ def read(pcs_string, debug=False):
             raise ValueError("%s is not defined" % child)
         if parent not in searchspace:
             raise ValueError("%s is not defined" % parent)
-        cond_str = "%s == %s" % (parent, ",".join(restrictions))
+
+        if len(restrictions) == 1:
+            cond_str = "%s == %s" % (parent, restrictions[0])
+        else:
+            cond_str = "%s in {%s}" % (parent, ",".join(restrictions))
+
         if len(searchspace[child].conditions) == 0:
             searchspace[child].conditions.append([cond_str, ])
         else:
@@ -230,14 +238,14 @@ def write(searchspace):
                                       (str(searchspace[para_name].conditions), para_name))
         for condition in searchspace[para_name].conditions[0]:
             lines.append(build_condition(para_name, condition))
-    return lines
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":
     fh = open(sys.argv[1])
     orig_pcs = fh.readlines()
     sp = read(orig_pcs, debug=True)
-    created_pcs = write(sp)
+    created_pcs = write(sp).split("\n")
     print "============== Writing Results"
     print "#Lines: ", len(created_pcs)
     print "#LostLines: ", len(orig_pcs) - len(created_pcs)

@@ -110,37 +110,37 @@ class TestSmacConverter(unittest.TestCase):
         self.assertDictEqual(cs, conditional_space)
 
     def test_write_int(self):
-        expected = ["int_a [-1, 6] [2]i", ]
+        expected = "int_a [-1, 6] [2]i"
         sp = {"a": int_a}
         value = pcs_parser.write(sp)
         self.assertEqual(expected, value)
 
     def test_write_log_int(self):
-        expected = ["int_log_a [1, 6] [3]il", ]
+        expected = "int_log_a [1, 6] [3]il"
         sp = {"a": int_log_a}
         value = pcs_parser.write(sp)
         self.assertEqual(expected, value)
 
     def test_write_q_int(self):
-        expected = ["Q16_int_a [16, 1024] [520]i", ]
+        expected = "Q16_int_a [16, 1024] [520]i"
         sp = {"a": configuration_space.create_int("int_a", 16, 1024, q=16)}
         value = pcs_parser.write(sp)
         self.assertEqual(expected, value)
 
     def test_write_q_float(self):
-        expected = ["Q16_float_a [16.1, 1024.1] [520.1]", ]
+        expected = "Q16_float_a [16.1, 1024.1] [520.1]"
         sp = {"a": configuration_space.create_float("float_a", 16.10, 1024.10, q=16)}
         value = pcs_parser.write(sp)
         self.assertEqual(expected, value)
 
     def test_write_LOG23(self):
-        expected = ["LOG23_a [1.0, 5.0] [3.0]", ]
+        expected = "LOG23_a [1.0, 5.0] [3.0]"
         sp = {"a": configuration_space.create_float("a", 23**1, 23**5, base=23)}
         value = pcs_parser.write(sp)
         self.assertEqual(expected, value)
 
     def test_write_LOG10(self):
-        expected = ["a [10.0, 1000.0] [505.0]l", ]
+        expected = "a [10.0, 1000.0] [505.0]l"
         sp = {"a": configuration_space.create_float("a", 10, 1000, base=10)}
         value = pcs_parser.write(sp)
         self.assertEqual(expected, value)
