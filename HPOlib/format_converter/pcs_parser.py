@@ -95,9 +95,12 @@ def build_continuous(param):
 def build_condition(name, condition):
     condition_template = "%s | %s in {%s}"
     condition = condition.split(" ")
-    if condition[1] != "==":
+    if condition[1] != "==" and condition[1] != "in":
         raise NotImplementedError("SMAC cannot handle >< conditions: %s (%s)" % (condition, name))
-    return condition_template % (name, condition[0], condition[2].replace(",", ", "))
+    if condition[1] == "in":
+        return condition_template % (name, condition[0], condition[2][1:-1].replace(",", ", "))
+    if condition[1] == "==":
+        return condition_template % (name, condition[0], condition[2])
 
 
 def read(pcs_string, debug=False):
@@ -191,7 +194,12 @@ def read(pcs_string, debug=False):
             raise ValueError("%s is not defined" % child)
         if parent not in searchspace:
             raise ValueError("%s is not defined" % parent)
-        cond_str = "%s == %s" % (parent, ",".join(restrictions))
+
+        if len(restrictions) == 1:
+            cond_str = "%s == %s" % (parent, restrictions[0])
+        else:
+            cond_str = "%s in {%s}" % (parent, ",".join(restrictions))
+
         if len(searchspace[child].conditions) == 0:
             searchspace[child].conditions.append([cond_str, ])
         else:
