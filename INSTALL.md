@@ -14,7 +14,7 @@ virtualenv virtualHPOlib
 source virtualHPOlib/bin/activate
 ```
 
-3.) Install ``numpy``, ``scipy``, ``matplotlib``, as this doesn't work through setup.py
+2.) Install ``numpy``, ``scipy``, ``matplotlib``, as this doesn't work through setup.py
 ```bash
 easy_install -U distribute
 pip install numpy
@@ -39,7 +39,7 @@ pip freeze
     wsgiref==0.1.2
 ```
 
-4.) run setup.py
+3.) run setup.py
 
 ```python
    python setup.py install
@@ -76,7 +76,7 @@ ls optimizers/smac
     smac_2_06_01-dev_parser.py   smac_2_06_01-dev.py   smac_2_06_01-dev_src    smac_2_06_01-devDefault.cfg
 ```
 
-5.) You can now run, e.g. smac with 200 evaluations on the branin function:
+4.) You can now run, e.g. smac with 200 evaluations on the branin function:
 
 ```bash
 cd benchmarks/branin
