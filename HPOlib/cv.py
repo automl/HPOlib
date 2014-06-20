@@ -172,7 +172,13 @@ def flatten_parameter_dict(params):
             elif type(value) in (list, tuple, np.ndarray) and \
                     all([type(v) not in (list, tuple, np.ndarray) for v in value]):
                 # Spearmint special case, keep only the first element
-                new_dict[key] = value[0]
+                # Adding: variable_id = val
+                if len(value) == 1:
+                    new_dict[key] = value[0]
+                else:
+                    for v_idx, v in enumerate(value):
+                        new_dict[key + "_%s" % v_idx] = v
+                #new_dict[key] = value[0]
             elif type(value) in (list, tuple, np.ndarray):
                 for v in value:
                     params_to_check.append(v)

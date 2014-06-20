@@ -1,7 +1,7 @@
 import unittest
 
 import unittests.test_benchmark_util as test_benchmark_util
-# import unittests.test_cv as test_cv
+import unittests.test_cv as test_cv
 import unittests.test_data_utils as test_data_utils
 import unittests.test_experiment as test_experiment
 #import unittests.test_gridsearch as test_gridsearch
@@ -13,7 +13,7 @@ import unittests.test_wrapping_util as test_wrapping_util
 def suite():
     _suite = unittest.TestSuite()
     _suite.addTest(unittest.makeSuite(test_benchmark_util.BenchmarkUtilTest))
-    # _suite.addTest(unittest.makeSuite(test_cv.CVTest))
+    _suite.addTest(unittest.makeSuite(test_cv.CVTest))
     _suite.addTest(unittest.makeSuite(test_data_utils.DataUtilTest))
     _suite.addTest(unittest.makeSuite(test_experiment.ExperimentTest))
     #_suite.addTest(unittest.makeSuite(test_gridsearch.GridSearchTest))

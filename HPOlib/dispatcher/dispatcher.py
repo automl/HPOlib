@@ -22,7 +22,7 @@ def remove_param_metadata(params):
     """
     Check whether some params are defined on the Log scale or with a Q value,
     must be marked with "LOG$_{paramname}" or Q[0-999]_$paramname
-    LOG/Q will be removed from the paramname
+    LOG_/Q_ will be removed from the paramname
     """
     for para in params:
         new_name = para
@@ -30,17 +30,17 @@ def remove_param_metadata(params):
         if isinstance(params[para], str):
             params[para] = params[para].strip("'")
         if "LOG10_" in para:
-            pos = para.find("LOG10")
+            pos = para.find("LOG10_")
             new_name = para[0:pos] + para[pos + 6:]
             params[new_name] = np.power(10, float(params[para]))
             del params[para]
-        elif "LOG2" in para:
+        elif "LOG2_" in para:
             pos = para.find("LOG2_")
             new_name = para[0:pos] + para[pos + 5:]
             params[new_name] = np.power(2, float(params[para]))
             del params[para]
         elif "LOG_" in para:
-            pos = para.find("LOG")
+            pos = para.find("LOG_")
             new_name = para[0:pos] + para[pos + 4:]
             params[new_name] = np.exp(float(params[para]))
             del params[para]
