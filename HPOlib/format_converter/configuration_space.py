@@ -25,7 +25,6 @@ __contact__ = "automl.org"
 class Hyperparameter(object):
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            print "ksdhfksdhf"
             return (self.name == other.name and self.domain == other.domain)
         else:
             return False
@@ -34,19 +33,19 @@ class Hyperparameter(object):
         return not self.__eq__(other)
 
     def __repr__(self):
-        repr_str = "Name: %s\n" % self.name
-        repr_str += repr(self.domain)
+        repr_str = ["Name: %s" % self.name, ]
+        repr_str.append(repr(self.domain))
         if self.has_conditions():
-            repr_str += "Conditions: %s\n" % (str(self.conditions))
+            repr_str.append("Conditions: %s" % (str(self.conditions)))
         else:
-            repr_str += "Conditions: None\n"
-        return repr_str + repr(self.domain)
+            repr_str.append("Conditions: None")
+        return ", ".join(repr_str)
 
     def __str__(self):
         return self.__repr__()
 
     def has_conditions(self):
-        return len(self.conditions[0]) == 0
+        return not len(self.conditions[0]) == 0
 
 
 class Domain(object):
@@ -61,15 +60,15 @@ class Domain(object):
     pass
 
     def __repr__(self):
-        repr_str = "Type: %s\n" % self.type
+        repr_str = ["Type: %s" % self.type, ]
         if self.type == "categorical":
-            repr_str += "Choices: %s\n" % str(self.choices)
+            repr_str.append("Choices: %s" % str(self.choices))
         elif self.type in ("float", "int"):
-            repr_str += "Range: [%s, %s]\n" % (str(self.lower), str(self.upper))
-            repr_str += "Base: %s\n" % self.base
-            repr_str += "Q: %s\n" % self.q
+            repr_str.append("Range: [%s, %s]" % (str(self.lower), str(self.upper)))
+            repr_str.append("Base: %s" % self.base)
+            repr_str.append("Q: %s" % self.q)
 
-        return repr_str
+        return ", ".join(repr_str)
 
     def __str__(self):
         return self.__repr__()
