@@ -30,7 +30,8 @@ import configuration_space
 
 
 # Build pyparsing expressions for params
-pp_param_name = pyparsing.Word(pyparsing.alphanums + "_" + "@" + ":" + "-" + "." + "\\" + "/")
+pp_param_name = pyparsing.Word(pyparsing.alphanums + "_" + "-" + "@" + "." + ":" + ";" + "\\" + "/" + "?" + "!" +
+                               "$" + "%" + "&" + "*" + "+" + "#" + "<" + ">")
 pp_digits = "0123456789"
 pp_plusorminus = pyparsing.Literal('+') | pyparsing.Literal('-')
 pp_int = pyparsing.Combine(pyparsing.Optional(pp_plusorminus) + pyparsing.Word(pp_digits))
