@@ -27,11 +27,56 @@ import networkx as nx
 
 
 class Hyperparameter(object):
-    pass
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            print "ksdhfksdhf"
+            return (self.name == other.name and self.domain == other.domain)
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __repr__(self):
+        repr_str = "Name: %s\n" % self.name
+        repr_str += repr(self.domain)
+        if self.has_conditions():
+            repr_str += "Conditions: %s\n" % (str(self.conditions))
+        else:
+            repr_str += "Conditions: None\n"
+        return repr_str + repr(self.domain)
+
+    def __str__(self):
+        return self.__repr__()
+
+    def has_conditions(self):
+        return len(self.conditions[0]) == 0
 
 
 class Domain(object):
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
     pass
+
+    def __repr__(self):
+        repr_str = "Type: %s\n" % self.type
+        if self.type == "categorical":
+            repr_str += "Choices: %s\n" % str(self.choices)
+        elif self.type in ("float", "int"):
+            repr_str += "Range: [%s, %s]\n" % (str(self.lower), str(self.upper))
+            repr_str += "Base: %s\n" % self.base
+            repr_str += "Q: %s\n" % self.q
+
+        return repr_str
+
+    def __str__(self):
+        return self.__repr__()
 
 
 def create_categorical(name, choices, conditions=None):
@@ -45,8 +90,12 @@ def create_categorical(name, choices, conditions=None):
     if conditions is None:
         theta.conditions = [[]]
     else:
-        theta.conditions = conditions
-    return theta
+        # Hopefully this is a array of arrays
+        if type(conditions) != list:
+            raise ValueError("Conditions are not a list: %s" % str(conditions))
+        for o_r in conditions:
+            if type(o_r) != list:
+                raise ValueError("This conditions are not a list: %s" % str(o_r))
 
 
 def create_float(name, lower, upper, q=None, base=None, conditions=None):
@@ -66,8 +115,12 @@ def create_float(name, lower, upper, q=None, base=None, conditions=None):
     if conditions is None:
         theta.conditions = [[]]
     else:
-        theta.conditions = conditions
-    return theta
+        # Hopefully this is a array of arrays
+        if type(conditions) != list:
+            raise ValueError("Conditions are not a list: %s" % str(conditions))
+        for o_r in conditions:
+            if type(o_r) != list:
+                raise ValueError("This conditions are not a list: %s" % str(o_r))
 
 
 def create_int(name, lower, upper, q=None, base=None, conditions=None):
@@ -90,8 +143,12 @@ def create_int(name, lower, upper, q=None, base=None, conditions=None):
     if conditions is None:
         theta.conditions = [[]]
     else:
-        theta.conditions = conditions
-    return theta
+        # Hopefully this is a array of arrays
+        if type(conditions) != list:
+            raise ValueError("Conditions are not a list: %s" % str(conditions))
+        for o_r in conditions:
+            if type(o_r) != list:
+                raise ValueError("This conditions are not a list: %s" % str(o_r))
 
 
 def create_dag_from_hyperparameters(hyperparameters):
