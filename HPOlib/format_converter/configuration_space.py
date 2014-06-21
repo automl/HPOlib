@@ -29,7 +29,7 @@ import networkx as nx
 class Hyperparameter(object):
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return (self.name == other.name and self.domain == other.domain)
+            return self.name == other.name and self.domain == other.domain
         else:
             return False
 
@@ -37,8 +37,7 @@ class Hyperparameter(object):
         return not self.__eq__(other)
 
     def __repr__(self):
-        repr_str = ["Name: %s" % self.name, ]
-        repr_str.append(repr(self.domain))
+        repr_str = ["Name: %s" % self.name, repr(self.domain)]
         if self.has_conditions():
             repr_str.append("Conditions: %s" % (str(self.conditions)))
         else:
