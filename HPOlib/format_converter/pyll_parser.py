@@ -8,7 +8,11 @@ import numpy as np  # Because the python docs don't recommend log(x, y)
 import HPOlib.format_converter.configuration_space as configuration_space_module
 
 
-def write_configuration_space(configuration_space):
+def read(pyll_string):
+    raise NotImplementedError("We cannot read hyperopt spaces. This feature is still missing")
+
+
+def write(configuration_space):
     configuration_space = copy.deepcopy(configuration_space)
 
     # Name conversions must happen here because the hyperparameter are

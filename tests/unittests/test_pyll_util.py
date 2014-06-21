@@ -71,11 +71,11 @@ class TestPyllUtil(unittest.TestCase):
         expected.write('b = hp.quniform("b", 0.0, 3.0, 0.1)\n\n')
         expected.write('space = {"a": a, "b": b}\n')
         simple_space = {"a": a, "b": b}
-        cs = pyll_parser.write_configuration_space(simple_space)
+        cs = pyll_parser.write(simple_space)
         self.assertEqual(expected.getvalue(), cs)
 
     def test_convert_conditional_space(self):
-        cs = pyll_parser.write_configuration_space(conditional_space)
+        cs = pyll_parser.write(conditional_space)
         expected = StringIO.StringIO()
         expected.write('from hyperopt import hp\nimport hyperopt.pyll as pyll')
         expected.write('\n\n')
@@ -89,7 +89,7 @@ class TestPyllUtil(unittest.TestCase):
         self.assertEqual(expected.getvalue(), cs)
 
     def test_convert_complex_space(self):
-        cs = pyll_parser.write_configuration_space(config_space)
+        cs = pyll_parser.write(config_space)
         expected = StringIO.StringIO()
         expected.write('from hyperopt import hp\nimport hyperopt.pyll as pyll')
         expected.write('\n\n')
@@ -113,11 +113,11 @@ class TestPyllUtil(unittest.TestCase):
         self.assertEqual(expected.getvalue(), cs)
 
         expected.seek(0)
-        cs = pyll_parser.write_configuration_space(config_space_2)
+        cs = pyll_parser.write(config_space_2)
         self.assertEqual(expected.getvalue().replace("gamma", "gamma_2"), cs)
 
     def test_operator_in(self):
-        cs = pyll_parser.write_configuration_space(conditional_space_operator_in)
+        cs = pyll_parser.write(conditional_space_operator_in)
         expected = StringIO.StringIO()
         expected.write('from hyperopt import hp\nimport hyperopt.pyll as pyll')
         expected.write('\n\n')
