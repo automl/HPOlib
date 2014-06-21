@@ -35,10 +35,17 @@ __contact__ = "automl.org"
 
 
 def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=False,
-                            save="", y_min=0, y_max=0, cut=sys.maxint):
+                            save="", y_min=0, y_max=0, cut=sys.maxint,
+                            linewidth=1, linestyle=False, markers=False):
+    if markers:
+        print "WARNING: markers will not be plotted due to the type of plot."
     markers = plot_util.get_plot_markers()
     colors = plot_util.get_plot_colors()
-    linestyles = itertools.cycle(['-'])
+    if linestyle:
+        linestyles = plot_util.get_plot_linestyles()
+    else:
+        linestyles = itertools.cycle(["-"])
+
     size = 1
 
     # get handles
@@ -79,11 +86,12 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=Fals
         # Plot the stuff
         marker = markers.next()
         color = colors.next()
-        l = linestyles.next()
+        line_style_ = linestyles.next()
         ax.scatter(np.argmin(line), min(line), facecolor="w", edgecolor=color,
                    s=size*10*15, marker=marker)
         ax.scatter(x, y, color=color, marker=marker, s=size*15)
-        ax.plot(x, line, color=color, label=name_list[i][0], linestyle=l, linewidth=size)
+        ax.plot(x, line, color=color, label=name_list[i][0], linestyle=line_style_,
+                linewidth=linewidth)
 
         if min(y) < min_val:
             min_val = min(y)
@@ -120,7 +128,7 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=Fals
 
 
 def main(pkl_list, name_list, optimum=0, title="", log=False, save="", y_max=0,
-         y_min=0, cut=sys.maxint):
+         y_min=0, cut=sys.maxint, linewidth=1, linestyle=False, markers=False):
 
     trial_list = list()
     for i in range(len(pkl_list)):
@@ -134,7 +142,8 @@ def main(pkl_list, name_list, optimum=0, title="", log=False, save="", y_max=0,
     sys.stdout.write("Plotting trace\n")
     plot_optimization_trace(trial_list=trial_list, name_list=name_list, optimum=optimum,
                             title=title, log=log, save=save, y_max=y_max,
-                            y_min=y_min, cut=cut)
+                            y_min=y_min, cut=cut, linewidth=linewidth,
+                            linestyle=linestyle, markers=markers)
 
     if save != "":
         sys.stdout.write("Saved plot to " + save + "\n")
