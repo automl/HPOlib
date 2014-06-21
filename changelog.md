@@ -4,6 +4,8 @@
 
 === Functionality ===
 
+* HPOlib/Plotting/results.py: New result print script which can be used while the experiment is still running
+
 === Other ===
 
 * HPOlib/dispatcher: Replace HPOlib/runsolver_wrapper. Can then choose different dispatcher to run the target experiment. These are:
