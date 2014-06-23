@@ -1,36 +1,49 @@
 import argparse
+from collections import defaultdict
 import ConfigParser
 import cPickle
 import os
 import StringIO
 import sys
 
+import numpy as np
+
+from HPOlib.Experiment import BROKEN_STATE
 import HPOlib.Plotting.plot_util as plot_util
-import HPOlib.wrapping_util as wrapping_util
 from HPOlib.Locker import Locker
 
 
 def get_num_terminates(result_on_terminate, trials):
     terminates = 0
     for trial in trials["trials"]:
-        if trial["result"] >= result_on_terminate - 0.00001:
-            terminates += 1
+        for instance_status in trial["instance_status"]:
+            if instance_status == BROKEN_STATE:
+                terminates += 1
 
     return terminates
+
+def get_instance_durations(trials):
+    instance_durations = []
+    for trial in trials["trials"]:
+        for instance_duration in trial["instance_durations"]:
+            if np.isfinite(instance_duration):
+                instance_durations.append(instance_duration)
+
+    return instance_durations
 
 
 def collect_results(directory):
     locker = Locker()
     sio = StringIO.StringIO()
     sio.write("Statistics for %s\n" % directory)
-    sio.write("%30s | %6s | %7s/%7s/%7s | %5s\n" %
+    sio.write("%30s | %6s | %7s/%7s/%7s | %10s | %10s\n" %
              ("Optimizer", "Seed", "#conf",
-             "#runs", "#crashs", "best"))
+             "#runs", "#crashs", "best", "AvgRunTime"))
 
 
     subdirs = os.listdir(directory)
     subdirs.sort()
-    results = []
+    results = defaultdict(list)
     # Look for all sub-experiments
     for subdir in subdirs:
         if os.path.isdir(subdir):
@@ -76,8 +89,13 @@ def collect_results(directory):
                     except Exception as e:
                         print e, exp_pkl
                         continue
-                    results.append([optimizer, int(seed), configurations,
-                                    instance_runs, crashs, best_performance])
+
+                    instance_durations = get_instance_durations(pkl)
+                    mean_instance_durations = np.mean(instance_durations)
+
+                    results[optimizer].append([optimizer, int(seed),
+                        configurations, instance_runs, crashs,
+                        best_performance, mean_instance_durations])
 
     def comparator(left, right):
         if left[0] < right[0]:
@@ -92,11 +110,24 @@ def collect_results(directory):
             else:
                 return 0
 
-    results.sort(cmp=comparator)
-    for result in results:
-        sio.write("%30s | %6d | %7d/%7d/%7d | %5f\n"
-                  % (result[0], result[1], result[2],
-                     result[3], result[4], result[5]))
+    for optimizer in sorted(results):
+        results[optimizer].sort(cmp=comparator)
+
+        results_for_mean = []
+        runtimes_for_mean = []
+
+        for result in results[optimizer]:
+            results_for_mean.append(float(result[5]))
+            runtimes_for_mean.append(float(result[6]))
+            sio.write("%30s | %6d | %7d/%7d/%7d | %10f | %10f\n"
+                      % (result[0], result[1], result[2],
+                         result[3], result[4], result[5], result[6]))
+
+        sio.write("#NumRuns %5d | Mean %5f | Std %5f | Best %5f | Median %5f "
+                  "| AvgRunTime %10f \n"
+                  % (len(results_for_mean), np.mean(results_for_mean),
+                     np.std(results_for_mean), np.min(results_for_mean),
+                     np.median(results_for_mean), np.mean(runtimes_for_mean)))
     return sio
 
 
