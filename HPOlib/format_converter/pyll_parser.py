@@ -106,10 +106,10 @@ def write(configuration_space):
 
 class PyllWriter(object):
     def __init__(self):
-        self.hyperparameter_counter = 0
+        self.hyperparameters = {}
 
     def reset_hyperparameter_countr(self):
-        self.hyperparameter_counter = 0
+        self.hyperparameters = {}
 
     def write(self, configuration_space):
         configuration_space = copy.deepcopy(configuration_space)
@@ -158,7 +158,8 @@ class PyllWriter(object):
 
         configuration_string.write('\nspace = {')
         configuration_string.write(', '
-            .join(['"%s": %s' % (name, name) for name in hyperparameter_names]))
+            .join(['"%s": param_%s' % (name, self.hyperparameters[name])
+                   for name in hyperparameter_names]))
         configuration_string.write('}\n')
         configuration_string.seek(0)
         return configuration_string.getvalue()
@@ -226,12 +227,15 @@ class PyllWriter(object):
                 for value in values:
                     choices[value][key] = child
 
-        return_string = '%s = hp.choice("%s", [\n' % (name, name)
+        index = "param_%d" % len(self.hyperparameters)
+        self.hyperparameters[name] = len(self.hyperparameters)
+        return_string = '%s = hp.choice("%s", [\n' % (index, name)
         for choice in sorted(choices):
             return_string += '    {'
             return_string += '"%s": "%s", ' % (name, choice)
             for key in sorted(choices[choice]):
-                return_string += '"%s": %s, ' % (key, key)
+                return_string += '"%s": param_%s, ' % \
+                                 (key, self.hyperparameters[key])
             return_string += '},\n'
         return_string += '    ])'
 
@@ -241,61 +245,79 @@ class PyllWriter(object):
         name = parameter.name
         lower = float(parameter.lower)
         upper = float(parameter.upper)
-        return name, '%s = hp.uniform("%s", %s, %s)' % (name, name, lower, upper)
+        index = "param_%d" % len(self.hyperparameters)
+        self.hyperparameters[name] = len(self.hyperparameters)
+        return name, '%s = hp.uniform("%s", %s, %s)' % \
+            (index, name, lower, upper)
 
     def write_uniform_int(self, parameter):
         name = parameter.name
         lower = float(parameter.lower)
         upper = float(parameter.upper)
         q = 1.0
-        return name, '%s = pyll.scope.int(hp.uniform("%s", %s, %s, %s))' \
-            % (name, name, lower, upper, q)
+        index = "param_%d" % len(self.hyperparameters)
+        self.hyperparameters[name] = len(self.hyperparameters)
+        return name, '%s = pyll.scope.int(hp.quniform("%s", %s, %s, %s))' \
+            % (index, name, lower, upper, q)
 
     def write_quniform(self, parameter):
         name = parameter.name
         lower = float(parameter.lower)
         upper = float(parameter.upper)
         q = parameter.q
+        index = "param_%d" % len(self.hyperparameters)
+        self.hyperparameters[name] = len(self.hyperparameters)
         return name, '%s = hp.quniform("%s", %s, %s, %s)' % \
-            (name, name, lower, upper, q)
+            (index, name, lower, upper, q)
 
     def write_quniform_int(self, parameter):
         name = parameter.name
         lower = float(parameter.lower)
         upper = float(parameter.upper)
         q = float(parameter.q)
+        index = "param_%d" % len(self.hyperparameters)
+        self.hyperparameters[name] = len(self.hyperparameters)
         return name, '%s = pyll.scope.int(hp.quniform("%s", %s, %s, %s))' \
-            % (name, name, lower, upper, q)
+            % (index, name, lower, upper, q)
 
     def write_loguniform(self, parameter):
         name = parameter.name
         lower = float(parameter.lower)
         upper = float(parameter.upper)
-        return name, '%s = hp.loguniform("%s", %s, %s)' % (name, name, lower, upper)
+        index = "param_%d" % len(self.hyperparameters)
+        self.hyperparameters[name] = len(self.hyperparameters)
+        return name, '%s = hp.loguniform("%s", %s, %s)' % \
+            (index, name, lower, upper)
 
     def write_loguniform_int(self, parameter):
         name = parameter.name
         lower = float(parameter.lower)
         upper = float(parameter.upper)
         q = 1.0
+        index = "param_%d" % len(self.hyperparameters)
+        self.hyperparameters[name] = len(self.hyperparameters)
         return name, '%s = pyll.scope.int(hp.qloguniform("%s", %s, %s, %s))' % \
-            (name, name, lower, upper, q)
+            (index, name, lower, upper, q)
 
     def write_qloguniform(self, parameter):
         name = parameter.name
         lower = float(parameter.lower)
         upper = float(parameter.upper)
         q = parameter.q
+        index = "param_%d" % len(self.hyperparameters)
+        self.hyperparameters[name] = len(self.hyperparameters)
         return name, '%s = hp.qloguniform("%s", %s, %s, %s)' % \
-            (name, name, lower, upper, q)
+            (index, name, lower, upper, q)
 
     def write_qloguniform_int(self, parameter):
         name = parameter.name
         lower = float(parameter.lower)
         upper = float(parameter.upper)
         q = float(parameter.q)
+        index = "param_%d" % len(self.hyperparameters)
+        self.hyperparameters[name] = len(self.hyperparameters)
         return name, '%s = pyll.scope.int(hp.qloguniform("%s", %s, %s, %s))' % \
-            (name, name, lower, upper, q)
+            (index, name, lower, upper, q)
 
 
 """

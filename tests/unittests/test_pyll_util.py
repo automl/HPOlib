@@ -4,7 +4,6 @@ import unittest
 import sys
 print sys.path
 
-import hyperopt
 from hyperopt import hp
 import numpy as np
 
@@ -71,12 +70,15 @@ config_space_2 = {"classifier": classifier,
 
 
 class TestPyllReader(unittest.TestCase):
+    @unittest.skip("a")
     def test_read_literal(self):
         pyll_parser.read_literal()
 
+    @unittest.skip("a")
     def test_read_container(self):
         pyll_parser.read_container()
 
+    @unittest.skip("a")
     def test_read_switch(self):
         pyll_parser.read_switch()
 
@@ -202,9 +204,9 @@ class TestPyllWriter(unittest.TestCase):
         expected = StringIO.StringIO()
         expected.write('from hyperopt import hp\nimport hyperopt.pyll as pyll')
         expected.write('\n\n')
-        expected.write('a = hp.uniform("a", 0.0, 1.0)\n')
-        expected.write('b = hp.quniform("b", 0.0, 3.0, 0.1)\n\n')
-        expected.write('space = {"a": a, "b": b}\n')
+        expected.write('param_0 = hp.uniform("a", 0.0, 1.0)\n')
+        expected.write('param_1 = hp.quniform("b", 0.0, 3.0, 0.1)\n\n')
+        expected.write('space = {"a": param_0, "b": param_1}\n')
         simple_space = {"a": a, "b": b}
         cs = self.pyll_writer.write(simple_space)
         self.assertEqual(expected.getvalue(), cs)
@@ -214,13 +216,13 @@ class TestPyllWriter(unittest.TestCase):
         expected = StringIO.StringIO()
         expected.write('from hyperopt import hp\nimport hyperopt.pyll as pyll')
         expected.write('\n\n')
-        expected.write('cond_a = hp.uniform("cond_a", 0.0, 1.0)\n')
-        expected.write('cond_b = hp.quniform("cond_b", 0.0, 3.0, 0.1)\n')
-        expected.write('a_or_b = hp.choice("a_or_b", [\n')
-        expected.write('    {"a_or_b": "a", "cond_a": cond_a, },\n')
-        expected.write('    {"a_or_b": "b", "cond_b": cond_b, },\n')
+        expected.write('param_0 = hp.uniform("cond_a", 0.0, 1.0)\n')
+        expected.write('param_1 = hp.quniform("cond_b", 0.0, 3.0, 0.1)\n')
+        expected.write('param_2 = hp.choice("a_or_b", [\n')
+        expected.write('    {"a_or_b": "a", "cond_a": param_0, },\n')
+        expected.write('    {"a_or_b": "b", "cond_b": param_1, },\n')
         expected.write('    ])\n\n')
-        expected.write('space = {"a_or_b": a_or_b}\n')
+        expected.write('space = {"a_or_b": param_2}\n')
         self.assertEqual(expected.getvalue(), cs)
 
     def test_convert_complex_space(self):
@@ -228,25 +230,31 @@ class TestPyllWriter(unittest.TestCase):
         expected = StringIO.StringIO()
         expected.write('from hyperopt import hp\nimport hyperopt.pyll as pyll')
         expected.write('\n\n')
-        expected.write('LOG2_C = hp.uniform("LOG2_C", -5.0, 15.0)\n')
-        expected.write('LOG2_gamma = hp.uniform("LOG2_gamma", -14.9999800563, 3.0)\n')
-        expected.write('kernel = hp.choice("kernel", [\n')
+        expected.write('param_0 = hp.uniform("LOG2_C", -5.0, 15.0)\n')
+        expected.write('param_1 = hp.uniform("LOG2_gamma", -14.9999800563, '
+                       '3.0)\n')
+        expected.write('param_2 = hp.choice("kernel", [\n')
         expected.write('    {"kernel": "linear", },\n')
-        expected.write('    {"kernel": "rbf", "LOG2_gamma": LOG2_gamma, },\n')
+        expected.write('    {"kernel": "rbf", "LOG2_gamma": param_1, },\n')
         expected.write('    ])\n')
-        expected.write('lr = hp.uniform("lr", 0.0001, 1.0)\n')
-        expected.write('neurons = pyll.scope.int(hp.quniform("neurons", 16.0, 1024.0, 16.0))\n')
-        expected.write('classifier = hp.choice("classifier", [\n')
-        expected.write('    {"classifier": "nn", "lr": lr, "neurons": neurons, },\n')
-        expected.write('    {"classifier": "svm", "LOG2_C": LOG2_C, "kernel": kernel, },\n')
+        expected.write('param_3 = hp.uniform("lr", 0.0001, 1.0)\n')
+        expected.write('param_4 = pyll.scope.int(hp.quniform("neurons", 16.0, '
+                       '1024.0, 16.0))\n')
+        expected.write('param_5 = hp.choice("classifier", [\n')
+        expected.write('    {"classifier": "nn", "lr": param_3, "neurons": '
+                       'param_4, },\n')
+        expected.write('    {"classifier": "svm", "LOG2_C": param_0, '
+                       '"kernel": param_2, },\n')
         expected.write('    ])\n')
-        expected.write('preprocessing = hp.choice("preprocessing", [\n')
+        expected.write('param_6 = hp.choice("preprocessing", [\n')
         expected.write('    {"preprocessing": "None", },\n')
         expected.write('    {"preprocessing": "pca", },\n')
         expected.write('    ])\n\n')
-        expected.write('space = {"classifier": classifier, "preprocessing": preprocessing}\n')
+        expected.write('space = {"classifier": param_5, '
+                       '"preprocessing": param_6}\n')
         self.assertEqual(expected.getvalue(), cs)
 
+        self.pyll_writer.reset_hyperparameter_countr()
         expected.seek(0)
         cs = self.pyll_writer.write(config_space_2)
         self.assertEqual(expected.getvalue().replace("gamma", "gamma_2"), cs)
@@ -256,66 +264,68 @@ class TestPyllWriter(unittest.TestCase):
         expected = StringIO.StringIO()
         expected.write('from hyperopt import hp\nimport hyperopt.pyll as pyll')
         expected.write('\n\n')
-        expected.write('cond_a = hp.uniform("cond_a", 0.0, 1.0)\n')
-        expected.write('cond_b = hp.quniform("cond_b", 0.0, 3.0, 0.1)\n')
-        expected.write('e = hp.uniform("e", 0.0, 5.0)\n')
-        expected.write('a_or_b = hp.choice("a_or_b", [\n')
-        expected.write('    {"a_or_b": "a", "cond_a": cond_a, "e": e, },\n')
-        expected.write('    {"a_or_b": "b", "cond_b": cond_b, "e": e, },\n')
+        expected.write('param_0 = hp.uniform("cond_a", 0.0, 1.0)\n')
+        expected.write('param_1 = hp.quniform("cond_b", 0.0, 3.0, 0.1)\n')
+        expected.write('param_2 = hp.uniform("e", 0.0, 5.0)\n')
+        expected.write('param_3 = hp.choice("a_or_b", [\n')
+        expected.write('    {"a_or_b": "a", "cond_a": param_0, "e": param_2, '
+                       '},\n')
+        expected.write('    {"a_or_b": "b", "cond_b": param_1, "e": param_2, '
+                       '},\n')
         expected.write('    ])\n\n')
-        expected.write('space = {"a_or_b": a_or_b}\n')
+        expected.write('space = {"a_or_b": param_3}\n')
         self.assertEqual(expected.getvalue(), cs)
 
     def test_write_uniform(self):
-        expected = ('a', 'a = hp.uniform("a", 0.0, 1.0)')
+        expected = ('a', 'param_0 = hp.uniform("a", 0.0, 1.0)')
         value = self.pyll_writer.write_uniform(a)
         self.assertEqual(expected, value)
 
     def test_write_uniform_int(self):
-        expected = ('a_int', 'a_int = pyll.scope.int(hp.uniform('
+        expected = ('a_int', 'param_0 = pyll.scope.int(hp.quniform('
                              '"a_int", 0.0, 1.0, 1.0))')
         value = self.pyll_writer.write_uniform_int(a_int)
         self.assertEqual(expected, value)
 
     def test_write_quniform(self):
-        expected = ("b", 'b = hp.quniform("b", 0.0, 3.0, 0.1)')
+        expected = ("b", 'param_0 = hp.quniform("b", 0.0, 3.0, 0.1)')
         value = self.pyll_writer.write_quniform(b)
         self.assertEqual(expected, value)
 
     def test_write_quniform_int(self):
-        expected = ("b_int", 'b_int = pyll.scope.int(hp.quniform('
+        expected = ("b_int", 'param_0 = pyll.scope.int(hp.quniform('
                     '"b_int", 0.0, 3.0, 1.0))')
         value = self.pyll_writer.write_quniform_int(b_int_1)
         self.assertEqual(expected, value)
 
-        expected = ("b_int", 'b_int = pyll.scope.int(hp.quniform('
+        expected = ("b_int", 'param_1 = pyll.scope.int(hp.quniform('
                     '"b_int", 0.0, 3.0, 2.0))')
         value = self.pyll_writer.write_quniform_int(b_int_2)
         self.assertEqual(expected, value)
 
     def test_write_loguniform(self):
-        expected = ("c", 'c = hp.loguniform("c", 0.0, 1.0)')
+        expected = ("c", 'param_0 = hp.loguniform("c", 0.0, 1.0)')
         value = self.pyll_writer.write_loguniform(c)
         self.assertEqual(expected, value)
 
     def test_write_loguniform_int(self):
-        expected = ("c_int", 'c_int = pyll.scope.int(hp.qloguniform('
+        expected = ("c_int", 'param_0 = pyll.scope.int(hp.qloguniform('
                              '"c_int", 0.0, 1.0, 1.0))')
         value = self.pyll_writer.write_loguniform_int(c_int)
         self.assertEqual(expected, value)
 
     def test_write_qloguniform(self):
-        expected = ("d", 'd = hp.qloguniform("d", 0.0, 3.0, 0.1)')
+        expected = ("d", 'param_0 = hp.qloguniform("d", 0.0, 3.0, 0.1)')
         value = self.pyll_writer.write_qloguniform(d)
         self.assertEqual(expected, value)
 
     def test_write_qloguniform_int(self):
-        expected = ("d_int", 'd_int = pyll.scope.int(hp.qloguniform('
+        expected = ("d_int", 'param_0 = pyll.scope.int(hp.qloguniform('
                     '"d_int", 0.0, 3.0, 1.0))')
         value = self.pyll_writer.write_qloguniform_int(d_int_1)
         self.assertEqual(expected, value)
 
-        expected = ("d_int", 'd_int = pyll.scope.int(hp.qloguniform('
+        expected = ("d_int", 'param_1 = pyll.scope.int(hp.qloguniform('
                     '"d_int", 0.0, 3.0, 2.0))')
         value = self.pyll_writer.write_qloguniform_int(d_int_2)
         self.assertEqual(expected, value)
