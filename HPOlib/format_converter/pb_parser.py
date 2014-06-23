@@ -50,15 +50,17 @@ def read(pb_string):
             choices = list()
             for ch in para.options:
                 choices.append(str(ch))
-            searchspace[name] = configuration_space.create_categorical(name=name, choices=choices, conditions=None)
+            searchspace[name] = configuration_space.CategoricalHyperparameter(
+                name=name, choices=choices, conditions=None)
         elif para.type == Experiment.ParameterSpec.FLOAT:
-            searchspace[name] = configuration_space.create_float(name=name, lower=para.min, upper=para.max,
-                                                                 base=None, q=None, conditions=None)
+            searchspace[name] = configuration_space.UniformFloatHyperparameter(
+                name=name, lower=para.min, upper=para.max, base=None, q=None, conditions=None)
         elif para.type == Experiment.ParameterSpec.INT:
-            searchspace[name] = configuration_space.create_int(name=name, lower=para.min, upper=para.max,
-                                                               base=None, q=None, conditions=None)
+            searchspace[name] = configuration_space.UniformIntegerHyperparameter(
+                name=name, lower=para.min, upper=para.max, base=None, q=None, conditions=None)
         else:
-            raise NotImplementedError("Don't know that type: %s (%s)" % (para.type, para.name))
+            raise NotImplementedError("Don't know that type: %s (%s)" %
+                                      (type(para), para.name))
     return searchspace
 
 
@@ -75,34 +77,35 @@ def write(searchspace):
         constructed_param = Experiment.ParameterSpec()
         constructed_param.size = 1
         constructed_param.name = param.name
-        if param.domain.type == "categorical":
+        if isinstance(param, configuration_space.CategoricalHyperparameter):
             constructed_param.type = Experiment.ParameterSpec.ENUM
-            for choice in param.domain.choices:
+            for choice in param.choices:
                 constructed_param.options.append(choice)
         else:
-            if param.domain.type == "int":
+            if isinstance(param, configuration_space.IntegerHyperparameter):
                 constructed_param.type = Experiment.ParameterSpec.INT
-                constructed_param.min = param.domain.lower
-                constructed_param.max = param.domain.upper
-            elif param.domain.type == "float":
+                constructed_param.min = param.lower
+                constructed_param.max = param.upper
+            elif isinstance(param, configuration_space.FloatHyperparameter):
                 constructed_param.type = Experiment.ParameterSpec.FLOAT
-                constructed_param.min = param.domain.lower
-                constructed_param.max = param.domain.upper
+                constructed_param.min = param.lower
+                constructed_param.max = param.upper
             else:
-                raise NotImplementedError("Unknown type: %s (%s)" % (param.domain.type, param.name))
+                raise NotImplementedError("Unknown type: %s (%s)" %
+                                          (type(param), param.name))
 
             # Handle LOG params
-            if param.domain.base is not None:
-                if int(param.domain.base) != param.domain.base:
+            if param.base is not None:
+                if int(param.base) != param.base:
                     raise NotImplementedError("We cannot handle non-int bases: %s (%s)" %
-                                              (str(param.domain.base), param.name))
-                constructed_param.name = "LOG%d_%s" % (int(param.domain.base), constructed_param.name)
-                constructed_param.min = np.log10(constructed_param.min) / np.log10(param.domain.base)
-                constructed_param.max = np.log10(constructed_param.max) / np.log10(param.domain.base)
+                                              (str(param.base), param.name))
+                constructed_param.name = "LOG%d_%s" % (int(param.base), constructed_param.name)
+                constructed_param.min = np.log10(constructed_param.min) / np.log10(param.base)
+                constructed_param.max = np.log10(constructed_param.max) / np.log10(param.base)
 
             # Handle q params
-            if param.domain.q is not None:
-                constructed_param.name = "Q%d_%s" % (int(param.domain.q), constructed_param.name)
+            if param.q is not None:
+                constructed_param.name = "Q%d_%s" % (int(param.q), constructed_param.name)
 
             # Do NOT handle conditions:
             if param.has_conditions():

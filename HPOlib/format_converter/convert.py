@@ -45,8 +45,8 @@ def main():
                                                          'TPE', 'Tpe', 'tpe', 'hyperopt',
                                                          'SPEARMINT', 'Spearmint', 'spearmint'],
                         default="", help="Convert to which format?", required=True)
-    parser.add_argument('infile', nargs='?', type=FileType('r'))
-    parser.add_argument("-s", "--save", dest="save",
+    parser.add_argument('input_file', nargs='?', type=FileType('r'))
+    parser.add_argument("-s", "--save", dest="save", metavar="destination",
                         default="", help="Where to save the new searchspace?")
 
     args, unknown = parser.parse_known_args()
@@ -59,7 +59,7 @@ def main():
     if args.conv_to == "HYPEROPT":
         args.conv_to = "TPE"
 
-    if args.infile is None:
+    if args.input_file is None:
         raise ValueError("No input file given")
 
     read_options = {"SMAC": pcs_parser.read,
@@ -68,7 +68,7 @@ def main():
                     }
     # First read searchspace
     print "Reading searchspace..."
-    searchspace = read_options[args.conv_from](args.infile)
+    searchspace = read_options[args.conv_from](args.input_file)
     print "...done. Found %d params" % len(searchspace)
 
     write_options = {"SMAC": pcs_parser.write,

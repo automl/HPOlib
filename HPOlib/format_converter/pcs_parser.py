@@ -53,43 +53,43 @@ pp_forbidden_clause = "{" + pp_param_name + "=" + pp_numberorname + \
 
 def build_categorical(param):
     cat_template = "%s {%s} [%s]"
-    return cat_template % (param.name, ", ".join(param.domain.choices), param.domain.choices[0])
+    return cat_template % (param.name, ", ".join(param.choices), param.choices[0])
 
 
 def build_continuous(param):
     float_template = "%s [%s, %s] [%s]"
     int_template = "%s [%d, %d] [%d]i"
-    if param.domain.base is not None:
-        if param.domain.base == 10:
+    if param.base is not None:
+        if param.base == 10:
             # SMAC can naturally handle this
             float_template += "l"
             int_template += "l"
-            if param.domain.lower < 0:
+            if param.lower < 0:
                 raise ValueError("This is no log domain: %s" % param.name)
-            if param.domain.upper < 0:
+            if param.upper < 0:
                 raise ValueError("This is no log domain: %s" % param.name)
         else:
-            if int(param.domain.base) != param.domain.base:
+            if int(param.base) != param.base:
                 raise NotImplementedError("We cannot handle non-int bases: %s (%s)" %
-                                          (str(param.domain.base), param.name))
+                                          (str(param.base), param.name))
             # HPOlib has to take care of this
-            param.name = "LOG%d_%s" % (int(param.domain.base), param.name)
-            param.domain.lower = np.log10(param.domain.lower) / np.log10(param.domain.base)
-            param.domain.upper = np.log10(param.domain.upper) / np.log10(param.domain.base)
+            param.name = "LOG%d_%s" % (int(param.base), param.name)
+            param.lower = np.log10(param.lower) / np.log10(param.base)
+            param.upper = np.log10(param.upper) / np.log10(param.base)
 
-    if param.domain.q is not None:
-        param.name = "Q%d_%s" % (int(param.domain.q), param.name)
+    if param.q is not None:
+        param.name = "Q%d_%s" % (int(param.q), param.name)
 
-    default = (param.domain.upper + param.domain.lower)/2
-    if param.domain.upper >= default <= param.domain.lower:
+    default = (param.upper + param.lower)/2
+    if param.upper >= default <= param.lower:
         raise NotImplementedError("Cannot find mean for %s" % param.name)
-    if param.domain.type == "int":
-        param.domain.lower = int(param.domain.lower)
-        param.domain.upper = int(param.domain.upper)
+    if isinstance(param, configuration_space.IntegerHyperparameter):
+        param.lower = int(param.lower)
+        param.upper = int(param.upper)
         default = int(default)
-        return int_template % (param.name, param.domain.lower, param.domain.upper, default)
+        return int_template % (param.name, param.lower, param.upper, default)
     else:
-        return float_template % (param.name, str(param.domain.lower), str(param.domain.upper), str(default))
+        return float_template % (param.name, str(param.lower), str(param.upper), str(default))
 
 
 def build_condition(name, condition):
@@ -143,9 +143,9 @@ def read(pcs_string, debug=False):
         param = None
         # print "Parsing: " + line
 
-        create = {"int": configuration_space.create_int,
-                  "float": configuration_space.create_float,
-                  "categorical": configuration_space.create_categorical}
+        create = {"int": configuration_space.UniformIntegerHyperparameter,
+                  "float": configuration_space.UniformFloatHyperparameter,
+                  "categorical": configuration_space.CategoricalHyperparameter}
 
         try:
             param_list = pp_cont_param.parseString(line)
@@ -225,9 +225,9 @@ def write(searchspace):
     lines = list()
     for para_name in searchspace:
         # First build params
-        if searchspace[para_name].domain.type in ("int", "float"):
+        if isinstance(searchspace[para_name], configuration_space.NumericalHyperparameter):
             lines.append(build_continuous(searchspace[para_name]))
-        elif searchspace[para_name].domain.type == "categorical":
+        elif isinstance(searchspace[para_name], configuration_space.CategoricalHyperparameter):
             lines.append(build_categorical(searchspace[para_name]))
         else:
             raise NotImplementedError("Unknown type: %s (%s)" % (searchspace[para_name].type, para_name))

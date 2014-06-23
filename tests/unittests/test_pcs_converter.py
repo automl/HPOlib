@@ -31,18 +31,18 @@ import HPOlib.format_converter.configuration_space as configuration_space
 import HPOlib.format_converter.pcs_parser as pcs_parser
 
 # More complex search space
-classifier = configuration_space.create_categorical("classifier", ["svm", "nn"])
-kernel = configuration_space.create_categorical("kernel", ["rbf", "linear"],
+classifier = configuration_space.CategoricalHyperparameter("classifier", ["svm", "nn"])
+kernel = configuration_space.CategoricalHyperparameter("kernel", ["rbf", "linear"],
                                                 conditions=[["classifier == svm", ]])
-C = configuration_space.create_float("C", 0.03125, 32768,  # base=2,
+C = configuration_space.UniformFloatHyperparameter("C", 0.03125, 32768,  # base=2,
                                      conditions=[["classifier == svm", ]])
-gamma = configuration_space.create_float("gamma", 0.000030518, 8,  # base=2,
+gamma = configuration_space.UniformFloatHyperparameter("gamma", 0.000030518, 8,  # base=2,
                                          conditions=[["kernel == rbf", "classifier == svm"]])
-neurons = configuration_space.create_int("neurons", 16, 1024,  # q=16,
+neurons = configuration_space.UniformIntegerHyperparameter("neurons", 16, 1024,  # q=16,
                                          conditions=[["classifier == nn", ]])
-lr = configuration_space.create_float("lr", 0.0001, 1.0,
+lr = configuration_space.UniformFloatHyperparameter("lr", 0.0001, 1.0,
                                       conditions=[["classifier == nn", ]])
-preprocessing = configuration_space.create_categorical("preprocessing",
+preprocessing = configuration_space.CategoricalHyperparameter("preprocessing",
                                                        ["None", "pca"])
 conditional_space = {"classifier": classifier,
                      "kernel": kernel,
@@ -52,13 +52,13 @@ conditional_space = {"classifier": classifier,
                      "lr": lr,
                      "preprocessing": preprocessing}
 
-float_a = configuration_space.create_float("float_a", -1.23, 6.45)
-e_float_a = configuration_space.create_float("e_float_a", .5E-2, 4.3e+6)
-int_a = configuration_space.create_int("int_a", -1, 6)
-log_a = configuration_space.create_float("log_a", -1.23, 6.45, base=10)
-int_log_a = configuration_space.create_int("int_log_a", 1, 6, base=10)
-cat_a = configuration_space.create_categorical("cat_a", ["a", "b", "c", "d"])
-crazy = configuration_space.create_categorical("@.:;/\?!$%&_-<>*+1234567890", ["const"])
+float_a = configuration_space.UniformFloatHyperparameter("float_a", -1.23, 6.45)
+e_float_a = configuration_space.UniformFloatHyperparameter("e_float_a", .5E-2, 4.3e+6)
+int_a = configuration_space.UniformIntegerHyperparameter("int_a", -1, 6)
+log_a = configuration_space.UniformFloatHyperparameter("log_a", -1.23, 6.45, base=10)
+int_log_a = configuration_space.UniformIntegerHyperparameter("int_log_a", 1, 6, base=10)
+cat_a = configuration_space.CategoricalHyperparameter("cat_a", ["a", "b", "c", "d"])
+crazy = configuration_space.CategoricalHyperparameter("@.:;/\?!$%&_-<>*+1234567890", ["const"])
 easy_space = {"float_a": float_a,
               "e_float_a": e_float_a,
               "int_a": int_a,
@@ -70,8 +70,11 @@ easy_space = {"float_a": float_a,
 
 
 class TestPCSConverter(unittest.TestCase):
+    def setUp(self):
+        self.maxDiff = None
+
     def test_read_configuration_space_basic(self):
-        float_a_copy = configuration_space.create_float("float_a", -1.23, 6.45)
+        float_a_copy = configuration_space.UniformFloatHyperparameter("float_a", -1.23, 6.45)
         a_copy = {"a": float_a_copy, "b": int_a}
         a_real = {"b": int_a, "a": float_a}
         self.assertDictEqual(a_real, a_copy)
@@ -90,7 +93,7 @@ class TestPCSConverter(unittest.TestCase):
         expected.write('@.:;/\?!$%&_-<>*+1234567890 {"const"} ["const"]\n')
         expected.seek(0)
         cs = pcs_parser.read(expected)
-        self.assertDictEqual(cs, easy_space)
+        self.assertEqual(cs, easy_space)
 
     def test_read_configuration_space_conditional(self):
         # More complex search space as string array
@@ -110,7 +113,7 @@ class TestPCSConverter(unittest.TestCase):
         complex_cs.append("preprocessing {None, pca} [None]")
 
         cs = pcs_parser.read(complex_cs)
-        self.assertDictEqual(cs, conditional_space)
+        self.assertEqual(cs, conditional_space)
 
     def test_write_int(self):
         expected = "int_a [-1, 6] [2]i"
@@ -126,24 +129,24 @@ class TestPCSConverter(unittest.TestCase):
 
     def test_write_q_int(self):
         expected = "Q16_int_a [16, 1024] [520]i"
-        sp = {"a": configuration_space.create_int("int_a", 16, 1024, q=16)}
+        sp = {"a": configuration_space.UniformIntegerHyperparameter("int_a", 16, 1024, q=16)}
         value = pcs_parser.write(sp)
         self.assertEqual(expected, value)
 
     def test_write_q_float(self):
         expected = "Q16_float_a [16.1, 1024.1] [520.1]"
-        sp = {"a": configuration_space.create_float("float_a", 16.10, 1024.10, q=16)}
+        sp = {"a": configuration_space.UniformFloatHyperparameter("float_a", 16.10, 1024.10, q=16)}
         value = pcs_parser.write(sp)
         self.assertEqual(expected, value)
 
     def test_write_log23(self):
         expected = "LOG23_a [1.0, 5.0] [3.0]"
-        sp = {"a": configuration_space.create_float("a", 23**1, 23**5, base=23)}
+        sp = {"a": configuration_space.UniformFloatHyperparameter("a", 23**1, 23**5, base=23)}
         value = pcs_parser.write(sp)
         self.assertEqual(expected, value)
 
     def test_write_log10(self):
         expected = "a [10.0, 1000.0] [505.0]l"
-        sp = {"a": configuration_space.create_float("a", 10, 1000, base=10)}
+        sp = {"a": configuration_space.UniformFloatHyperparameter("a", 10, 1000, base=10)}
         value = pcs_parser.write(sp)
         self.assertEqual(expected, value)
