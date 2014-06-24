@@ -27,10 +27,10 @@ import unittest
 import HPOlib.format_converter.configuration_space as configuration_space
 import HPOlib.format_converter.pb_parser as pb_parser
 
-float_a = configuration_space.create_float("float_a", -5.3, 10.5)
-int_a = configuration_space.create_int("int_a", -5, 10)
-cat_a = configuration_space.create_categorical("enum_a", ["5", "a", "b", "@/&%%"])
-crazy = configuration_space.create_categorical("@.:;/\?!$%&_-<>*+1234567890", ["const"])
+float_a = configuration_space.UniformFloatHyperparameter("float_a", -5.3, 10.5)
+int_a = configuration_space.UniformIntegerHyperparameter("int_a", -5, 10)
+cat_a = configuration_space.CategoricalHyperparameter("enum_a", ["5", "a", "b", "@/&%%"])
+crazy = configuration_space.CategoricalHyperparameter("@.:;/\?!$%&_-<>*+1234567890", ["const"])
 easy_space = {"float_a": float_a,
               "int_a": int_a,
               "enum_a": cat_a,

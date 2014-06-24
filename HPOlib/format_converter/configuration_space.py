@@ -27,135 +27,219 @@ import networkx as nx
 
 
 class Hyperparameter(object):
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self.name == other.name and self.domain == other.domain
-        else:
-            return False
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __repr__(self):
-        repr_str = ["Name: %s" % self.name, repr(self.domain)]
-        if self.has_conditions():
-            repr_str.append("Conditions: %s" % (str(self.conditions)))
-        else:
-            repr_str.append("Conditions: None")
-        return ", ".join(repr_str)
-
-    def __str__(self):
-        return self.__repr__()
-
-    def has_conditions(self):
-        return not len(self.conditions[0]) == 0
-
-
-class Domain(object):
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self.__dict__ == other.__dict__
-        else:
-            return False
+    def __init__(self):
+        raise ValueError("Class %s is not supposed to be instantiated" % self
+                         .__class__)
 
     def __ne__(self, other):
         return not self.__eq__(other)
     pass
 
-    def __repr__(self):
-        repr_str = ["Type: %s" % self.type, ]
-        if self.type == "categorical":
-            repr_str.append("Choices: %s" % str(self.choices))
-        elif self.type in ("float", "int"):
-            repr_str.append("Range: [%s, %s]" % (str(self.lower), str(self.upper)))
-            repr_str.append("Base: %s" % self.base)
-            repr_str.append("Q: %s" % self.q)
-
-        return ", ".join(repr_str)
-
     def __str__(self):
         return self.__repr__()
 
-
-def create_categorical(name, choices, conditions=None):
-    domain = Domain()
-    domain.type = "categorical"
-    domain.choices = choices
-
-    theta = Hyperparameter()
-    theta.name = name
-    theta.domain = domain
-    if conditions is None:
-        theta.conditions = [[]]
-    else:
+    def check_conditions(self):
+        if self.conditions is None:
+            self.conditions = [[]]
         # Hopefully this is a array of arrays
-        if type(conditions) != list:
-            raise ValueError("Conditions are not a list: %s" % str(conditions))
-        for o_r in conditions:
+        if type(self.conditions) != list:
+            raise ValueError("Conditions are not a list: %s" % str(self.conditions))
+        for o_r in self.conditions:
             if type(o_r) != list:
                 raise ValueError("This conditions are not a list: %s" % str(o_r))
-        theta.conditions = conditions
 
-    return theta
+    def has_conditions(self):
+        return len(self.conditions[0]) > 0
 
-
-def create_float(name, lower, upper, q=None, base=None, conditions=None):
-    if lower >= upper:
-        raise ValueError("%f is more/equal than %f: %s" % (lower, upper, name))
-
-    domain = Domain()
-    domain.type = "float"
-    domain.lower = float(lower)
-    domain.upper = float(upper)
-    domain.q = q
-    domain.base = base
-
-    theta = Hyperparameter()
-    theta.name = name
-    theta.domain = domain
-    if conditions is None:
-        theta.conditions = [[]]
-    else:
-        # Hopefully this is a array of arrays
-        if type(conditions) != list:
-            raise ValueError("Conditions are not a list: %s" % str(conditions))
-        for o_r in conditions:
-            if type(o_r) != list:
-                raise ValueError("This conditions are not a list: %s" % str(o_r))
-        theta.conditions = conditions
-
-    return theta
+    def get_conditions_as_string(self):
+        if self.has_conditions():
+            return "Conditions: %s" % (str(self.conditions))
+        else:
+            return "Conditions: None"
 
 
-def create_int(name, lower, upper, q=None, base=None, conditions=None):
-    if lower >= upper:
-        raise ValueError("%f is more/equal than %f: %s" % (lower, upper, name))
-    if int(lower) != lower:
-        raise ValueError("%f is no int: %s" % (lower, name))
-    if int(upper) != upper:
-        raise ValueError("%f is no int: %s" % (upper, name))
-    domain = Domain()
-    domain.type = "int"
-    domain.lower = int(lower)
-    domain.upper = int(upper)
-    domain.q = q
-    domain.base = base
+class NumericalHyperparameter(Hyperparameter):
+    pass
 
-    theta = Hyperparameter()
-    theta.name = name
-    theta.domain = domain
-    if conditions is None:
-        theta.conditions = [[]]
-    else:
-        # Hopefully this is a array of arrays
-        if type(conditions) != list:
-            raise ValueError("Conditions are not a list: %s" % str(conditions))
-        for o_r in conditions:
-            if type(o_r) != list:
-                raise ValueError("This conditions are not a list: %s" % str(o_r))
-        theta.conditions = conditions
 
-    return theta
+class FloatHyperparameter(NumericalHyperparameter):
+    pass
+
+
+class IntegerHyperparameter(NumericalHyperparameter):
+    def check_int(self, parameter, name):
+        if abs(int(parameter) - parameter) > 0.00000001 and \
+                type(parameter) is not int:
+            raise ValueError("For an Integer parameter, the quantization "
+                 "value %s must be an Integer, too. Right now it "
+                 "is a %s with value %s" %
+                 (name, type(parameter), str(parameter)))
+        return int(parameter)
+
+
+class CategoricalHyperparameter(Hyperparameter):
+    def __init__(self, name, choices, conditions=None):
+        self.name = name
+        self.choices = choices
+        self.conditions = conditions
+        self.check_conditions()
+
+    def __repr__(self):
+        repr_str = ["Name: %s" % self.name]
+        repr_str.append("Type: Categorical")
+        repr_str.append("Choices: %s" % str(self.choices))
+        repr_str.append(self.get_conditions_as_string())
+        return ", ".join(repr_str)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            if len(self.choices) != len(other.choices):
+                return False
+            else:
+                for i in range(len(self.choices)):
+                    if self.choices[i] != other.choices[i]:
+                        return False
+            return True
+        else:
+            return False
+
+
+class UniformFloatHyperparameter(FloatHyperparameter):
+    def __init__(self, name, lower, upper, q=None, base=None, conditions=None):
+        self.name = name
+        self.lower = float(lower)
+        self.upper = float(upper)
+        self.q = float(q) if q is not None else None
+        self.base = float(base) if base is not None else None
+        self.conditions = conditions
+        self.check_conditions()
+
+    def __repr__(self):
+        repr_str = ["Name: %s" % self.name]
+        repr_str.append("Type: UniformFloat")
+        repr_str.append("Range: [%s, %s]" % (str(self.lower), str(self.upper)))
+        repr_str.append("Base: %s" % self.base)
+        repr_str.append("Q: %s" % self.q)
+        repr_str.append(self.get_conditions_as_string())
+        return ", ".join(repr_str)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return all([abs(self.lower - other.lower) < 0.00000001,
+                        abs(self.upper - other.upper) < 0.00000001,
+                        self.base is None and other.base is None or
+                        self.base is not None and other.base is not None and
+                        abs(self.base - other.base) < 0.00000001,
+                        self.q is None and other.q is None or
+                        self.q is not None and other.q is not None and
+                        abs(self.q - other.q) < 0.00000001])
+        else:
+            return False
+
+
+class NormalFloatHyperparameter(FloatHyperparameter):
+    def __init__(self, name, mu, sigma, q=None, base=None, conditions=None):
+        self.name = name
+        self.mu = float(mu)
+        self.sigma = float(sigma)
+        self.q = float(q) if q is not None else None
+        self.base = float(base) if base is not None else None
+        self.conditions = conditions
+        self.check_conditions()
+
+    def __repr__(self):
+        repr_str = ["Name: %s" % self.name]
+        repr_str.append("Type: NormalFloat")
+        repr_str.append("Mu: %s Sigma: %s" % (str(self.mu), str(self.sigma)))
+        repr_str.append("Base: %s" % self.base)
+        repr_str.append("Q: %s" % self.q)
+        repr_str.append(self.get_conditions_as_string())
+        return ", ".join(repr_str)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return all([abs(self.mu - other.mu) < 0.00000001,
+                        abs(self.sigma - other.sigma) < 0.00000001,
+                        self.base is None and other.base is None or
+                        self.base is not None and other.base is not None and
+                        abs(self.base - other.base) < 0.00000001,
+                        self.q is None and other.q is None or
+                        self.q is not None and other.q is not None and
+                        abs(self.q - other.q) < 0.00000001])
+        else:
+            return False
+
+
+class UniformIntegerHyperparameter(IntegerHyperparameter):
+    def __init__(self, name, lower, upper, q=None, base=None, conditions=None):
+        self.name = name
+        self.lower = self.check_int(lower, "lower")
+        self.upper = self.check_int(upper, "upper")
+        if q is not None:
+            self.q = self.check_int(q, "q")
+        else:
+            self.q = None
+        self.base = float(base) if base is not None else None
+        self.conditions = conditions
+        self.check_conditions()
+
+    def __repr__(self):
+        repr_str = ["Name: %s" % self.name]
+        repr_str.append("Type: UniformInteger")
+        repr_str.append("Range: [%s, %s]" % (str(self.lower), str(self.upper)))
+        repr_str.append("Base: %s" % self.base)
+        repr_str.append("Q: %s" % self.q)
+        repr_str.append(self.get_conditions_as_string())
+        return ", ".join(repr_str)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return all([self.lower == other.lower,
+                        self.upper == other.upper,
+                        self.base is None and other.base is None or
+                        self.base is not None and other.base is not None and
+                        abs(self.base - other.base) < 0.00000001,
+                        self.q is None and other.q is None or
+                        self.q is not None and other.q is not None and
+                        self.q == other.q])
+        else:
+            return False
+
+
+class NormalIntegerHyperparameter(IntegerHyperparameter):
+    def __init__(self, name, lower, upper, q=None, base=None, conditions=None):
+        self.name = name
+        self.lower = self.check_int(lower, "lower")
+        self.upper = self.check_int(upper, "upper")
+        if q is not None:
+            self.q = self.check_int(q, "q")
+        else:
+            self.q = None
+        self.base = float(base) if base is not None else None
+        self.conditions = conditions
+        self.check_conditions()
+
+    def __repr__(self):
+        repr_str = ["Name: %s" % self.name]
+        repr_str.append("Type: NormalInteger")
+        repr_str.append("Mu: %s Sigma: %s" % (str(self.lower), str(self.upper)))
+        repr_str.append("Base: %s" % self.base)
+        repr_str.append("Q: %s" % self.q)
+        repr_str.append(self.get_conditions_as_string())
+        return ", ".join(repr_str)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return all([abs(self.mu - other.mu) < 0.00000001,
+                        abs(self.sigma - other.sigma) < 0.00000001,
+                        self.base is None and other.base is None or
+                        self.base is not None and other.base is not None and
+                        abs(self.base - other.base) < 0.00000001,
+                        self.q is None and other.q is None or
+                        self.q is not None and other.q is not None and
+                        self.q == other.q])
+        else:
+            return False
 
 
 def create_dag_from_hyperparameters(hyperparameters):
