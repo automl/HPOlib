@@ -33,7 +33,12 @@ cache = dict()
 
 
 def get_plot_markers():
-    return itertools.cycle(['o', 's', 'x', '^'])
+    return itertools.cycle(['o', 's', 'x', '^', 'p', 'v', '>', '<', '8', '*',
+                            '+', 'D'])
+
+
+def get_plot_linestyles():
+    return itertools.cycle(['-', '--', '-.', '--.', ':', ])
 
 
 def get_plot_colors():
@@ -123,9 +128,13 @@ def get_pkl_and_name_list(argument_list):
 
 def extract_trajectory(trials, cut=sys.maxint):
     trace = list()
-    currentbest = trials['trials'][0]
+    currentbest = trials['trials'][0]["result"]
+    if not np.isfinite(currentbest):
+        currentbest = sys.maxint
 
     for result in [trial["result"] for trial in trials['trials'][:cut]]:
+        if not np.isfinite(result):
+            continue
         if result < currentbest:
             currentbest = result
         trace.append(currentbest)
