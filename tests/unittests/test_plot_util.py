@@ -84,9 +84,9 @@ class PlotUtilTest(unittest.TestCase):
         self.assertAlmostEqual(0.72639128754424731, res)
         self.assertEqual(16, index)
 
-        res, index = plot_util.get_best_value_and_index(branin_experiment, cut=10)
-        self.assertAlmostEqual(12.779763397329571, res)
-        self.assertEqual(7, index)
+        res, index = plot_util.get_best_value_and_index(branin_experiment, cut=11)
+        self.assertAlmostEqual(2.6962005134978178, res)
+        self.assertEqual(10, index)
 
         self.assertRaises(ValueError, plot_util.get_best_value_and_index,
                          branin_experiment, 0.5)

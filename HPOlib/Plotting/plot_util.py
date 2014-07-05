@@ -71,36 +71,6 @@ def load_pickles(name_list, pkl_list):
     return pickles
 
 
-def get_best_dict(name_list, pickles, cut=sys.maxint):
-    """
-    Get the best values of many experiments.
-
-    Input
-    * name_list: A list with of tuples of kind (optimizer_name, num_pickles)
-    * pickles: A dictionary with all pickle files for an optimizer_name
-    * cut: How many iterations should be considered
-
-    Returns:
-    * best_dict: A dictionary with the best response value for every optimizer
-    * idx_dict: A dictionary with the number of iterations needed to find the
-        optimum
-    * keys: A list with optimizer names.
-
-    """
-    best_dict = dict()
-    idx_dict = dict()
-    keys = list()
-    for i in range(len(name_list)):
-        keys.append(name_list[i][0])
-        best_dict[name_list[i][0]] = list()
-        idx_dict[name_list[i][0]] = list()
-        for pkl in pickles[name_list[i][0]]:
-            best, idx = get_best_value_and_index(pkl, cut)
-            best_dict[name_list[i][0]].append(best)
-            idx_dict[name_list[i][0]].append(idx)
-    return best_dict, idx_dict, keys
-
-
 def get_pkl_and_name_list(argument_list):
     name_list = list()
     pkl_list = list()
@@ -126,7 +96,40 @@ def get_pkl_and_name_list(argument_list):
     return pkl_list, name_list
 
 
+def get_best_dict(name_list, pickles, cut=sys.maxint):
+    """
+    Get the best values of many experiments.
+
+    Input
+    * name_list: A list with of tuples of kind (optimizer_name, num_pickles)
+    * pickles: A dictionary with a list of  all pickle files for an
+        optimizer_name
+    * cut: How many iterations should be considered
+
+    Returns:
+    * best_dict: A dictionary with a list of the best response value for every
+        optimizer
+    * idx_dict: A dictionary with a list the number of iterations needed to
+        find the optimum
+    * keys: A list with optimizer names.
+
+    """
+    best_dict = dict()
+    idx_dict = dict()
+    keys = list()
+    for i in range(len(name_list)):
+        keys.append(name_list[i][0])
+        best_dict[name_list[i][0]] = list()
+        idx_dict[name_list[i][0]] = list()
+        for pkl in pickles[name_list[i][0]]:
+            best, idx = get_best_value_and_index(pkl, cut)
+            best_dict[name_list[i][0]].append(best)
+            idx_dict[name_list[i][0]].append(idx)
+    return best_dict, idx_dict, keys
+
+
 def extract_trajectory(experiment, cut=sys.maxint):
+    """Extract a list where the value at position i is the current best after i configurations."""
     if not isinstance(cut, int):
         raise ValueError("Argument cut must be an Integer value but is %s" %
             type(cut))
@@ -148,7 +151,7 @@ def extract_trajectory(experiment, cut=sys.maxint):
 
 
 def extract_results(experiment, cut=sys.maxint):
-    """Extract an array with all results.
+    """Extract a list with all results.
 
     If `cut` is given, return up to `cut` results. Raise ValueError if cut
     is equal or less than zero."""
@@ -205,7 +208,7 @@ def get_best_value_and_index(trials, cut=sys.maxint):
     traj = extract_trajectory(trials)
     if cut < len(traj):
         best_value = traj[cut-1]
-        best_index = np.argmin(traj[:cut-1])
+        best_index = np.argmin(traj[:cut])
     else:
         best_value = traj[-1]
         best_index = np.argmin(traj)
