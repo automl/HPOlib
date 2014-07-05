@@ -21,6 +21,8 @@
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
+from collections import OrderedDict
+import StringIO
 import sys
 
 import numpy as np
@@ -56,7 +58,16 @@ def build_categorical(param):
     return cat_template % (param.name, ", ".join(param.choices), param.choices[0])
 
 
+def build_constant(param):
+    constant_template = "%s {%s} [%s]"
+    return constant_template % (param.name, param.value, param.value)
+
+
 def build_continuous(param):
+    if type(param) in (configuration_space.NormalIntegerHyperparameter,
+                       configuration_space.NormalFloatHyperparameter):
+        param = param.to_uniform()
+
     float_template = "%s [%s, %s] [%s]"
     int_template = "%s [%d, %d] [%d]i"
     if param.base is not None:
@@ -64,23 +75,34 @@ def build_continuous(param):
             # SMAC can naturally handle this
             float_template += "l"
             int_template += "l"
+            default = np.power(10, (np.log10(param.upper) +
+                                    np.log10(param.lower))/2)
             if param.lower < 0:
                 raise ValueError("This is no log domain: %s" % param.name)
             if param.upper < 0:
                 raise ValueError("This is no log domain: %s" % param.name)
+        elif abs(param.base - np.e) < 0.0000001:
+            param.name = "LOG_%s" % param.name
+            param.lower = np.log(param.lower)
+            param.upper = np.log(param.upper)
+            default = (param.lower + param.upper) / 2
         else:
             if int(param.base) != param.base:
                 raise NotImplementedError("We cannot handle non-int bases: %s (%s)" %
                                           (str(param.base), param.name))
             # HPOlib has to take care of this
+            print param
+            print np.log10(param.lower), np.log10(param.base)
             param.name = "LOG%d_%s" % (int(param.base), param.name)
             param.lower = np.log10(param.lower) / np.log10(param.base)
             param.upper = np.log10(param.upper) / np.log10(param.base)
+            default = (param.upper + param.lower) / 2
+    else:
+        default = (param.upper + param.lower)/2
 
     if param.q is not None:
         param.name = "Q%d_%s" % (int(param.q), param.name)
 
-    default = (param.upper + param.lower)/2
     if param.upper >= default <= param.lower:
         raise NotImplementedError("Cannot find mean for %s" % param.name)
     if isinstance(param, configuration_space.IntegerHyperparameter):
@@ -104,7 +126,7 @@ def build_condition(name, condition):
 
 
 def read(pcs_string, debug=False):
-    searchspace = dict()
+    searchspace = OrderedDict()
     conditions = list()
     # some statistics
     ct = 0
@@ -222,23 +244,40 @@ def read(pcs_string, debug=False):
 
 
 def write(searchspace):
-    lines = list()
+    param_lines = StringIO.StringIO()
+    condition_lines = StringIO.StringIO()
     for para_name in searchspace:
         # First build params
-        if isinstance(searchspace[para_name], configuration_space.NumericalHyperparameter):
-            lines.append(build_continuous(searchspace[para_name]))
-        elif isinstance(searchspace[para_name], configuration_space.CategoricalHyperparameter):
-            lines.append(build_categorical(searchspace[para_name]))
+        if param_lines.tell() > 0:
+            param_lines.write("\n")
+        if isinstance(searchspace[para_name],
+                      configuration_space.NumericalHyperparameter):
+            param_lines.write(build_continuous(searchspace[para_name]))
+        elif isinstance(searchspace[para_name],
+                        configuration_space.CategoricalHyperparameter):
+            param_lines.write(build_categorical(searchspace[para_name]))
+        elif isinstance(searchspace[para_name], configuration_space.Constant):
+            param_lines.write(build_constant(searchspace[para_name]))
         else:
-            raise NotImplementedError("Unknown type: %s (%s)" % (searchspace[para_name].type, para_name))
+            raise NotImplementedError("Unknown type: %s (%s)" % (
+                type(searchspace[para_name]), para_name))
 
         # Now handle conditions
+        if condition_lines.tell() > 0:
+            condition_lines.write("\n")
         if len(searchspace[para_name].conditions) > 1:
             raise NotImplementedError("SMAC cannot handle OR conditions on different parents: %s (%s)" %
                                       (str(searchspace[para_name].conditions), para_name))
         for condition in searchspace[para_name].conditions[0]:
-            lines.append(build_condition(para_name, condition))
-    return "\n".join(lines)
+            condition_lines.write(build_condition(para_name, condition))
+
+    if condition_lines.tell() > 0:
+        condition_lines.seek(0)
+        param_lines.write("\n\n")
+        for line in condition_lines:
+            param_lines.write(line)
+    param_lines.seek(0)
+    return param_lines.getvalue()
 
 
 if __name__ == "__main__":
