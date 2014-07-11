@@ -33,12 +33,13 @@ __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 
-def plot_time_trace(time_dict, name_list, title="", log=True, save="", y_max=0, y_min=0):
-    colors = plot_util.get_plot_colors()
-    markers = plot_util.get_plot_markers()
-    linestyles = itertools.cycle(['-'])
+def plot_time_trace(time_dict, name_list, title="", log=True, save="",
+                    y_max=0, y_min=0, linewidth=1,
+                    linestyles=plot_util.get_single_linestyle(),
+                    colors=plot_util.get_plot_colors(),
+                    markers=plot_util.get_empty_iterator(),
+                    markersize=6, ylabel=None, xlabel=None):
 
-    size = 5
     ratio = 5
     gs = matplotlib.gridspec.GridSpec(ratio, 1)
     fig = plt.figure(1, dpi=100)
@@ -72,7 +73,9 @@ def plot_time_trace(time_dict, name_list, title="", log=True, save="", y_max=0, 
         ax1.fill_between(x, trial_list_means[k] - trial_list_std[k],
                          trial_list_means[k] + trial_list_std[k],
                          facecolor=c, alpha=0.3, edgecolor=c)
-        ax1.plot(x, trial_list_means[k], color=c, linewidth=size, label=name_list[k][0], linestyle=l, marker=m)
+        ax1.plot(x, trial_list_means[k], color=c, linewidth=linewidth,
+                 label=name_list[k][0], marker=m, markersize=markersize,
+                 linestyle=l)
         # Plot number of func evals for this experiment
 
         if min(trial_list_means[k] - trial_list_std[k]) < min_val:
@@ -86,10 +89,17 @@ def plot_time_trace(time_dict, name_list, title="", log=True, save="", y_max=0, 
     fig.suptitle(title, fontsize=16)
     leg = ax1.legend(loc='best', fancybox=True)
     leg.get_frame().set_alpha(0.5)
-    if log:
-        ax1.set_ylabel("log10(Optimizer time in [sec])")
-    else:
-        ax1.set_ylabel("Optimizer time in [sec]")
+    if ylabel is None:
+        if log:
+            ylabel = "log10(Optimizer time in [sec])"
+        else:
+            ylabel = "Optimizer time in [sec]"
+    ax1.set_ylabel(ylabel)
+
+    if xlabel is None:
+        xlabel = "#Function evaluations"
+    ax1.set_xlabel(xlabel)
+
     if y_max == y_min:
         ax1.set_ylim([min_val-2, max_val+2])
     else:
@@ -107,7 +117,11 @@ def plot_time_trace(time_dict, name_list, title="", log=True, save="", y_max=0, 
 
 
 def main(pkl_list, name_list, autofill, title="", log=False, save="",
-         y_min=0, y_max=0, cut=sys.maxint):
+         y_min=0, y_max=0, cut=sys.maxint, linewidth=1,
+         linestyles=plot_util.get_single_linestyle(),
+         colors=plot_util.get_plot_colors(),
+         markers=plot_util.get_empty_iterator(), markersize=6, ylabel=None,
+         xlabel=None):
 
     times_dict = dict()
     for exp in range(len(name_list)):
@@ -163,7 +177,9 @@ def main(pkl_list, name_list, autofill, title="", log=False, save="",
                                  (str(max_len), str(len(times_dict[key][t]))))
 
     plot_time_trace(times_dict, name_list, title=title, log=log, save=save,
-                    y_min=y_min, y_max=y_max)
+                    y_min=y_min, y_max=y_max, linewidth=linewidth,
+                    linestyles=linestyles, colors=colors, markers=markers,
+                    markersize=markersize, ylabel=ylabel, xlabel=xlabel)
 
     if save != "":
         sys.stdout.write("Saved plot to " + save + "\n")

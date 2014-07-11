@@ -32,6 +32,10 @@ __contact__ = "automl.org"
 cache = dict()
 
 
+def get_empty_iterator():
+    return itertools.cycle([None])
+
+
 def get_plot_markers():
     return itertools.cycle(['o', 's', 'x', '^', 'p', 'v', '>', '<', '8', '*',
                             '+', 'D'])
@@ -39,6 +43,10 @@ def get_plot_markers():
 
 def get_plot_linestyles():
     return itertools.cycle(['-', '--', '-.', '--.', ':', ])
+
+
+def get_single_linestyle():
+    return itertools.cycle(['-'])
 
 
 def get_plot_colors():

@@ -34,11 +34,11 @@ __contact__ = "automl.org"
 
 
 def plot_optimization_trace_cv(trial_list, name_list, optimum=0, title="",
-                               log=True, save="", y_max=0, y_min=0):
-    markers =plot_util.get_plot_markers()
-    colors = plot_util.get_plot_colors()
-    linestyles = itertools.cycle(['-'])
-    size = 1
+                               log=True, save="", y_max=0, y_min=0,
+                               linewidth=1, linestyles=empty_iterator(),
+                               colors=plot_util.get_plot_colors(),
+                               markers=empty_iterator(), markersize=6,
+                               ylabel=None, xlabel=None):
 
     ratio = 5
     gs = matplotlib.gridspec.GridSpec(ratio, 1)
@@ -64,25 +64,29 @@ def plot_optimization_trace_cv(trial_list, name_list, optimum=0, title="",
             x = range(1, len(tr)+1)
             y = tr
             if not leg:
-                ax1.plot(x, y, color=c, linewidth=size, linestyle=l, label=name_list[i][0])
+                ax1.plot(x, y, color=c, linewidth=linewidth,
+                         markersize=markersize, label=name_list[i][0])
                 leg = True
-            ax1.plot(x, y, color=c, linewidth=size, linestyle=l)
+            ax1.plot(x, y, color=c, linewidth=linewidth, markersize=markersize)
             min_val = min(min_val, min(tr))
             max_val = max(max_val, max(tr))
             max_trials = max(max_trials, len(tr))
 
     # Maybe plot on logscale
     ylabel = ""
-
-    if log:
-        ax1.set_ylabel("log10(Minfunction value)" + ylabel)
-    else:
-        ax1.set_ylabel("Minfunction value" + ylabel)
+    if ylabel is None:
+        if log:
+            ylabel = "log10(Minfunction value)"
+        else:
+            ylabel = "Minfunction value"
+    ax1.set_ylabel(ylabel)
 
     # Descript and label the stuff
     leg = ax1.legend(loc='best', fancybox=True)
     leg.get_frame().set_alpha(0.5)
-    ax1.set_xlabel("#Function evaluations")
+    if xlabel is None:
+        xlabel = "#Function evaluations"
+    ax1.set_xlabel(xlabel)
 
     if y_max == y_min:
          # Set axes limits
@@ -102,7 +106,9 @@ def plot_optimization_trace_cv(trial_list, name_list, optimum=0, title="",
 
 
 def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
-         y_min=0, y_max=0):
+         y_min=0, y_max=0, linewidth=1, linestyles=plot_util.get_single_linestyle(),
+         colors=plot_util.get_plot_colors(), markers=plot_util.get_empty_iterator(),
+         markersize=6, ylabel=None, xlabel=None):
 
     trial_list = list()
     for i in range(len(pkl_list)):
@@ -123,7 +129,10 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
             trial_list[-1].append(np.array(tr))
 
     plot_optimization_trace_cv(trial_list, name_list, optimum, title=title, log=log,
-                            save=save, y_min=y_min, y_max=y_max)
+                            save=save, y_min=y_min, y_max=y_max,
+                            linewidth=linewidth, linestyles=linestyles,
+                            colors=colors, markers=markers,
+                            markersize=markersize, ylabel=ylabel, xlabel=xlabel)
 
     if save != "":
         sys.stdout.write("Saved plot to " + save + "\n")

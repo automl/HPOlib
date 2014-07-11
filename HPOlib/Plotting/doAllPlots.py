@@ -143,21 +143,15 @@ def _statistics(pkl_list, name_list, save="", cut=sys.maxint, log=False):
     # noinspection PyBroadException
     try:
         os.chdir(plotting_dir)
-        cmd = ["python statistics.py", "--cut %d" % cut]
-        for i in range(len(name_list)):
-            cmd.append(name_list[i][0])
-            for pkl in pkl_list[i]:
-                cmd.append(pkl)
+        import statistics
+        stringIO = statistics.get_statistics_as_text(pkl_list, name_list, cut)
+        os.chdir(plotting_dir)
+
         if save is not "":
-            fh = open(save, "w")
-            subprocess.check_call(" ".join(cmd), shell=True, stdin=fh, stdout=fh, stderr=fh)
-            fh.close()
+            with open(save, "w") as fh:
+                fh.write(stringIO.getvalue())
         else:
-            proc = subprocess.Popen(" ".join(cmd), shell=True, stdout=subprocess.PIPE)
-            out = proc.communicate()[0]
-            #print the output of the child process to stdout
-            print (out)
-        os.chdir(cur_dir)
+            print stringIO.getvalue()
         sys.stdout.write("passed\n")
     except Exception, e:
         sys.stderr.write(format_traceback(sys.exc_info()))

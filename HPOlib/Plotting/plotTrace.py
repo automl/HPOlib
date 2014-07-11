@@ -19,7 +19,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from argparse import ArgumentParser
-import itertools
 import sys
 import cPickle
 
@@ -36,18 +35,12 @@ __contact__ = "automl.org"
 
 def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=False,
                             save="", y_min=0, y_max=0, cut=sys.maxint,
-                            linewidth=1, linestyle=False, markers=False):
-    if markers:
-        print "WARNING: markers will not be plotted due to the type of plot."
-    markers = plot_util.get_plot_markers()
-    colors = plot_util.get_plot_colors()
-    if linestyle:
-        linestyles = plot_util.get_plot_linestyles()
-    else:
-        linestyles = itertools.cycle(["-"])
+                            linewidth=1, linestyles=plot_util.get_single_linestyle(),
+                            colors=plot_util.get_plot_colors(),
+                            markers=plot_util.get_empty_iterator(),
+                            ylabel=None, xlabel=None):
 
     size = 1
-
     # get handles
     ratio = 5
     gs = matplotlib.gridspec.GridSpec(ratio, 1)
@@ -101,11 +94,16 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=Fals
             max_trials = num_plotted_trials
 
     # Describe and label the stuff
-    ax.set_xlabel("#Function evaluations")
-    if log:
-        ax.set_ylabel("log10(Minfunction value)")
-    else:
-        ax.set_ylabel("Minfunction value")
+    if xlabel is None:
+        xlabel = "#Function evaluations"
+    ax.set_xlabel(xlabel)
+
+    if ylabel is None:
+        if log:
+            ylabel = "log10(Minfunction value)"
+        else:
+            ylabel = "Minfunction value"
+    ax.set_ylabel(ylabel)
 
     if y_min == y_max:
         ax.set_ylim([min_val - 0.1, max_val + 0.1])
@@ -128,7 +126,9 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=Fals
 
 
 def main(pkl_list, name_list, optimum=0, title="", log=False, save="", y_max=0,
-         y_min=0, cut=sys.maxint, linewidth=1, linestyle=False, markers=False):
+         y_min=0, cut=sys.maxint, linewidth=1, linestyles=plot_util.get_single_linestyle(),
+         colors=plot_util.get_plot_colors(), markers=plot_util.get_empty_iterator(),
+         ylabel=None, xlabel=None):
 
     trial_list = list()
     for i in range(len(pkl_list)):
@@ -137,13 +137,14 @@ def main(pkl_list, name_list, optimum=0, title="", log=False, save="", y_max=0,
         fh = open(pkl_list[i][0])
         trl = cPickle.load(fh)
         fh.close()
-        trial_list.append(plot_util.extract_trials(trl))
+        trial_list.append(plot_util.extract_results(trl))
 
     sys.stdout.write("Plotting trace\n")
     plot_optimization_trace(trial_list=trial_list, name_list=name_list, optimum=optimum,
                             title=title, log=log, save=save, y_max=y_max,
                             y_min=y_min, cut=cut, linewidth=linewidth,
-                            linestyle=linestyle, markers=markers)
+                            linestyles=linestyles, colors=colors,
+                            markers=markers, ylabel=ylabel, xlabel=xlabel)
 
     if save != "":
         sys.stdout.write("Saved plot to " + save + "\n")
