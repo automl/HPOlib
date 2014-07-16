@@ -50,7 +50,12 @@ logger = logging.getLogger("HPOlib.wrapping")
 def kill_children(sig):
     # TODO: somehow wait, until the Experiment pickle is written to disk
     process = psutil.Process(os.getpid())
-    children = process.children()
+    # Ubuntu 14.04 and older versions ship with a deprecated version of
+    # psutil. Use the old interface only if the old version is installed:
+    if psutil.version_info[0] >= 2:
+        children = process.children()
+    else:
+        children = process.get_children()
 
     pids_with_commands = []
     for child in children:
