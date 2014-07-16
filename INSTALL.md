@@ -124,7 +124,7 @@ tar -xf hyperopt_august2013_mod_src.tar.gz
 mv hyperopt_august2013_mod_src tpe/
 
 tar -xf smac_2_06_01-dev_src.tar.gz
-mv mv smac_2_06_01-dev_src smac/
+mv smac_2_06_01-dev_src smac/
 
 tar -xf spearmint_april2013_mod_src.tar.gz
 mv spearmint_april2013_mod_src spearmint/
