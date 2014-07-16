@@ -48,9 +48,8 @@ logger = logging.getLogger("HPOlib.wrapping")
 
 def get_all_p_for_pgid():
     current_pgid = os.getpgid(os.getpid())
-    pids = psutil.pids()
     running_pid = []
-    for pid in pids:
+    for pid in psutil.process_iter():
         try:
             pgid = os.getpgid(pid)
         except:
