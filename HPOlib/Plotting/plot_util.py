@@ -123,13 +123,27 @@ def get_pkl_and_name_list(argument_list):
 
 def extract_trajectory(trials, cut=sys.maxint):
     trace = list()
-    currentbest = trials['trials'][0]
+    currentbest = trials['trials'][0]["result"]
+    if not np.isfinite(currentbest):
+        currentbest = sys.maxint
 
     for result in [trial["result"] for trial in trials['trials'][:cut]]:
+        if not np.isfinite(result):
+            continue
         if result < currentbest:
             currentbest = result
         trace.append(currentbest)
-    return trace
+    return trace 
+
+#def extract_trajectory(trials, cut=sys.maxint):
+#    trace = list()
+#    currentbest = trials['trials'][0]
+
+#    for result in [trial["result"] for trial in trials['trials'][:cut]]:
+#        if result < currentbest:
+#            currentbest = result
+#        trace.append(currentbest)
+#    return trace
 
 
 def extract_trials(trials, cut=sys.maxint):
