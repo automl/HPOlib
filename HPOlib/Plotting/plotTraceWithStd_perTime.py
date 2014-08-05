@@ -34,11 +34,12 @@ __contact__ = "automl.org"
 
 
 def plot_optimization_trace(trial_list, name_list, times_list, optimum=0, title="",
-                            log=True, save="", y_max=0, y_min=0, scale_std=1):
-    markers = plot_util.get_plot_markers()
-    colors = plot_util.get_plot_colors()
-    linestyles = itertools.cycle(['-'])
-    size = 1
+                            log=True, save="", y_max=0, y_min=0, scale_std=1,
+                            linewidth=1, linestyles=plot_util.get_single_linestyle(),
+                            colors=plot_util.get_plot_colors(),
+                            markers=plot_util.get_empty_iterator(), markersize=6,
+                            print_lenght_trial_list=True, ylabel=None,
+                            xlabel=None):
 
     ratio = 5
     gs = matplotlib.gridspec.GridSpec(ratio, 1)
@@ -68,17 +69,19 @@ def plot_optimization_trace(trial_list, name_list, times_list, optimum=0, title=
     for i in range(len(trial_list_means)):
         x = times_list[i]
         y = trial_list_means[i] - optimum
-        # m = markers.next()
+        m = markers.next()
         c = colors.next()
         l = linestyles.next()
+        label = name_list[i][0]
+        if print_lenght_trial_list:
+            label += "(" + str(len(trial_list[i])) + ")"
         std_up = y + trial_list_std[i]
         std_down = y - trial_list_std[i]
 
         ax1.fill_between(x, std_down, std_up,
                          facecolor=c, alpha=0.3, edgecolor=c)
-        ax1.plot(x, y, color=c, linewidth=size*2,
-                 label=name_list[i][0] + "(" + str(len(trial_list[i])) + ")",
-                 linestyle=l, marker="")
+        ax1.plot(x, y, linewidth=linewidth, linestyle=l, color=c,
+                 marker=m, markersize=markersize, label=label)
         if min(std_down) < min_val:
             min_val = min(std_down)
         if max(y + std_up) > max_val:
@@ -86,21 +89,25 @@ def plot_optimization_trace(trial_list, name_list, times_list, optimum=0, title=
         if max(times_list[i]) > max_trials:
             max_trials = max(times_list[i])
 
-    # Maybe plot on logscale
-    if scale_std != 1:
-        ylabel = ", %s * std" % scale_std
-    else:
-        ylabel = ""
+    if ylabel is None:
+        # Maybe plot on logscale
+        if scale_std != 1:
+            ylabel = ", %s * std" % scale_std
+        else:
+            ylabel = ""
 
-    if log:
-        ax1.set_ylabel("log10(Minfunction value)" + ylabel)
-    else:
-        ax1.set_ylabel("Minfunction value" + ylabel)
+        if log:
+            ylabel = "log10(Minfunction value)" + ylabel
+        else:
+            ylabel = "Minfunction value" + ylabel
+    ax1.set_ylabel(ylabel)
 
     # Descript and label the stuff
     leg = ax1.legend(loc='best', fancybox=True)
     leg.get_frame().set_alpha(0.5)
-    ax1.set_xlabel("Duration [sec] ")
+    if xlabel is None:
+        xlabel = "Duration [sec] "
+    ax1.set_xlabel(xlabel)
 
     if y_max == y_min:
         # Set axes limit
@@ -179,7 +186,10 @@ def fill_trajectories(trace_list, times_list):
 
 
 def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
-         log=False, y_min=0, y_max=0, scale_std=1, cut=sys.maxint):
+         log=False, y_min=0, y_max=0, scale_std=1, cut=sys.maxint,
+         linewidth=1, linestyles=plot_util.get_single_linestyle(),
+         colors=plot_util.get_plot_colors(), markers=plot_util.get_empty_iterator(),
+         markersize=6, print_lenght_trial_list=True, ylabel=None, xlabel=None):
 
     trial_list = list()
     times_list = list()
@@ -212,8 +222,13 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
                 raise ValueError("(%s != %s), Traces do not have the same length, please use -a" %
                                  (str(max_len), str(len(trial_list[i][t]))))
 
-    plot_optimization_trace(trial_list, name_list, times_list, optimum, title=title, log=log,
-                            save=save, y_min=y_min, y_max=y_max, scale_std=scale_std)
+    plot_optimization_trace(trial_list, name_list, times_list, optimum,
+                            title=title, log=log, save=save, y_min=y_min,
+                            y_max=y_max, scale_std=scale_std, linewidth=linewidth,
+                            linestyles=linestyles, colors=colors,
+                            markers=markers, markersize=markersize,
+                            print_lenght_trial_list=print_lenght_trial_list,
+                            ylabel=ylabel, xlabel=xlabel)
     if save != "":
         sys.stdout.write("Saved plot to " + save + "\n")
     else:

@@ -22,8 +22,10 @@ __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 from collections import deque, OrderedDict
+import re
 
 import networkx as nx
+import numpy as np
 
 
 class Hyperparameter(object):
@@ -51,11 +53,84 @@ class Hyperparameter(object):
     def has_conditions(self):
         return len(self.conditions[0]) > 0
 
+    def append_conditions(self, conditions):
+        for condition in conditions:
+            self.append_condition(condition)
+
+    def append_condition(self, condition):
+        if type(condition) != list:
+            raise ValueError("Condition Argument is not a list: %s" % str(condition))
+
+        added = False
+        if not condition:
+            return
+
+        if self.conditions == [[]]:
+            self.conditions = [condition]
+            added = True
+        # Check if this is a single condition of form "a == 2" and there
+        # exists "a == 1" so they can be condensed into "a in {1,2}"
+        elif len(condition) == 1:
+            depends_on = condition[0].split()[0]
+            condition_to_add = condition[0].split()[2]
+            for i, sc in enumerate(self.conditions):
+                if len(sc) == 1 and sc[0].split()[0] == depends_on:
+                    # Conditions can be condensed
+                    condition_values = sc[0].split()[2]
+                    if "," in condition_values:
+                        condition_values = condition_values[1:-1].split(",")
+                        if condition_to_add in condition_values:
+                            added = True
+                            break
+                        else:
+                            condition_values.append(condition_to_add)
+                            self.conditions[i][0] = "%s in %s" % (depends_on,
+                                "{" + ",".join(condition_values) + "}")
+                    else:
+                        if condition_to_add == condition_values:
+                            added = True
+                            break
+                        else:
+                            condition_values = [condition_values]
+                            condition_values.append(condition_to_add)
+                            self.conditions[i][0] = "%s in %s" % (depends_on,
+                                "{" + ",".join(condition_values) + "}")
+                    added = True
+                    break
+
+        if not added:
+            self.conditions.append(condition)
+
     def get_conditions_as_string(self):
         if self.has_conditions():
             return "Conditions: %s" % (str(self.conditions))
         else:
             return "Conditions: None"
+
+
+class Constant(Hyperparameter):
+    def __init__(self, name, value, conditions=None):
+        self.name = name
+        self.value = value
+        self.conditions = conditions
+        self.check_conditions()
+
+    def __repr__(self):
+        repr_str = ["Name: %s" % self.name]
+        repr_str.append("Type: Constant")
+        repr_str.append("Value: %s" % self.value)
+        repr_str.append(self.get_conditions_as_string())
+        return ", ".join(repr_str)
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            if self.name != other.name:
+                return False
+            if self.value != other.value:
+                return False
+            return True
+        else:
+            return False
 
 
 class NumericalHyperparameter(Hyperparameter):
@@ -68,10 +143,10 @@ class FloatHyperparameter(NumericalHyperparameter):
 
 class IntegerHyperparameter(NumericalHyperparameter):
     def check_int(self, parameter, name):
-        if abs(int(parameter) - parameter) > 0.00000001 and \
+        if abs(np.round(parameter, 5) - parameter) > 0.00001 and \
                 type(parameter) is not int:
-            raise ValueError("For an Integer parameter, the quantization "
-                 "value %s must be an Integer, too. Right now it "
+            raise ValueError("For the Integer parameter %s, "
+                 "the value must be an Integer, too. Right now it "
                  "is a %s with value %s" %
                  (name, type(parameter), str(parameter)))
         return int(parameter)
@@ -93,6 +168,8 @@ class CategoricalHyperparameter(Hyperparameter):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
+            if self.name != other.name:
+                return False
             if len(self.choices) != len(other.choices):
                 return False
             else:
@@ -113,6 +190,7 @@ class UniformFloatHyperparameter(FloatHyperparameter):
         self.base = float(base) if base is not None else None
         self.conditions = conditions
         self.check_conditions()
+        self.check_name()
 
     def __repr__(self):
         repr_str = ["Name: %s" % self.name]
@@ -125,7 +203,8 @@ class UniformFloatHyperparameter(FloatHyperparameter):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return all([abs(self.lower - other.lower) < 0.00000001,
+            return all([self.name == other.name,
+                        abs(self.lower - other.lower) < 0.00000001,
                         abs(self.upper - other.upper) < 0.00000001,
                         self.base is None and other.base is None or
                         self.base is not None and other.base is not None and
@@ -135,6 +214,39 @@ class UniformFloatHyperparameter(FloatHyperparameter):
                         abs(self.q - other.q) < 0.00000001])
         else:
             return False
+
+    def check_name(self):
+        # TODO: replace float by decimal!
+        perform_power = False
+        if "LOG10_" in self.name:
+            pos = self.name.find("LOG10_")
+            self.name = self.name[0:pos] + self.name[pos + 6:]
+            self.base = 10
+            perform_power = True
+        elif "LOG2_" in self.name:
+            pos = self.name.find("LOG2_")
+            self.name = self.name[0:pos] + self.name[pos + 5:]
+            self.base = 2
+            perform_power = True
+        elif "LOG_" in self.name:
+            pos = self.name.find("LOG_")
+            self.name = self.name[0:pos] + self.name[pos + 4:]
+            self.base = np.e
+            perform_power = True
+        if perform_power and self.base is not None:
+            self.lower = np.round(np.power(self.base, self.lower), 5)
+            self.upper = np.round(np.power(self.base, self.upper), 5)
+        #Check for Q value, returns round(x/q)*q
+        m = re.search(r'Q[0-999\.]{1,10}_', self.name)
+        if m is not None:
+            pos = self.name.find(m.group(0))
+            self.name = self.name[0:pos] + self.name[pos + len(m.group(0)):]
+            self.q = float(m.group(0)[1:-1])
+
+    def to_integer(self):
+        return UniformIntegerHyperparameter(self.name, self.lower,
+                                            self.upper, self.q, self.base,
+                                            self.conditions)
 
 
 class NormalFloatHyperparameter(FloatHyperparameter):
@@ -158,7 +270,8 @@ class NormalFloatHyperparameter(FloatHyperparameter):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return all([abs(self.mu - other.mu) < 0.00000001,
+            return all([self.name == other.name,
+                        abs(self.mu - other.mu) < 0.00000001,
                         abs(self.sigma - other.sigma) < 0.00000001,
                         self.base is None and other.base is None or
                         self.base is not None and other.base is not None and
@@ -168,6 +281,19 @@ class NormalFloatHyperparameter(FloatHyperparameter):
                         abs(self.q - other.q) < 0.00000001])
         else:
             return False
+
+    def to_uniform(self, z=3):
+        if self.base is not None:
+            return UniformFloatHyperparameter(self.name,
+                np.power(self.base, self.mu-(z*self.sigma)),
+                np.power(self.base, self.mu+(z*self.sigma)),
+                q=self.q, base=self.base, conditions=self.conditions)
+        else:
+            return UniformFloatHyperparameter(self.name,
+                self.mu-(z*self.sigma), self.mu+(z*self.sigma),
+                q=self.q, base=self.base, conditions=self.conditions)
+    def to_integer(self):
+        raise NotImplementedError()
 
 
 class UniformIntegerHyperparameter(IntegerHyperparameter):
@@ -182,6 +308,7 @@ class UniformIntegerHyperparameter(IntegerHyperparameter):
         self.base = float(base) if base is not None else None
         self.conditions = conditions
         self.check_conditions()
+        self.check_name()
 
     def __repr__(self):
         repr_str = ["Name: %s" % self.name]
@@ -194,7 +321,8 @@ class UniformIntegerHyperparameter(IntegerHyperparameter):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return all([self.lower == other.lower,
+            return all([self.name == other.name,
+                        self.lower == other.lower,
                         self.upper == other.upper,
                         self.base is None and other.base is None or
                         self.base is not None and other.base is not None and
@@ -205,12 +333,40 @@ class UniformIntegerHyperparameter(IntegerHyperparameter):
         else:
             return False
 
+    def check_name(self):
+        # TODO: replace float by decimal!
+        perform_power = False
+        if "LOG10_" in self.name:
+            pos = self.name.find("LOG10_")
+            self.name = self.name[0:pos] + self.name[pos + 6:]
+            self.base = 10
+            perform_power = True
+        elif "LOG2_" in self.name:
+            pos = self.name.find("LOG2_")
+            self.name = self.name[0:pos] + self.name[pos + 5:]
+            self.base = 2
+            perform_power = True
+        elif "LOG_" in self.name:
+            pos = self.name.find("LOG_")
+            self.name = self.name[0:pos] + self.name[pos + 4:]
+            self.base = np.e
+            perform_power = True
+        if perform_power and self.base is not None:
+            self.lower = np.power(self.base, self.lower)
+            self.upper = np.power(self.base, self.upper)
+        #Check for Q value, returns round(x/q)*q
+        m = re.search(r'Q[0-999\.]{1,10}_', self.name)
+        if m is not None:
+            pos = self.name.find(m.group(0))
+            self.name = self.name[0:pos] + self.name[pos + len(m.group(0)):]
+            self.q = int(m.group(0)[1:-1])
+
 
 class NormalIntegerHyperparameter(IntegerHyperparameter):
     def __init__(self, name, lower, upper, q=None, base=None, conditions=None):
         self.name = name
-        self.lower = self.check_int(lower, "lower")
-        self.upper = self.check_int(upper, "upper")
+        self.mu = self.check_int(lower, "mu")
+        self.sigma = self.check_int(upper, "sigma")
         if q is not None:
             self.q = self.check_int(q, "q")
         else:
@@ -222,7 +378,7 @@ class NormalIntegerHyperparameter(IntegerHyperparameter):
     def __repr__(self):
         repr_str = ["Name: %s" % self.name]
         repr_str.append("Type: NormalInteger")
-        repr_str.append("Mu: %s Sigma: %s" % (str(self.lower), str(self.upper)))
+        repr_str.append("Mu: %s Sigma: %s" % (str(self.mu), str(self.sigma)))
         repr_str.append("Base: %s" % self.base)
         repr_str.append("Q: %s" % self.q)
         repr_str.append(self.get_conditions_as_string())
@@ -230,7 +386,8 @@ class NormalIntegerHyperparameter(IntegerHyperparameter):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return all([abs(self.mu - other.mu) < 0.00000001,
+            return all([self.name == other.name,
+                        abs(self.mu - other.mu) < 0.00000001,
                         abs(self.sigma - other.sigma) < 0.00000001,
                         self.base is None and other.base is None or
                         self.base is not None and other.base is not None and
@@ -241,14 +398,26 @@ class NormalIntegerHyperparameter(IntegerHyperparameter):
         else:
             return False
 
+    def to_uniform(self, z=3):
+        if self.base is not None:
+            return UniformFloatHyperparameter(self.name,
+                np.power(self.base, self.mu-(z*self.sigma)),
+                np.power(self.base, self.mu+(z*self.sigma)),
+                q=self.q, base=self.base, conditions=self.conditions)
+        else:
+            return UniformFloatHyperparameter(self.name,
+                self.mu-(z*self.sigma), self.mu+(z*self.sigma),
+                q=self.q, base=self.base, conditions=self.conditions)
+
 
 def create_dag_from_hyperparameters(hyperparameters):
-    if type(hyperparameters) == dict:
+    if type(hyperparameters) in [dict, OrderedDict]:
         hyperparameters = hyperparameters.values()
     elif type(hyperparameters) in [list, tuple]:
         pass
     else:
-        raise NotImplementedError()
+        raise ValueError("Type %s not supported (%s)" %
+                         (type(hyperparameters), str(hyperparameters)))
     hyperparameters.sort(key=lambda theta: theta.name, reverse=True)
 
 
@@ -264,23 +433,28 @@ def create_dag_from_hyperparameters(hyperparameters):
 
         if hyperparameter.conditions != [[]]:
             # Extend to handle or-conditions
-            if len(hyperparameter.conditions) > 1:
-                print hyperparameter.name, hyperparameter.conditions
-                raise NotImplementedError()
+            #if len(hyperparameter.conditions) > 1:
+            #    print hyperparameter.name, hyperparameter.conditions
+            #    raise NotImplementedError()
 
             # extract all conditions and check if all parent nodes are
             # already inserted into the Graph
             depends_on = []
-
-            for condition in hyperparameter.conditions[0]:
-                depends_on_name = condition.split()[0]
-                operator = condition.split()[1]
-                value = condition.split()[2]
-                if depends_on_name not in visited:
-                    to_visit.append(hyperparameter)
+            do_continue = False
+            for i, conditions in enumerate(hyperparameter.conditions):
+                depends_on.append([])
+                for condition in conditions:
+                    depends_on_name = condition.split()[0]
+                    operator = condition.split()[1]
+                    value = condition.split()[2]
+                    if depends_on_name not in visited:
+                        to_visit.append(hyperparameter)
+                        continue
+                    depends_on[-1].append((depends_on_name, operator, value))
+                if len(depends_on[-1]) != len(conditions):
+                    do_continue = True
                     continue
-                depends_on.append((depends_on_name, operator, value))
-            if len(depends_on) != len(hyperparameter.conditions[0]):
+            if do_continue:
                 continue
         else:
             depends_on = []
@@ -290,43 +464,53 @@ def create_dag_from_hyperparameters(hyperparameters):
 
         if len(depends_on) == 0:
             DG.add_edge('__HPOlib_configuration_space_root__', name)
-        elif len(depends_on) == 1:
-            d_name, op, value = depends_on[0]
-            DG.add_edge(d_name, name, condition=(d_name, op, value))
         else:
-            # Add links to all direct parents, these can be less than the
-            # number of values in depends_on. The direct parent depends on
-            # all other values in depends_on except itself
-            parents = []
-            for i, d in enumerate(depends_on):
-                d_name, op, value = d
-                parents.append(nx.ancestors(DG, d_name))
+            for dependency_path in depends_on:
+                if len(dependency_path) == 1:
+                    d_name, op, value = dependency_path[0]
+                    DG.add_edge(d_name, name, condition=(d_name, op, value))
+                else:
+                    # Add links to all direct parents, these can be less than the
+                    # number of values in depends_on. The direct parent depends on
+                    # all other values in depends_on except itself
+                    parents = []
+                    for i, d in enumerate(dependency_path):
+                        d_name, op, value = d
+                        parents.append(nx.ancestors(DG, d_name))
 
-            candidates = []
-            for i, d in enumerate(depends_on):
-                d_name, op, value = d
-                for j, d2 in enumerate(depends_on):
-                    if i == j:
-                        continue
-                    if d_name in parents[j]:
-                        candidates.append(j)
-                    else:
-                        continue
+                    candidates = []
+                    for i, d in enumerate(dependency_path):
+                        d_name, op, value = d
+                        for j, d2 in enumerate(dependency_path):
+                            if i == j:
+                                continue
+                            if d_name in parents[j]:
+                                candidates.append(j)
+                            else:
+                                continue
 
-            if len(candidates) != 1:
-                print candidates
-                raise ValueError()
+                    if len(candidates) != 1:
+                        print hyperparameter, depends_on
+                        print parents
+                        print candidates
+                        raise ValueError()
 
-            parent = depends_on[candidates[0]][0]
-            condition = depends_on[candidates[0]]
+                    parent = dependency_path[candidates[0]][0]
+                    condition = dependency_path[candidates[0]]
 
-            DG.add_edge(parent, name, condition=condition)
+                    DG.add_edge(parent, name, condition=condition)
 
     if not nx.is_directed_acyclic_graph(DG):
         cycles = list(nx.simple_cycles(DG))
         raise ValueError("Hyperparameter configurations contain a cycle %s" %
             str(cycles))
 
+    nx.write_dot(DG, "hyperparameters.dot")
+    import matplotlib.pyplot as plt
+    plt.title("draw_networkx")
+    pos = nx.graphviz_layout(DG, prog='dot')
+    nx.draw(DG, pos, with_labels=True)
+    plt.savefig('nx_test.png')
     return DG
 
 

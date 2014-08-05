@@ -32,8 +32,21 @@ __contact__ = "automl.org"
 cache = dict()
 
 
+def get_empty_iterator():
+    return itertools.cycle([None])
+
+
 def get_plot_markers():
-    return itertools.cycle(['o', 's', 'x', '^'])
+    return itertools.cycle(['o', 's', 'x', '^', 'p', 'v', '>', '<', '8', '*',
+                            '+', 'D'])
+
+
+def get_plot_linestyles():
+    return itertools.cycle(['-', '--', '-.', '--.', ':', ])
+
+
+def get_single_linestyle():
+    return itertools.cycle(['-'])
 
 
 def get_plot_colors():
@@ -66,36 +79,6 @@ def load_pickles(name_list, pkl_list):
     return pickles
 
 
-def get_best_dict(name_list, pickles, cut=sys.maxint):
-    """
-    Get the best values of many experiments.
-
-    Input
-    * name_list: A list with of tuples of kind (optimizer_name, num_pickles)
-    * pickles: A dictionary with all pickle files for an optimizer_name
-    * cut: How many iterations should be considered
-
-    Returns:
-    * best_dict: A dictionary with the best response value for every optimizer
-    * idx_dict: A dictionary with the number of iterations needed to find the
-        optimum
-    * keys: A list with optimizer names.
-
-    """
-    best_dict = dict()
-    idx_dict = dict()
-    keys = list()
-    for i in range(len(name_list)):
-        keys.append(name_list[i][0])
-        best_dict[name_list[i][0]] = list()
-        idx_dict[name_list[i][0]] = list()
-        for pkl in pickles[name_list[i][0]]:
-            best, idx = get_best_value_and_index(pkl, cut)
-            best_dict[name_list[i][0]].append(best)
-            idx_dict[name_list[i][0]].append(idx)
-    return best_dict, idx_dict, keys
-
-
 def get_pkl_and_name_list(argument_list):
     name_list = list()
     pkl_list = list()
@@ -121,13 +104,53 @@ def get_pkl_and_name_list(argument_list):
     return pkl_list, name_list
 
 
-def extract_trajectory(trials, cut=sys.maxint):
+def get_best_dict(name_list, pickles, cut=sys.maxint):
+    """
+    Get the best values of many experiments.
+
+    Input
+    * name_list: A list with of tuples of kind (optimizer_name, num_pickles)
+    * pickles: A dictionary with a list of  all pickle files for an
+        optimizer_name
+    * cut: How many iterations should be considered
+
+    Returns:
+    * best_dict: A dictionary with a list of the best response value for every
+        optimizer
+    * idx_dict: A dictionary with a list the number of iterations needed to
+        find the optimum
+    * keys: A list with optimizer names.
+
+    """
+    best_dict = dict()
+    idx_dict = dict()
+    keys = list()
+    for i in range(len(name_list)):
+        keys.append(name_list[i][0])
+        best_dict[name_list[i][0]] = list()
+        idx_dict[name_list[i][0]] = list()
+        for pkl in pickles[name_list[i][0]]:
+            best, idx = get_best_value_and_index(pkl, cut)
+            best_dict[name_list[i][0]].append(best)
+            idx_dict[name_list[i][0]].append(idx)
+    return best_dict, idx_dict, keys
+
+
+def extract_trajectory(experiment, cut=sys.maxint):
+    """Extract a list where the value at position i is the current best after i configurations."""
+    if not isinstance(cut, int):
+        raise ValueError("Argument cut must be an Integer value but is %s" %
+            type(cut))
+    if cut <= 0:
+        raise ValueError("Argument cut cannot be zero or negative.")
+
     trace = list()
-    currentbest = trials['trials'][0]["result"]
+
+    currentbest = experiment['trials'][0]["result"]
     if not np.isfinite(currentbest):
         currentbest = sys.maxint
 
-    for result in [trial["result"] for trial in trials['trials'][:cut]]:
+    for result in [trial["result"] for trial in experiment['trials'][:cut]]:
         if not np.isfinite(result):
             continue
         if result < currentbest:
@@ -146,8 +169,18 @@ def extract_trajectory(trials, cut=sys.maxint):
 #    return trace
 
 
-def extract_trials(trials, cut=sys.maxint):
-    trl = [trial["result"] for trial in trials['trials'][:cut]]
+def extract_results(experiment, cut=sys.maxint):
+    """Extract a list with all results.
+
+    If `cut` is given, return up to `cut` results. Raise ValueError if cut
+    is equal or less than zero."""
+    if not isinstance(cut, int):
+        raise ValueError("Argument cut must be an Integer value but is %s" %
+            type(cut))
+    if cut <= 0:
+        raise ValueError("Argument cut cannot be zero or negative.")
+
+    trl = [trial["result"] for trial in experiment['trials'][:cut]]
     return trl
 
 
@@ -155,29 +188,45 @@ def extract_runtime_timestamps(trials, cut=sys.maxint):
     # return a list like (20, 53, 101, 200)
     time_list = list()
     time_list.append(0)
-    for trial in trials["trials"][:cut]:
+    for trial in trials["trials"][:cut+1]:
         time_list.append(np.sum(trial["instance_durations"]) + time_list[-1])
     return time_list
 
 
-def get_best(trials, cut=False):
+def get_best(experiment, cut=sys.maxint):
+    """Return the best value found in experiment.
+
+    If `cut` is given, look at the first `cut` results. Raise ValueError if cut
+    is equal or less than zero."""
+    if not isinstance(cut, int):
+        raise ValueError("Argument cut must be an Integer value but is %s" %
+            type(cut))
+    if cut <= 0:
+        raise ValueError("Argument cut cannot be zero or negative.")
+
     # returns the best value found in this experiment
-    traj = extract_trajectory(trials)
-    best_value = sys.maxint
-    if cut and 0 < cut < len(traj):
-        best_value = traj[cut]
+    traj = extract_trajectory(experiment)
+    if cut < len(traj):
+        best_value = traj[cut-1]
     else:
         best_value = traj[-1]
     return best_value
 
 
-def get_best_value_and_index(trials, cut=False):
-    # returns the best value and corresponding index
+def get_best_value_and_index(trials, cut=sys.maxint):
+    """Return the best value found and its index in experiment.
+
+    If `cut` is given, look at the first `cut` results. Raise ValueError if cut
+    is equal or less than zero. Important: The index is zero-based!"""
+    if not isinstance(cut, int):
+        raise ValueError("Argument cut must be an Integer value but is %s" %
+            type(cut))
+    if cut <= 0:
+        raise ValueError("Argument cut cannot be zero or negative.")
+
     traj = extract_trajectory(trials)
-    best_value = sys.maxint
-    best_index = -1
-    if cut and 0 < cut < len(traj):
-        best_value = traj[cut]
+    if cut < len(traj):
+        best_value = traj[cut-1]
         best_index = np.argmin(traj[:cut])
     else:
         best_value = traj[-1]

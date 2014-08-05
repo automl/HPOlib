@@ -122,7 +122,7 @@ class TestPCSConverter(unittest.TestCase):
         self.assertEqual(expected, value)
 
     def test_write_log_int(self):
-        expected = "int_log_a [1, 6] [3]il"
+        expected = "int_log_a [1, 6] [2]il"
         sp = {"a": int_log_a}
         value = pcs_parser.write(sp)
         self.assertEqual(expected, value)
@@ -146,7 +146,7 @@ class TestPCSConverter(unittest.TestCase):
         self.assertEqual(expected, value)
 
     def test_write_log10(self):
-        expected = "a [10.0, 1000.0] [505.0]l"
+        expected = "a [10.0, 1000.0] [100.0]l"
         sp = {"a": configuration_space.UniformFloatHyperparameter("a", 10, 1000, base=10)}
         value = pcs_parser.write(sp)
         self.assertEqual(expected, value)

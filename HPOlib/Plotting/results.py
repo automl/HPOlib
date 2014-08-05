@@ -34,6 +34,7 @@ def get_instance_durations(trials):
 
 def collect_results(directory):
     locker = Locker()
+    errors = []
     sio = StringIO.StringIO()
     sio.write("Statistics for %s\n" % directory)
     sio.write("%30s | %6s | %7s/%7s/%7s | %10s | %10s\n" %
@@ -58,7 +59,7 @@ def collect_results(directory):
                         try:
                             pkl = cPickle.load(fh)
                         except Exception as e:
-                            print exp_pkl, type(e)
+                            errors.append(exp_pkl + ' ' +  str(type(e)))
                             continue
                     locker.unlock(exp_pkl)
 
@@ -87,7 +88,7 @@ def collect_results(directory):
                     try:
                         best_performance = plot_util.get_best(pkl)
                     except Exception as e:
-                        print e, exp_pkl
+                        errors.append(str(e) + ' ' + exp_pkl)
                         continue
 
                     instance_durations = get_instance_durations(pkl)
@@ -128,6 +129,12 @@ def collect_results(directory):
                   % (len(results_for_mean), np.mean(results_for_mean),
                      np.std(results_for_mean), np.min(results_for_mean),
                      np.median(results_for_mean), np.mean(runtimes_for_mean)))
+
+    if len(errors) > 0:
+        sio.write("\nCouldn't read the following .pkl files\n")
+        for error in errors:
+            sio.write(error)
+            sio.write("\n")
     return sio
 
 
