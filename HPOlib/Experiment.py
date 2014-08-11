@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from collections import defaultdict
 import cPickle
 import logging
 import os
@@ -34,6 +35,9 @@ __contact__ = "automl.org"
 
 logger = logging.getLogger("HPOlib.experiment")
 
+# Do not forget to increment this if you add a new field either to Experiment
+#  or Trial
+VERSION = 1
 
 CANDIDATE_STATE = 0
 INCOMPLETE_STATE = 1
@@ -101,6 +105,10 @@ class Experiment:
             # Dummy field, this will be calculated by wrapping.py after
             # everything is finished
             self.optimizer_time = []
+            # A field which denotes the version of the Experiment format,
+            # in new versions, there might be new fields which have to be
+            # pickled and loaded and so on...
+            self.version = VERSION
 
             # Save this out.
             # self._save_jobs()
@@ -127,6 +135,9 @@ class Experiment:
         trial['duration'] = np.NaN
         # Stores the duration for every instance
         trial['instance_durations'] = np.ones((self.folds)) * np.NaN
+        # Store additional data in form of strings for every fold, this can
+        # e.g. be a machine learning model which is saved to the disk
+        trial['additional_data'] = defaultdict(str)
         return trial
 
     def __del__(self):
@@ -235,12 +246,14 @@ class Experiment:
         # self._save_jobs()
 
     # Set the status of a job to be crashed
-    def set_one_fold_crashed(self, _id, fold, result, duration):
+    def set_one_fold_crashed(self, _id, fold, result, duration,
+                             additional_data=None):
         assert(self.get_trial_from_id(_id)['instance_status'][fold] ==
                RUNNING_STATE)
         self.trials[_id]['instance_status'][fold] = BROKEN_STATE
         self.trials[_id]['instance_durations'][fold] = duration
         self.trials[_id]['instance_results'][fold] = result
+        self.trials[_id]['additional_data'][fold] = additional_data
         if (self.trials[_id]['instance_status'] != RUNNING_STATE).all():
             self.trials[_id]['status'] = INCOMPLETE_STATE
         self.check_cv_finished(_id)
@@ -249,12 +262,14 @@ class Experiment:
         # self._save_jobs()
 
     # Set the results of one fold of crossvalidation (SMAC)
-    def set_one_fold_complete(self, _id, fold, result, duration):
+    def set_one_fold_complete(self, _id, fold, result, duration,
+                              additional_data=None):
         assert(self.get_trial_from_id(_id)['instance_status'][fold] ==
                RUNNING_STATE)
         self.get_trial_from_id(_id)['instance_results'][fold] = result
         self.get_trial_from_id(_id)['instance_status'][fold] = COMPLETE_STATE
         self.get_trial_from_id(_id)['instance_durations'][fold] = duration
+        self.get_trial_from_id(_id)['additional_data'][fold] = additional_data
         # Set to incomplete if no job is running
         if (self.trials[_id]['instance_status'] != RUNNING_STATE).all():
             self.trials[_id]['status'] = INCOMPLETE_STATE

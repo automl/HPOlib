@@ -61,7 +61,7 @@ def kill_children(sig):
     for child in children:
         pids_with_commands.append((child.pid, child.cmdline()))
 
-    logger.critical("Running %s" % str(pids_with_commands))
+    logger.debug("Running %s" % str(pids_with_commands))
     for child in children:
         try:
             os.kill(child.pid, sig)

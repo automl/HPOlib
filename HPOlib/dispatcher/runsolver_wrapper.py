@@ -73,15 +73,15 @@ def read_run_instance_output(run_instance_output):
     """
     Read the run_instance output file
     """
-    result_array = None
     fh = open(run_instance_output, "r")
     run_instance_content = fh.readlines()
     fh.close()
     result_string = None
+    result_array = None
     for line in run_instance_content:
         match = re.search(r"\s*[Rr]esult\s+(?:([Ff]or)|([oO]f))\s"
-                          r"+(?:(HAL)|(ParamILS)|(SMAC)|([tT]his [wW]rapper))",
-                          line)
+            r"+(?:(HAL)|(ParamILS)|(SMAC)|([tT]his "
+            r"[wW]rapper)|(this algorithm run))", line)
         if match:
             pos = match.start(0)
             result_string = line[pos:].strip()
@@ -125,6 +125,7 @@ def parse_output_files(cfg, run_instance_output, runsolver_output_file):
     cpu_time, measured_wallclock_time, error = read_runsolver_output(
         runsolver_output_file)
     result_array, result_string = read_run_instance_output(run_instance_output)
+    additional_data = " ".join(result_array[8:])
     if not result_array:
         logger.critical("We could not find anything matching our regexp. "
                         "Setting the target algorithm runtime to the time "
@@ -144,33 +145,31 @@ def parse_output_files(cfg, run_instance_output, runsolver_output_file):
     if error is None and result_string is None:
         additional_data = "No result string returned. Please have a look " \
                           "at " + run_instance_output
-        rval = (cpu_time, wallclock_time, "CRASHED", cfg.getfloat("HPOLIB",
-                                                                  "result_on_terminate"), additional_data)
+        rval = (cpu_time, wallclock_time, "CRASHED",
+                cfg.getfloat("HPOLIB", "result_on_terminate"), additional_data)
         os.remove(runsolver_output_file)
 
     elif error is None and result_array[3] != "SAT":
-        additional_data = "Please have a look at " + run_instance_output + "." \
-                                                                           "The output status is not \"SAT\""
-        rval = (cpu_time, wallclock_time, "CRASHED", cfg.getfloat("HPOLIB",
-                                                                  "result_on_terminate"), additional_data)
+        rval = (cpu_time, wallclock_time, "CRASHED",
+                cfg.getfloat("HPOLIB", "result_on_terminate"), additional_data)
         os.remove(runsolver_output_file)
 
     elif error is None and not np.isfinite(float(result_array[6].strip(","))):
-        additional_data = "Response value is not finite. Please have a look " \
-                          "at " + run_instance_output
-        rval = (cpu_time, wallclock_time, "UNSAT", cfg.getfloat("HPOLIB",
-                                                                "result_on_terminate"), additional_data)
+        rval = (cpu_time, wallclock_time, "UNSAT",
+                cfg.getfloat("HPOLIB", "result_on_terminate"), additional_data)
 
     elif error is None:
         if cfg.getboolean("HPOLIB", "remove_target_algorithm_output"):
             os.remove(run_instance_output)
         os.remove(runsolver_output_file)
         rval = (cpu_time, wallclock_time, "SAT", float(result_array[6].strip(",")),
-                cfg.get("HPOLIB", "function"))
+                additional_data)
 
     else:
-        rval = (cpu_time, wallclock_time, "CRASHED", cfg.getfloat("HPOLIB",
-                                                                  "result_on_terminate"),
+        # The runsolver terminated the target algorithm, so there should be
+        # no additional run info and we can use the field
+        rval = (cpu_time, wallclock_time, "CRASHED",
+                cfg.getfloat("HPOLIB", "result_on_terminate"),
                 error + " Please have a look at " +
                 runsolver_output_file)
         # It is useful to have the run_instance_output for debugging

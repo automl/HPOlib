@@ -11,6 +11,7 @@
 * HPOlib/dispatcher: Replace HPOlib/runsolver_wrapper. Can then choose different dispatcher to run the target experiment. These are:
     * python_file: Import a python file and execute a function
     * runsolver_wrapper: Run a target algorithm through the runsolver wrapper.
+* HPOlib/dispatcher: The additional run data field of the return string, which was previously unused is now stored in the experiment pickle file.
 * HPOlib/wrapping.py: One can now specify a temporary output directory where the experiment output is temporarily stored and 
     transfered back to the experiment directory when the experiment is finished. This is useful for fast (<1s) jobs which are executed
     in high number in parallel (>100) when all computers write to a central file system.

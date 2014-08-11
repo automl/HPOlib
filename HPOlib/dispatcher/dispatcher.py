@@ -163,11 +163,11 @@ def main():
     experiment = Experiment.load_experiment_file()
     if status == "SAT":
         experiment.set_one_fold_complete(trial_index, fold, result,
-                                         wallclock_time)
+                                         wallclock_time, additional_data)
     elif status == "CRASHED" or status == "UNSAT":
         result = cfg.getfloat("HPOLIB", "result_on_terminate")
         experiment.set_one_fold_crashed(trial_index, fold, result,
-                                        wallclock_time)
+                                        wallclock_time, additional_data)
         status = "SAT"
     else:
         # TODO: We need a global stopping mechanism

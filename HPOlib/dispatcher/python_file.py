@@ -49,9 +49,11 @@ def dispatch(cfg, fold, params):
 
         if isinstance(retval, float):
             result = retval
+            additional_data = None
         elif isinstance(retval, dict):
             result = retval["result"]
-            wallclock_time = retval["duration"]
+            wallclock_time = retval.get("duration")
+            additional_data = retval.get("additional_data")
         else:
             status = "UNSAT"
             logger.error("Return type %s of target function %s is not "
@@ -65,4 +67,4 @@ def dispatch(cfg, fold, params):
         wallclock_time = time.time() - starttime
 
 
-    return "", result, status, wallclock_time
+    return additional_data, result, status, wallclock_time
