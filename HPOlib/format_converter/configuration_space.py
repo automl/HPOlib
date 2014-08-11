@@ -504,13 +504,14 @@ def create_dag_from_hyperparameters(hyperparameters):
         cycles = list(nx.simple_cycles(DG))
         raise ValueError("Hyperparameter configurations contain a cycle %s" %
             str(cycles))
-
+    """
     nx.write_dot(DG, "hyperparameters.dot")
     import matplotlib.pyplot as plt
     plt.title("draw_networkx")
     pos = nx.graphviz_layout(DG, prog='dot')
     nx.draw(DG, pos, with_labels=True)
     plt.savefig('nx_test.png')
+    """
     return DG
 
 
