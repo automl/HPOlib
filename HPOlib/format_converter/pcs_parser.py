@@ -197,6 +197,8 @@ def read(pcs_string, debug=False):
         try:
             # noinspection PyUnusedLocal
             param_list = pp_forbidden_clause.parseString(line)
+            # TODO: remove this hotfix!
+            continue
             raise NotImplementedError("We cannot handle forbidden clauses: %s" % line)
         except pyparsing.ParseException:
             pass
@@ -206,14 +208,36 @@ def read(pcs_string, debug=False):
 
         searchspace[param.name] = param
 
+    def normalize_param_name(name):
+        if "LOG10_" in child:
+            pos = name.find("LOG10_")
+            name = name[0:pos] + name[pos + 6:]
+        elif "LOG2_" in child:
+            pos = name.find("LOG2_")
+            name = name[0:pos] + name[pos + 5:]
+        elif "LOG_" in child:
+            pos = name.find("LOG_")
+            name = name[0:pos] + name[pos + 4:]
+        import re
+        m = re.search(r'Q[0-999\.]{1,10}_', name)
+        if m is not None:
+            pos = name.find(m.group(0))
+            name = name[0:pos] + name[pos + len(m.group(0)):]
+        return name
+
+
     #Now handle conditions
     for cond in conditions:
         child = cond[0]
         parent = cond[2]
         restrictions = cond[5:-1:2]
-        #print child, parent, restrictions
+        # TODO remove this hotfix
+        child = normalize_param_name(child)
+        parent = normalize_param_name(parent)
+
         if child not in searchspace:
-            raise ValueError("%s is not defined" % child)
+            raise ValueError("%s is not defined, values in search space are %s"
+                             % (child, str(searchspace)))
         if parent not in searchspace:
             raise ValueError("%s is not defined" % parent)
 
