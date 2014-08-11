@@ -1,10 +1,9 @@
 import itertools
 import unittest
 
-import numpy as np
-
 import HPOlib.Plotting.plot_util as plot_util
-from experiments.branin_experiment import experiment as branin_experiment
+from tests.unittests.experiments.branin_experiment import experiment as \
+    branin_experiment
 
 branin_expected = [24.129964413622268, 59.972610578348807, 16.787197168652479,
                    83.744395406186612, 113.65462688764023, 21.642525044091762,
