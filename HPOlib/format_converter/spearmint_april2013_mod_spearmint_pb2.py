@@ -45,15 +45,27 @@
 from google.protobuf import descriptor
 from google.protobuf import message
 from google.protobuf import reflection
-from google.protobuf import descriptor_pb2
+# from google.protobuf import descriptor_pb2
 # @@protoc_insertion_point(imports)
-
-
 
 DESCRIPTOR = descriptor.FileDescriptor(
     name='spearmint.proto',
     package='',
-    serialized_pb='\n\x0fspearmint.proto\"\xcc\x01\n\x03Job\x12\n\n\x02id\x18\x01 \x02(\x04\x12\x10\n\x08\x65xpt_dir\x18\x02 \x02(\t\x12\x0c\n\x04name\x18\x03 \x02(\t\x12\x1b\n\x08language\x18\x04 \x02(\x0e\x32\t.Language\x12\x0e\n\x06status\x18\x05 \x01(\t\x12\x19\n\x05param\x18\x06 \x03(\x0b\x32\n.Parameter\x12\x10\n\x08submit_t\x18\x07 \x01(\x04\x12\x0f\n\x07start_t\x18\x08 \x01(\x04\x12\r\n\x05\x65nd_t\x18\t \x01(\x04\x12\r\n\x05value\x18\n \x01(\x01\x12\x10\n\x08\x64uration\x18\x0b \x01(\x01\"L\n\tParameter\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x0f\n\x07int_val\x18\x02 \x03(\x03\x12\x0f\n\x07str_val\x18\x03 \x03(\t\x12\x0f\n\x07\x64\x62l_val\x18\x04 \x03(\x01\"\x91\x02\n\nExperiment\x12\x1b\n\x08language\x18\x01 \x02(\x0e\x32\t.Language\x12\x0c\n\x04name\x18\x02 \x02(\t\x12+\n\x08variable\x18\x03 \x03(\x0b\x32\x19.Experiment.ParameterSpec\x1a\xaa\x01\n\rParameterSpec\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x0c\n\x04size\x18\x02 \x02(\r\x12,\n\x04type\x18\x03 \x02(\x0e\x32\x1e.Experiment.ParameterSpec.Type\x12\x0f\n\x07options\x18\x04 \x03(\t\x12\x0b\n\x03min\x18\x05 \x01(\x01\x12\x0b\n\x03max\x18\x06 \x01(\x01\"$\n\x04Type\x12\x07\n\x03INT\x10\x01\x12\t\n\x05\x46LOAT\x10\x02\x12\x08\n\x04\x45NUM\x10\x03*6\n\x08Language\x12\n\n\x06MATLAB\x10\x01\x12\n\n\x06PYTHON\x10\x02\x12\t\n\x05SHELL\x10\x03\x12\x07\n\x03MCR\x10\x04')
+    serialized_pb="\n\x0fspearmint.proto\"\xcc\x01\n\x03Job\x12\n\n\x02id\x18\x01 \x02(\x04\x12\x10\n\x08\x65xpt_dir" +
+                  "\x18\x02 \x02(\t\x12\x0c\n\x04name\x18\x03 \x02(\t\x12\x1b\n\x08language\x18\x04 \x02" +
+                  "(\x0e\x32\t.Language\x12\x0e\n\x06status\x18\x05 \x01(\t\x12\x19\n\x05param\x18\x06 \x03" +
+                  "(\x0b\x32\n.Parameter\x12\x10\n\x08submit_t\x18\x07 \x01(\x04\x12\x0f\n\x07start_t\x18\x08 " +
+                  "\x01(\x04\x12\r\n\x05\x65nd_t\x18\t \x01(\x04\x12\r\n\x05value\x18\n \x01(\x01\x12\x10\n\x08\x64" +
+                  "uration\x18\x0b \x01(\x01\"L\n\tParameter\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x0f\n\x07int_val" +
+                  "\x18\x02 \x03(\x03\x12\x0f\n\x07str_val\x18\x03 \x03(\t\x12\x0f\n\x07\x64\x62l_val\x18\x04 \x03" +
+                  "(\x01\"\x91\x02\n\nExperiment\x12\x1b\n\x08language\x18\x01 \x02(\x0e\x32\t.Language\x12\x0c\n\x04" +
+                  "name\x18\x02 \x02(\t\x12+\n\x08variable\x18\x03 \x03(\x0b\x32\x19.Experiment.ParameterSpec" +
+                  "\x1a\xaa\x01\n\rParameterSpec\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x0c\n\x04size\x18\x02 \x02" +
+                  "(\r\x12,\n\x04type\x18\x03 \x02(\x0e\x32\x1e.Experiment.ParameterSpec.Type\x12\x0f\n\x07options" +
+                  "\x18\x04 \x03(\t\x12\x0b\n\x03min\x18\x05 \x01(\x01\x12\x0b\n\x03max\x18\x06 \x01(\x01\"$\n\x04" +
+                  "Type\x12\x07\n\x03INT\x10\x01\x12\t\n\x05\x46LOAT\x10\x02\x12\x08\n\x04\x45NUM\x10\x03*6\n\x08" +
+                  "Language\x12\n\n\x06MATLAB\x10\x01\x12\n\n\x06PYTHON\x10\x02\x12\t\n\x05SHELL\x10\x03\x12\x07" +
+                  "\n\x03MCR\x10\x04")
 
 _LANGUAGE = descriptor.EnumDescriptor(
     name='Language',
@@ -61,22 +73,22 @@ _LANGUAGE = descriptor.EnumDescriptor(
     filename=None,
     file=DESCRIPTOR,
     values=[
-    descriptor.EnumValueDescriptor(
-        name='MATLAB', index=0, number=1,
-        options=None,
-        type=None),
-    descriptor.EnumValueDescriptor(
-        name='PYTHON', index=1, number=2,
-        options=None,
-        type=None),
-    descriptor.EnumValueDescriptor(
-        name='SHELL', index=2, number=3,
-        options=None,
-        type=None),
-    descriptor.EnumValueDescriptor(
-        name='MCR', index=3, number=4,
-        options=None,
-        type=None),
+        descriptor.EnumValueDescriptor(
+            name='MATLAB', index=0, number=1,
+            options=None,
+            type=None),
+        descriptor.EnumValueDescriptor(
+            name='PYTHON', index=1, number=2,
+            options=None,
+            type=None),
+        descriptor.EnumValueDescriptor(
+            name='SHELL', index=2, number=3,
+            options=None,
+            type=None),
+        descriptor.EnumValueDescriptor(
+            name='MCR', index=3, number=4,
+            options=None,
+            type=None),
     ],
     containing_type=None,
     options=None,
@@ -383,6 +395,7 @@ class Parameter(message.Message):
     DESCRIPTOR = _PARAMETER
 
     # @@protoc_insertion_point(class_scope:Parameter)
+
 
 class Experiment(message.Message):
     __metaclass__ = reflection.GeneratedProtocolMessageType
