@@ -22,6 +22,7 @@ import logging
 import os
 import sys
 import tempfile
+import warnings
 
 import numpy as np
 
@@ -380,9 +381,12 @@ class Experiment:
         finite_instance_results = 0
         for trial in self.trials:
             self._trial_sanity_check(trial)
+
             # Backwards compability with numpy 1.6
-            wallclock_time = np.nansum(trial['instance_durations'])
-            total_wallclock_time += wallclock_time if np.isfinite(wallclock_time) else 0
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                wallclock_time = np.nansum(trial['instance_durations'])
+                total_wallclock_time += wallclock_time if np.isfinite(wallclock_time) else 0
         assert (wrapping_util.float_eq(total_wallclock_time,
                                        self.total_wallclock_time)), \
             (total_wallclock_time, self.total_wallclock_time)
