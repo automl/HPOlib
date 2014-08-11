@@ -36,10 +36,13 @@ __contact__ = "automl.org"
 def plot_optimization_trace(trial_list, name_list, times_list, optimum=0, title="",
                             log=True, save="", y_max=0, y_min=0, scale_std=1,
                             linewidth=1, linestyles=plot_util.get_single_linestyle(),
-                            colors=plot_util.get_plot_colors(),
+                            colors=None,
                             markers=plot_util.get_empty_iterator(), markersize=6,
                             print_lenght_trial_list=True, ylabel=None,
                             xlabel=None):
+
+    if colors is None:
+        colors= plot_util.get_plot_colors()
 
     ratio = 5
     gs = matplotlib.gridspec.GridSpec(ratio, 1)
@@ -188,8 +191,11 @@ def fill_trajectories(trace_list, times_list):
 def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
          log=False, y_min=0, y_max=0, scale_std=1, cut=sys.maxint,
          linewidth=1, linestyles=plot_util.get_single_linestyle(),
-         colors=plot_util.get_plot_colors(), markers=plot_util.get_empty_iterator(),
+         colors=None, markers=plot_util.get_empty_iterator(),
          markersize=6, print_lenght_trial_list=True, ylabel=None, xlabel=None):
+
+    if colors is None:
+        colors= plot_util.get_plot_colors()
 
     trial_list = list()
     times_list = list()

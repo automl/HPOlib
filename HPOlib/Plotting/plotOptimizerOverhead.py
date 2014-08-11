@@ -36,10 +36,12 @@ __contact__ = "automl.org"
 def plot_time_trace(time_dict, name_list, title="", log=True, save="",
                     y_max=0, y_min=0, linewidth=1,
                     linestyles=plot_util.get_single_linestyle(),
-                    colors=plot_util.get_plot_colors(),
+                    colors=None,
                     markers=plot_util.get_empty_iterator(),
                     markersize=6, ylabel=None, xlabel=None):
 
+    if colors is None:
+        colors= plot_util.get_plot_colors()
     ratio = 5
     gs = matplotlib.gridspec.GridSpec(ratio, 1)
     fig = plt.figure(1, dpi=100)
@@ -119,9 +121,11 @@ def plot_time_trace(time_dict, name_list, title="", log=True, save="",
 def main(pkl_list, name_list, autofill, title="", log=False, save="",
          y_min=0, y_max=0, cut=sys.maxint, linewidth=1,
          linestyles=plot_util.get_single_linestyle(),
-         colors=plot_util.get_plot_colors(),
-         markers=plot_util.get_empty_iterator(), markersize=6, ylabel=None,
-         xlabel=None):
+         colors=None, markers=plot_util.get_empty_iterator(), markersize=6,
+         ylabel=None, xlabel=None):
+
+    if colors is None:
+        colors= plot_util.get_plot_colors()
 
     times_dict = dict()
     for exp in range(len(name_list)):

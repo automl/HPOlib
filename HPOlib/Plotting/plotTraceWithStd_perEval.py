@@ -23,7 +23,7 @@ import cPickle
 import itertools
 import sys
 
-from matplotlib.pyplot import tight_layout, figure, subplots_adjust, subplot, savefig, show
+import matplotlib.pyplot as plt
 import matplotlib.gridspec
 import numpy as np
 
@@ -35,17 +35,20 @@ __contact__ = "automl.org"
 
 def plot_optimization_trace(trial_list, name_list, optimum=0, title="",
                             log=True, save="", y_max=0, y_min=0, scale_std=1,
-                            linewidth=1, linestyles=plot_util.get_single_linestyle(),
-                            colors=plot_util.get_plot_colors(),
-                            markers=plot_util.get_empty_iterator(), markersize=6,
-                            print_lenght_trial_list=True, ylabel=None,
-                            xlabel=None):
+                            linewidth=1, linestyles=plot_util.
+                            get_single_linestyle(), colors=None,
+                            markers=plot_util.get_empty_iterator(),
+                            markersize=6, print_lenght_trial_list=True,
+                            ylabel=None, xlabel=None):
+
+    if colors is None:
+        colors= plot_util.get_plot_colors()
 
     ratio = 5
     gs = matplotlib.gridspec.GridSpec(ratio, 1)
-    fig = figure(1, dpi=100)
+    fig = plt.figure(dpi=300)
     fig.suptitle(title, fontsize=16)
-    ax1 = subplot(gs[0:ratio, :])
+    ax1 = fig.add_subplot(gs[0:ratio, :])
     ax1.grid(True, linestyle='-', which='major', color='lightgrey', alpha=0.5)
     min_val = sys.maxint
     max_val = -sys.maxint
@@ -57,10 +60,10 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="",
     # One trialList represents all runs from one optimizer
     for i in range(len(trial_list)):
         if log:
-            trial_list_means.append(np.log10(np.mean(np.array(trial_list[i]), axis=0)))
+            trial_list_means.append(np.log10(np.nanmean(np.array(trial_list[i]), axis=0)))
         else:
-            trial_list_means.append(np.mean(np.array(trial_list[i]), axis=0))
-        trial_list_std.append(np.std(np.array(trial_list[i]), axis=0)*scale_std)
+            trial_list_means.append(np.nanmean(np.array(trial_list[i]), axis=0))
+        trial_list_std.append(np.nanstd(np.array(trial_list[i]), axis=0)*scale_std)
 
     fig.suptitle(title, fontsize=16)
 
@@ -114,29 +117,38 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="",
         ax1.set_ylim([y_min, y_max])
     ax1.set_xlim([0, max_trials + 1])
 
-    tight_layout()
-    subplots_adjust(top=0.85)
+    fig.tight_layout()
+    fig.subplots_adjust(top=0.85)
     if save != "":
-        savefig(save, dpi=100, facecolor='w', edgecolor='w',
+        plt.savefig(save, dpi=100, facecolor='w', edgecolor='w',
                 orientation='portrait', papertype=None, format=None,
                 transparent=False, bbox_inches="tight", pad_inches=0.1)
+        fig.clf()
+        plt.close(fig)
     else:
-        show()
+        plt.show()
 
 
 def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
          y_min=0, y_max=0, scale_std=1, cut=sys.maxint, linewidth=1,
          linestyles=plot_util.get_single_linestyle(),
-         colors=plot_util.get_plot_colors(), markers=plot_util.get_empty_iterator(),
+         colors=None, markers=plot_util.get_empty_iterator(),
          markersize=6, print_lenght_trial_list=True, ylabel=None, xlabel=None):
+
+    if colors is None:
+        colors = plot_util.get_plot_colors()
 
     trial_list = list()
     for i in range(len(pkl_list)):
         trial_list.append(list())
         for pkl in pkl_list[i]:
-            fh = open(pkl, "r")
-            trials = cPickle.load(fh)
-            fh.close()
+            if pkl in plot_util.cache:
+                trials = plot_util.cache[pkl]
+            else:
+                fh = open(pkl, "r")
+                trials = cPickle.load(fh)
+                fh.close()
+                plot_util.cache[pkl] = trials
 
             trace = plot_util.extract_trajectory(trials, cut=cut)
             trial_list[-1].append(np.array(trace))
