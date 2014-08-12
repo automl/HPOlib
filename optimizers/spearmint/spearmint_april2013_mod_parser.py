@@ -31,9 +31,17 @@ def manipulate_config(config):
         raise Exception("SPEARMINT:method-args not specified in .cfg")
 
     # GENERAL
+    number_of_jobs = config.getint('HPOLIB', 'number_of_jobs')
     if not config.has_option('SPEARMINT', 'max_finished_jobs'):
         config.set('SPEARMINT', 'max_finished_jobs',
-                   config.get('HPOLIB', 'number_of_jobs'))
+                   str(number_of_jobs))
+    elif config.getint('SPEARMINT', 'max_finished_jobs') != number_of_jobs:
+        logger.warning("Found a total_num_runs_limit (%d) which differs from "
+                       "the one read from the config (%d). This can e.g. "
+                       "happen when restoring a Spearmint run" %
+                       (config.getint('SPEARMINT', 'max_finished_jobs'),
+                        number_of_jobs))
+        config.set('SPEARMINT', 'max_finished_jobs', str(number_of_jobs))
 
     path_to_optimizer = config.get('SPEARMINT', 'path_to_optimizer')
     if not os.path.isabs(path_to_optimizer):

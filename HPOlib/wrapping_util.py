@@ -53,6 +53,18 @@ def nan_mean(arr):
     return res
 
 
+def nan_std(arr):
+    # First: Sum all finite elements
+    arr = np.array(arr)
+    vals = ([ele for ele in arr if np.isfinite(ele)])
+    if len(vals) == 0:
+        return np.nan
+    try:
+        return np.std(vals)
+    except:
+        return 0
+
+
 def get_time_string():
     local_time = datetime.datetime.today()
     time_string = "%d-%d-%d--%d-%d-%d-%d" % (local_time.year, local_time.month,

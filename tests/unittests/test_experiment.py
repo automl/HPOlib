@@ -150,6 +150,20 @@ class ExperimentTest(unittest.TestCase):
         experiment.add_job({"x": 0})
         experiment.set_one_fold_running(0, 0)
         experiment.set_one_fold_crashed(0, 0, 1000, 0)
+
+    def test_additional_data(self):
+        experiment = Experiment.Experiment(".", "test_exp", folds=1)
+        id0 = experiment.add_job({"x": 0})
+        experiment.set_one_fold_running(id0, 0)
+        experiment.set_one_fold_complete(id0, 0, 0.1, 0, additional_data="A")
+        self.assertEqual("A", experiment.get_trial_from_id(id0)
+            ['additional_data'][0])
+
+        id1 = experiment.add_job({"x": 1})
+        experiment.set_one_fold_running(id1, 0)
+        experiment.set_one_fold_crashed(id1, 0, 1, 0, additional_data="B")
+        self.assertEqual("B", experiment.get_trial_from_id(id1)
+            ['additional_data'][0])
         
     def test_one_fold_workflow(self):
         experiment = Experiment.Experiment(".", "test_exp", folds=5)

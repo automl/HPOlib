@@ -30,6 +30,7 @@ import sys
 from threading import Thread
 import thread
 import time
+import warnings
 
 import HPOlib
 import HPOlib.check_before_start as check_before_start
@@ -61,7 +62,7 @@ def kill_children(sig):
     for child in children:
         pids_with_commands.append((child.pid, child.cmdline()))
 
-    logger.critical("Running %s" % str(pids_with_commands))
+    logger.debug("Running %s" % str(pids_with_commands))
     for child in children:
         try:
             os.kill(child.pid, sig)
@@ -105,7 +106,9 @@ def calculate_wrapping_overhead(trials):
     import numpy as np
     benchmark_time = 0
     for t in trials.trials:
-        benchmark_time += np.nansum(t['instance_durations'])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            benchmark_time += np.nansum(t['instance_durations'])
     wrapping_time = wrapping_time - benchmark_time
     return wrapping_time
 
@@ -132,7 +135,9 @@ def calculate_optimizer_time(trials):
 
     # We need to import numpy again
     import numpy as np
-    return np.nansum(optimizer_time)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return np.nansum(optimizer_time)
 
 
 def output_experiment_pickle(console_output_delay,
@@ -249,6 +254,9 @@ def main():
 
     if args.working_dir:
         os.chdir(args.working_dir)
+    elif args.restore:
+        args.restore = os.path.abspath(args.restore) + "/"
+        os.chdir(args.restore)
 
     experiment_dir = os.getcwd()
 

@@ -33,8 +33,16 @@ def manipulate_config(config):
     if not config.has_option('TPE', 'space'):
         raise Exception("TPE:space not specified in .cfg")
 
+    number_of_jobs = config.getint('HPOLIB', 'number_of_jobs')
     if not config.has_option('TPE', 'number_evals'):
         config.set('TPE', 'number_evals', config.get('HPOLIB', 'number_of_jobs'))
+    elif config.getint('TPE', 'number_evals') != number_of_jobs:
+        logger.warning("Found a total_num_runs_limit (%d) which differs from "
+                       "the one read from the config (%d). This can e.g. "
+                       "happen when restoring a TPE run" %
+                       (config.getint('TPE', 'number_evals'),
+                        number_of_jobs))
+        config.set('TPE', 'number_evals', str(number_of_jobs))
 
     path_to_optimizer = config.get('TPE', 'path_to_optimizer')
     if not os.path.isabs(path_to_optimizer):

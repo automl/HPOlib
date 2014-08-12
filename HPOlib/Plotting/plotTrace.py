@@ -36,9 +36,11 @@ __contact__ = "automl.org"
 def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=False,
                             save="", y_min=0, y_max=0, cut=sys.maxint,
                             linewidth=1, linestyles=plot_util.get_single_linestyle(),
-                            colors=plot_util.get_plot_colors(),
-                            markers=plot_util.get_empty_iterator(),
+                            colors=None, markers=plot_util.get_empty_iterator(),
                             ylabel=None, xlabel=None):
+
+    if colors is None:
+        colors= plot_util.get_plot_colors()
 
     size = 1
     # get handles
@@ -126,9 +128,13 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=Fals
 
 
 def main(pkl_list, name_list, optimum=0, title="", log=False, save="", y_max=0,
-         y_min=0, cut=sys.maxint, linewidth=1, linestyles=plot_util.get_single_linestyle(),
-         colors=plot_util.get_plot_colors(), markers=plot_util.get_empty_iterator(),
+         y_min=0, cut=sys.maxint, linewidth=1,
+         linestyles=plot_util.get_single_linestyle(), colors=None,
+         markers=plot_util.get_empty_iterator(),
          ylabel=None, xlabel=None):
+
+    if colors is None:
+        colors= plot_util.get_plot_colors()
 
     trial_list = list()
     for i in range(len(pkl_list)):

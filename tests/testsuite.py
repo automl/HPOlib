@@ -8,7 +8,7 @@ import unittests.test_dispatcher as test_dispatcher
 import unittests.test_experiment as test_experiment
 import unittests.test_pb_converter as test_pb_converter
 import unittests.test_pcs_converter as test_pcs_converter
-#import unittests.test_plot_util as test_plot_util
+import unittests.test_plot_util as test_plot_util
 import unittests.test_pyll_util as test_pyll_util
 import unittests.test_runsolver_wrapper as test_runsolver_wrapper
 import unittests.test_wrapping as test_wrapping
@@ -25,7 +25,7 @@ def suite():
     _suite.addTest(unittest.makeSuite(test_experiment.ExperimentTest))
     _suite.addTest(unittest.makeSuite(test_pb_converter.TestPbConverter))
     _suite.addTest(unittest.makeSuite(test_pcs_converter.TestPCSConverter))
-    #_suite.addTest(unittest.makeSuite(test_plot_util.PlotUtilTest))
+    _suite.addTest(unittest.makeSuite(test_plot_util.PlotUtilTest))
     _suite.addTest(unittest.makeSuite(test_pyll_util.TestPyllReader))
     _suite.addTest(unittest.makeSuite(test_pyll_util.TestPyllWriter))
     _suite.addTest(unittest.makeSuite(test_runsolver_wrapper.RunsolverWrapperTest))

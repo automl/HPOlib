@@ -21,6 +21,7 @@ import os
 import subprocess
 import sys
 import time
+import warnings
 
 import numpy as np
 
@@ -104,7 +105,10 @@ def do_cv(params, folds=10):
             # If a specified number of runs crashed, quit the whole cross validation
             # in order to save time.
             worst_possible = cfg.getfloat("HPOLIB", "result_on_terminate")
-            crashed_runs = np.nansum([0 if res != worst_possible else 1 for res in results])
+            # So far, this was a nansum, but there must be no NaNs at this
+            # point of the program flow!
+            assert np.isfinite(results).all()
+            crashed_runs = np.sum([0 if res != worst_possible else 1 for res in results])
             if crashed_runs >= cfg.getint("HPOLIB", "max_crash_per_cv"):
                 logger.warning("Aborting CV because the number of crashes "
                                "exceeds the configured max_crash_per_cv value")
@@ -123,8 +127,9 @@ def do_cv(params, folds=10):
         mean = np.NaN
         
     # Do not return any kind of nan because this would break spearmint
-    if not np.isfinite(mean):
-        mean = float(cfg.get("HPOLIB", "result_on_terminate"))
+    with warnings.catch_warnings():
+        if not np.isfinite(mean):
+            mean = float(cfg.get("HPOLIB", "result_on_terminate"))
 
     logger.info("Finished CV")
     return mean
@@ -236,10 +241,6 @@ def main(*args, **kwargs):
     del experiment
     
     return res
-
-
-#def doForTPE(params):
-#    return main(42, params)
 
 
 def read_params_from_command_line():

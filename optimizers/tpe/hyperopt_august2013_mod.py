@@ -90,9 +90,8 @@ def restore(config, optimizer_dir, **kwargs):
         raise Exception("%s does not exist" % (restore_file,))
 
     # Special settings for restoring
-    fh = open(restore_file)
-    state = cPickle.load(fh)
-    fh.close()
+    with open(restore_file) as fh:
+        state = cPickle.load(fh)
     complete_runs = 0
     #noinspection PyProtectedMember
     tpe_trials = state['trials']._trials

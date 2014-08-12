@@ -88,6 +88,7 @@ def restore(config, optimizer_dir, **kwargs):
     sys.path.append(os.path.join(
         os.path.dirname(os.path.realpath(__file__)), path_to_optimizer))
     # We need the Grid because otherwise we cannot load the pickle file
+    sys.path.append(config.get('SPEARMINT', 'path_to_optimizer'))
     import ExperimentGrid
     # Assumes that all not valid states are marked as crashed
     fh = open(restore_file)
