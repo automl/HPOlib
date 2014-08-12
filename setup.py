@@ -206,29 +206,38 @@ class AdditionalInstall(install):
                                                      optimizer_tar_name="smac_2_06_01-dev_src.tar.gz",
                                                      url="http://www.automl.org/smac_2_06_01-dev_src.tar.gz",
                                                      md5='30ab1d09696de47efac77ed163772c0a')
+
             spearmint = self._copy_and_download_optimizer(optimizer_dir=optimizer_dir,
                                                           optimizer_name='spearmint',
                                                           optimizer_tar_name="spearmint_april2013_mod_src.tar.gz",
                                                           url="http://www.automl.org/spearmint_april2013" +
                                                               "_mod_src.tar.gz",
                                                           md5='340fc0da97a30454d633ce9781b05369')
+            smac_2_08 = self._copy_and_download_optimizer(optimizer_dir=optimizer_dir,
+                                                          optimizer_name='smac_2_08',
+                                                          optimizer_tar_name="smac_2_08_00-master_src.tar.gz",
+                                                          url="http://www.automl.org/smac_2_08_00-master_src.tar.gz",
+                                                          md5='2be626a5437b56da2eba1b67b7a94367')
 
-        # Do whatever you want to do
         # TODO: Normally one wants to call run(self), but this runs distutils and ignores install_requirements for unknown reasons
         # if anyone knows a better way, feel free to change
         install.do_egg_install(self)
 
         # Give detailed output to user
-        if not tpe or not smac or not spearmint:
+        if not tpe or not smac or not spearmint or not smac_2_08:
             sys.stderr.write("[ERROR] Something went wrong while copying and downloading optimizers." +
                              "Please do the following to be ready to start optimizing:\n\n" +
                              "cd optimizers\n" +
                              "wget http://www.automl.org/hyperopt_august2013_mod_src.tar.gz \n" +
                              "wget http://www.automl.org/smac_2_06_01-dev_src.tar.gz \n" +
+                             "wget http://www.automl.org/smac_2_08_00-master_src.tar.gz \n" +
                              "wget http://www.automl.org/spearmint_april2013_mod_src.tar.gz \n" +
                              "tar -xf hyperopt_august2013_mod_src.tar.gz \n" +
                              "mv hyperopt_august2013_mod_src tpe/ \n" +
-                             "tar -xf smac_2_06_01-dev_src.tar.gz \n" + "mv smac_2_06_01-dev_src.tar.gz smac/ \n" +
+                             "tar -xf smac_2_06_01-dev_src.tar.gz \n" +
+                             "mv smac_2_06_01-dev_src.tar.gz smac/ \n" +
+                             "tar -xf smac_2_08_00-master_src.tar.gz \n" +
+                             "mv smac_2_08_00-master_src.tar.gz smac/ \n" +
                              "tar -xf spearmint_april2013_mod_src.tar.gz \n" +
                              "mv spearmint_april2013_mod_src spearmint/ \n\n" +
                              "Thank You!\n")
