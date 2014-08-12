@@ -382,8 +382,8 @@ def main():
             temporary_output_dir = os.path.join(temporary_output_dir, last_part)
 
             # Replace any occurence of the path in the command
-            cmd = cmd.replace(optimizer_dir_in_experiment,
-                              temporary_output_dir)
+            cmd = cmd.replace(optimizer_dir_in_experiment, temporary_output_dir)
+            optimizer_output_file = optimizer_output_file.replace(optimizer_dir_in_experiment, temporary_output_dir)
 
             shutil.copytree(optimizer_dir_in_experiment, temporary_output_dir)
 
