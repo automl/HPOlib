@@ -40,6 +40,12 @@ version_info = ["Automatic Configurator Library ==> v2.06.01-development-643 (a1
 
 #optimizer_str = "smac_2_06_01-dev"
 
+# Some constants which are used multiple times
+def get_algo_exec():
+    import HPOlib
+    return '"python ' + os.path.join(os.path.dirname(HPOlib.__file__),
+                                   'dispatcher', 'dispatcher.py') + '"'
+
 
 def check_dependencies():
     process = subprocess.Popen("which java", stdout=subprocess.PIPE,
@@ -55,11 +61,13 @@ def check_dependencies():
 
 
 def _get_state_run(optimizer_dir):
-    rungroups = glob.glob(optimizer_dir + "scenario-SMAC*")
+    rungroups = glob.glob(optimizer_dir + "/" + "scenario-SMAC*")
+    if len(rungroups) == 0:
+        raise Exception("Could not find a rungroup in %s" % optimizer_dir)
     if len(rungroups) == 1:
         rungroup = rungroups[0]
     else:
-        logger.warning("Found multiple rungroups, take the newest one.")
+        logger.warning("Found multiple rugroups, take the newest one.")
         creation_times = []
         for i, filename in enumerate(rungroups):
             creation_times.append(float(os.path.getctime(filename)))
@@ -77,7 +85,6 @@ def _get_state_run(optimizer_dir):
 
 def build_smac_call(config, options, optimizer_dir):
     import HPOlib
-    algo_exec_dir = os.path.dirname(HPOlib.__file__)
 
     call = config.get('SMAC', 'path_to_optimizer') + "/smac"
     call = " ".join([call, '--numRun', str(options.seed),
@@ -89,9 +96,7 @@ def build_smac_call(config, options, optimizer_dir):
                     '--intraInstanceObj', config.get('SMAC', 'intra_instance_obj'),
                     '--runObj', config.get('SMAC', 'run_obj'),
                     # '--testInstanceFile', config.get('SMAC', 'testInstanceFile'),
-                    '--algoExec',  '"python', os.path.join(algo_exec_dir,
-                        'dispatcher', 'dispatcher.py') + '"',
-                    #                config.get('SMAC', 'algo_exec')) + '"',
+                    '--algoExec', get_algo_exec(),
                     '--execDir', optimizer_dir,
                     '-p', os.path.join(optimizer_dir, os.path.basename(config.get('SMAC', 'p'))),
                     # The experiment dir MUST not be specified when restarting, it is set
@@ -131,35 +136,37 @@ def build_smac_call(config, options, optimizer_dir):
         restore_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                     os.getcwd(), state_run)
         call = " ".join([call, "--restore-scenario", restore_path])
+        call = " ".join([call, "--rungroup restore_%s_" %
+                                wrapping_util.get_time_string()])
     else:
         call = " ".join([call, '--instanceFile',
                          os.path.join(optimizer_dir, 'train.txt'),
                          '--testInstanceFile',
                          os.path.join(optimizer_dir, 'test.txt')])
+
     return call
 
 
-def restore(config, optimizer_dir, **kwargs):
+def restore(config, optimizer_dir, cmd, **kwargs):
     """
     Returns the number of restored runs.
     """
+    import HPOlib
 
     ############################################################################
     # Run SMAC in a manner that it restores the files but then exits
     fh = open(optimizer_dir + "smac_restart.out", "w")
-    smac_cmd = re.sub('python ' + os.path.dirname(os.path.realpath(__file__)) +
-                      "/" + config.get('SMAC', 'algo_exec'), 'pwd',
-                      kwargs['cmd'])
-    smac_cmd = re.sub('--outputDirectory ' + optimizer_dir, '--outputDirectory '
-                      + optimizer_dir + "restart_rungroups", smac_cmd)
+    logger.info(get_algo_exec())
+    smac_cmd = re.sub(get_algo_exec(), 'pwd', cmd)
+    smac_cmd = re.sub(" --rungroup restore_", " --rungroup restore_dummy_", smac_cmd)
     logger.info(smac_cmd)
     process = subprocess.Popen(smac_cmd, stdout=fh, stderr=fh, shell=True,
                                executable="/bin/bash")
     logger.info("----------------------RUNNING--------------------------------")
     ret = process.wait()
     fh.close()
+
     logger.info("Finished with return code: " + str(ret))
-    # os.remove("smac_restart.out")
 
     # read smac.out and look how many states are restored
     fh = open(optimizer_dir + "smac_restart.out")
@@ -173,10 +180,16 @@ def restore(config, optimizer_dir, **kwargs):
     # Find out all rungroups and state-runs
     ############################################################################
     state_run = _get_state_run(optimizer_dir)
+    logger.info(state_run)
 
     state_run_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                   os.getcwd(), state_run)
     state_runs = glob.glob(state_run_path + "/runs_and_results-it*.csv")
+
+    if len(state_runs) == 0:
+        raise ValueError("Did not find any state run information in %s" %
+                         state_run_path)
+
     state_run_iterations = []
     for state_run in state_runs:
         match = re.search(r"(runs_and_results-it)([0-9]{1,100})(.csv)",
@@ -212,8 +225,10 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
 
     # Find experiment directory
     if options.restore:
+        logger.info(options.restore)
         if not os.path.exists(options.restore):
-            raise Exception("The restore directory does not exist")
+            raise Exception("The restore directory %s does not exist at "
+                            "location %s" % (os.getcwd(), options.restore))
         optimizer_dir = options.restore
     else:
         optimizer_dir = os.path.join(experiment_dir,

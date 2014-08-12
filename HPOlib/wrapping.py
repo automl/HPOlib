@@ -254,6 +254,9 @@ def main():
 
     if args.working_dir:
         os.chdir(args.working_dir)
+    elif args.restore:
+        args.restore = os.path.abspath(args.restore) + "/"
+        os.chdir(args.restore)
 
     experiment_dir = os.getcwd()
     check_before_start.check_first(experiment_dir)
