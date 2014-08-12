@@ -251,6 +251,7 @@ def main():
         os.chdir(args.working_dir)
 
     experiment_dir = os.getcwd()
+
     check_before_start.check_first(experiment_dir)
 
     # Now we can safely import non standard things
@@ -302,14 +303,17 @@ def main():
         except OSError:
             pass
     folds = config.getint('HPOLIB', 'number_cv_folds')
-    trials = Experiment.Experiment(optimizer_dir_in_experiment,
-                                   experiment_directory_prefix + optimizer,
+
+    trials = Experiment.Experiment(expt_dir=optimizer_dir_in_experiment,
+                                   expt_name=experiment_directory_prefix + optimizer,
                                    folds=folds,
                                    max_wallclock_time=config.get('HPOLIB',
                                                                  'cpu_limit'),
                                    title=args.title)
     trials.optimizer = optimizer_version
 
+    optimizer_output_file = os.path.join(optimizer_dir_in_experiment, optimizer + wrapping_util.get_time_string() +
+                                         "_" + str(args.seed) + ".out")
     if args.restore:
         #noinspection PyBroadException
         try:
@@ -324,7 +328,7 @@ def main():
 
         logger.info("Restored %d runs", restored_runs)
         trials.remove_all_but_first_runs(restored_runs)
-        fh = open(os.path.join(optimizer_dir_in_experiment, optimizer + ".out"), "a")
+        fh = open(optimizer_output_file, "a")
         fh.write("#" * 80 + "\n" + "Restart! Restored %d runs.\n" % restored_runs)
         fh.close()
 
@@ -398,7 +402,7 @@ def main():
         os.chdir(optimizer_dir_in_experiment)
 
         logger.info(cmd)
-        output_file = os.path.join(optimizer_dir_in_experiment, optimizer + ".out")
+        output_file = optimizer_output_file
         fh = open(output_file, "a")
         cmd = shlex.split(cmd)
         print cmd
@@ -436,7 +440,6 @@ def main():
         sent_SIGKILL = False
         sent_SIGKILL_time = np.inf
 
-
         def enqueue_output(out, queue):
             for line in iter(out.readline, b''):
                 queue.put(line)
@@ -460,7 +463,7 @@ def main():
                                      optimizer, experiment_directory_prefix,
                                      lock, Experiment, np, False))
             logger.info('Optimizer runs with PID: %d', proc.pid)
-
+            logger.info('We start in directory %s', os.getcwd())
         while True:
             # this implements the total runtime limit
             if time.time() > optimizer_end_time and not sent_SIGINT:
