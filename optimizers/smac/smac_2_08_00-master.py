@@ -22,6 +22,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 
 import numpy as np
 
@@ -129,6 +130,8 @@ def build_smac_call(config, options, optimizer_dir):
     # using a shared model
     if config.get('SMAC', 'shared_model') != 'False':
         call = " ".join([call, "--shared-model-mode true",
+                         "--shared-model-mode-frequency",
+                         config.get("SMAC", "shared_model_mode_frequency"),
                          '-p', os.path.join(optimizer_dir, os.path.basename(config.get('SMAC', 'p'))),
                          '--scenario-file', os.path.join(optimizer_dir, 'scenario.txt')])
     else:
@@ -278,7 +281,8 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
         parent_space = os.path.join(experiment_dir, optimizer_str, space)
         ct = 0
         all_found = False
-        while ct < 100 and not all_found:
+        while ct < config.getint('SMAC', 'wait_for_shared_model') and not all_found:
+            time.sleep(1)
             ct += 1
             # So far we have not not found anything
             all_found = True
