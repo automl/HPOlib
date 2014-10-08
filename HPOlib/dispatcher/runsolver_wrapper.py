@@ -98,26 +98,34 @@ def read_run_instance_output(run_instance_output):
     return result_array, result_string
 
 
-def make_command(cfg, fold, param_string, run_instance_output):
-    fn = cfg.get("HPOLIB", "function")
+def make_command(cfg, fold, param_string, run_instance_output, function=None):
+    if function is None:
+        fn = cfg.get("HPOLIB", "function")
+    else:
+        fn = cfg.get("HPOLIB", function)
     python_cmd = cfg.get("HPOLIB", "leading_algo_info") + " " + fn
     python_cmd += " --fold %d --folds %d --params %s" % (fold, cfg.getint(
         "HPOLIB", "number_cv_folds"), param_string)
     # Do not write the actual task in quotes because runsolver will not work
     # then; also we need use-pty and timestamp so that the "solver" output
     # is flushed to the output directory
-    delay = 0
+    cmd = _make_runsolver_command(cfg, run_instance_output)
+    cmd += " " + python_cmd
+    return cmd
+
+
+def _make_runsolver_command(cfg, output_filename):
     cmd = cfg.get("HPOLIB", "leading_runsolver_info")
-    cmd += " runsolver -o %s --timestamp --use-pty" % run_instance_output
+    cmd += " runsolver -o %s --timestamp --use-pty" % output_filename
     if cfg.get('HPOLIB', 'runsolver_time_limit'):
         cmd += " -W %d" % cfg.getint('HPOLIB', 'runsolver_time_limit')
     if cfg.get('HPOLIB', 'cpu_limit'):
         cmd += " -C %d" % cfg.getint('HPOLIB', 'cpu_limit')
     if cfg.get('HPOLIB', 'memory_limit'):
         cmd += " -M %d" % cfg.getint('HPOLIB', 'memory_limit')
+    delay = 0
     if delay is not None:
         cmd += " -d %d" % int(delay)
-    cmd += " " + python_cmd
     return cmd
 
 
@@ -186,17 +194,23 @@ def dispatch(cfg, fold, params):
     runsolver_output_file = os.path.join(os.getcwd(),
                                          time_string + "_runsolver.out")
     cmd = make_command(cfg, fold, param_string, run_instance_output)
-    fh = open(runsolver_output_file, "w")
 
-    logger.debug("Calling: %s" % cmd)
-    #sys.stdout.write(cmd + "\n")
-    #sys.stdout.flush()
-    process = subprocess.Popen(cmd, stdout=fh,
-                               stderr=fh, shell=True, executable="/bin/bash")
-    logger.info(
-        "-----------------------RUNNING RUNSOLVER----------------------------")
-    process.wait()
+    fh = open(runsolver_output_file, "w")
+    _run_command_with_shell(cmd, fh)
     fh.close()
+
     cpu_time, wallclock_time, status, result, additional_data = \
         parse_output_files(cfg, run_instance_output, runsolver_output_file)
     return additional_data, result, status, wallclock_time
+
+
+def _run_command_with_shell(command, output):
+    logger.info("Calling: %s" % command)
+    process = subprocess.Popen(command, stdout=output,
+                               stderr=output, shell=True,
+                               executable="/bin/bash")
+    logger.info(
+        "-----------------------RUNNING RUNSOLVER----------------------------")
+    process.wait()
+
+    return
