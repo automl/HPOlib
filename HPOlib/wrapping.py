@@ -25,6 +25,7 @@ from Queue import Queue, Empty
 import signal
 import shlex
 import shutil
+import StringIO
 import subprocess
 import sys
 from threading import Thread
@@ -35,6 +36,7 @@ import warnings
 import HPOlib
 import HPOlib.check_before_start as check_before_start
 import HPOlib.wrapping_util as wrapping_util
+import HPOlib.dispatcher.runsolver_wrapper as runsolver_wrapper
 # Import experiment only after the check for numpy succeeded
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
@@ -363,23 +365,6 @@ def main():
         signal.signal(signal.SIGINT, exit_.signal_callback)
         signal.signal(signal.SIGHUP, exit_.signal_callback)
 
-        # call target_function.setup()
-        fn_setup = config.get("HPOLIB", "function_setup")
-        if fn_setup:
-            try:
-                logger.info(fn_setup)
-                fn_setup = shlex.split(fn_setup)
-                output = subprocess.check_output(fn_setup, stderr=subprocess.STDOUT) #,
-                                                 #shell=True, executable="/bin/bash")
-                logger.debug(output)
-            except subprocess.CalledProcessError as e:
-                logger.critical(e.output)
-                sys.exit(1)
-            except OSError as e:
-                logger.critical(e.message)
-                logger.critical(e.filename)
-                sys.exit(1)
-
         # Change into the current experiment directory
         # Some optimizer might expect this
         dir_before_exp = os.getcwd()
@@ -408,6 +393,26 @@ def main():
             optimizer_dir_in_experiment = temporary_output_dir
 
         os.chdir(optimizer_dir_in_experiment)
+
+        # call target_function.setup()
+        fn_setup = config.get("HPOLIB", "function_setup")
+        if fn_setup:
+            if temporary_output_dir:
+                logger.critical("The options 'temporary_output_directory' "
+                                "and 'function_setup' cannot be used "
+                                "together.")
+                sys.exit(1)
+
+            fn_setup_output = os.path.join(os.getcwd(),
+                                           "function_setup.out")
+            runsolver_cmd = runsolver_wrapper._make_runsolver_command(
+                config, fn_setup_output)
+            setup_cmd = runsolver_cmd + " " + fn_setup
+            #runsolver_output = subprocess.STDOUT
+            runsolver_output = open("/dev/null")
+            runsolver_wrapper._run_command_with_shell(setup_cmd,
+                                                      runsolver_output)
+
 
         logger.info(cmd)
         output_file = optimizer_output_file
@@ -550,6 +555,27 @@ def main():
 
         fh.close()
 
+
+        # call target_function.setup()
+        fn_teardown = config.get("HPOLIB", "function_teardown")
+        if fn_teardown:
+            if temporary_output_dir:
+                logger.critical("The options 'temporary_output_directory' "
+                                "and 'function_teardown' cannot be used "
+                                "together.")
+                sys.exit(1)
+
+            fn_teardown_output = os.path.join(os.getcwd(),
+                                              "function_teardown.out")
+            runsolver_cmd = runsolver_wrapper._make_runsolver_command(
+                config, fn_teardown_output)
+            teardown_cmd = runsolver_cmd + " " + fn_teardown
+            # runsolver_output = subprocess.STDOUT
+            runsolver_output = open("/dev/null")
+            runsolver_wrapper._run_command_with_shell(teardown_cmd,
+                                                      runsolver_output)
+
+
         # Change back into to directory
         os.chdir(dir_before_exp)
         if temporary_output_dir:
@@ -577,19 +603,6 @@ def main():
 
             optimizer_dir_in_experiment = new_dir
 
-        # call target_function.teardown()
-        fn_teardown = config.get("HPOLIB", "function_teardown")
-        if fn_teardown:
-            try:
-                fn_teardown = shlex.split(fn_teardown)
-                output = subprocess.check_output(fn_teardown, stderr=subprocess.STDOUT)
-            except subprocess.CalledProcessError as e:
-                logger.critical(e.output)
-                sys.exit(1)
-            except OSError as e:
-                logger.critical(e.message)
-                logger.critical(e.filename)
-                logger.critical(os.getcwd())
 
         trials = Experiment.Experiment(optimizer_dir_in_experiment,
                                        experiment_directory_prefix + optimizer)
