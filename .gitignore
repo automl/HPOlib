@@ -1,3 +1,6 @@
+# Documentation
+docs/build/*
+
 *.py[cod]
 
 # Optimizers
