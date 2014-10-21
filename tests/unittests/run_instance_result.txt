@@ -1,1 +1,0 @@
-00.01/00.12     Result for ParamILS: SAT, 0.35, 1, 0.5, -1, Random file

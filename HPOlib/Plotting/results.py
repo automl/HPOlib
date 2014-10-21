@@ -8,19 +8,29 @@ import sys
 
 import numpy as np
 
-from HPOlib.Experiment import BROKEN_STATE
+from HPOlib.Experiment import CANDIDATE_STATE, COMPLETE_STATE, \
+    INCOMPLETE_STATE, RUNNING_STATE, BROKEN_STATE
 import HPOlib.Plotting.plot_util as plot_util
 from HPOlib.Locker import Locker
 
 
-def get_num_terminates(result_on_terminate, trials):
+def get_num_runs_for_state(state, trials):
     terminates = 0
     for trial in trials["trials"]:
         for instance_status in trial["instance_status"]:
-            if instance_status == BROKEN_STATE:
+            if instance_status == state:
                 terminates += 1
 
     return terminates
+
+def get_num_nans(trials):
+    nans = 0
+    for trial in trials['trials']:
+        for instance_result in trial['instance_results']:
+            if np.isnan(instance_result):
+                nans += 1
+
+    return  nans
 
 def get_instance_durations(trials):
     instance_durations = []
@@ -37,9 +47,9 @@ def collect_results(directory):
     errors = []
     sio = StringIO.StringIO()
     sio.write("Statistics for %s\n" % directory)
-    sio.write("%30s | %6s | %7s/%7s/%7s | %10s | %10s\n" %
-             ("Optimizer", "Seed", "#conf",
-             "#runs", "#crashs", "best", "AvgRunTime"))
+    sio.write("%30s | %6s | %7s/%7s/%7s/%7s/%7s/%7s/%7s/%7s | %10s | %10s\n" %
+             ("Optimizer", "Seed", "#conf", "#runs", "#compl", "#incom",
+              "#crashs", "#run", "#notrun", "#NaNs", "best", "AvgRunTime"))
 
 
     subdirs = os.listdir(directory)
@@ -47,6 +57,7 @@ def collect_results(directory):
     results = defaultdict(list)
     # Look for all sub-experiments
     for subdir in subdirs:
+        subdir = os.path.join(directory, subdir)
         if os.path.isdir(subdir):
             # Get the experiment pickle...
             for possible_experiment_pickle in os.listdir(subdir):
@@ -82,9 +93,13 @@ def collect_results(directory):
                         seed = seed[1:].split("_")[0]
                         seed = int(seed)
 
-                    worst_possible_result = cfg.getfloat\
-                        ("HPOLIB", "result_on_terminate")
-                    crashs = get_num_terminates(worst_possible_result, pkl)
+                    crashs = get_num_runs_for_state(BROKEN_STATE, pkl)
+                    candidates = get_num_runs_for_state(CANDIDATE_STATE, pkl)
+                    running = get_num_runs_for_state(RUNNING_STATE, pkl)
+                    incomplete = get_num_runs_for_state(INCOMPLETE_STATE, pkl)
+                    complete = get_num_runs_for_state(COMPLETE_STATE, pkl)
+                    nans = get_num_nans(pkl)
+
                     try:
                         best_performance = plot_util.get_best(pkl)
                     except Exception as e:
@@ -95,8 +110,9 @@ def collect_results(directory):
                     mean_instance_durations = np.mean(instance_durations)
 
                     results[optimizer].append([optimizer, int(seed),
-                        configurations, instance_runs, crashs,
-                        best_performance, mean_instance_durations])
+                        configurations, instance_runs, complete, incomplete,
+                        crashs, running, candidates, nans, best_performance,
+                        mean_instance_durations])
 
     def comparator(left, right):
         if left[0] < right[0]:
@@ -120,9 +136,10 @@ def collect_results(directory):
         for result in results[optimizer]:
             results_for_mean.append(float(result[5]))
             runtimes_for_mean.append(float(result[6]))
-            sio.write("%30s | %6d | %7d/%7d/%7d | %10f | %10f\n"
-                      % (result[0], result[1], result[2],
-                         result[3], result[4], result[5], result[6]))
+            sio.write("%30s | %6d | %7s/%7s/%7s/%7s/%7s/%7s/%7s/%7s | %10f | %10f\n"
+                      % (result[0], result[1], result[2], result[3], result[4],
+                         result[5], result[6], result[7], result[8], result[9],
+                         result[10], result[11]))
 
         sio.write("#NumRuns %5d | Mean %5f | Std %5f | Best %5f | Median %5f "
                   "| AvgRunTime %10f \n"

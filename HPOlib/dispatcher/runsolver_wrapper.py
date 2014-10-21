@@ -21,6 +21,7 @@ import numpy as np
 import os
 import re
 import subprocess
+import time
 
 import HPOlib.wrapping_util as wrapping_util
 
@@ -35,53 +36,78 @@ hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.dispatcher.runsolver_wrapper")
 
 
-def read_runsolver_output(runsolver_output_file):
+def read_runsolver_output(runsolver_output_content):
     """
-    Read the runsolver output, watch out for
-    Mem limit exceeded: sending SIGTERM then SIGKILL
-    Maximum CPU time exceeded: sending SIGTERM then SIGKILL
-    Maximum wall clock time exceeded: sending SIGTERM then SIGKILL
-    Maximum VSize exceeded: sending SIGTERM then SIGKILL
-    In case one of these happened, send back the worst possible result
-    as specified in the config
+    Parse the output of the runsolver.
+
+    This method scans for the occurence of several errors and tries to keep
+    track of the time wallclock time spent (in case the runsolver crashed and
+    did not output a final line).
+
+    It looks for the following errors
+    * Mem limit exceeded: sending SIGTERM then SIGKILL
+    * Maximum CPU time exceeded: sending SIGTERM then SIGKILL
+    * Maximum wall clock time exceeded: sending SIGTERM then SIGKILL
+    * Maximum VSize exceeded: sending SIGTERM then SIGKILL
+    these errors are inserted into the variable limit exceeded
+
+    In case of normal termination, the runsolver prints a line "Solver just
+    ended...". If this does not occur, this function return a pessimistic
+    estimation of the wallclock time and the cpu time used so far. This is
+    double the time the runsolver stated in its last output.
     """
-    limit_exceeded = None
-    cpu_time = None
-    wallclock_time = None
+    error = None
+    cpu_time = 0
+    wallclock_time = 0
     solver_ended_section = False
-    with open(runsolver_output_file, 'r') as f:
-        runsolver_output_content = f.readlines()
-        for line in runsolver_output_content:
-            if "Maximum CPU time exceeded" in line:
-                limit_exceeded = "CPU time exceeded"
-            if "Maximum wall clock time exceeded" in line:
-                limit_exceeded = "Wall clock time exceeded"
-            if "Maximum VSize exceeded" in line:
-                limit_exceeded = "VSize exceeded"
-            if "Mem limit exceeded" in line:
-                limit_exceeded = "Memory exceeded"
-            if "Solver just ended. Dumping a history of the last" in line:
-                solver_ended_section = True
-            if re.search(r"Real time \(s\): ", line) and solver_ended_section:
-                wallclock_time = float(line.split()[3])
-            if re.search(r"^CPU time \(s\): ", line) and solver_ended_section:
-                cpu_time = float(line.split()[3])
-    return cpu_time, wallclock_time, limit_exceeded
+
+    for line in runsolver_output_content:
+        # Look for error messages
+        if "Maximum CPU time exceeded" in line:
+            error = "CPU time exceeded"
+        if "Maximum wall clock time exceeded" in line:
+            error = "Wall clock time exceeded"
+        if "Maximum VSize exceeded" in line:
+            error = "VSize exceeded"
+        if "Mem limit exceeded" in line:
+            error = "Memory exceeded"
+
+        # Keep track of the time used so far
+        match = re.search(r"\[(startup\+)(\d*\.\d*)( s)\]", line)
+        if match:
+            wallclock_time = float(match.group(2))
+        match = re.search(r"(Current children cumulated CPU time \(s\)) (\d*\.\d*)", line)
+        if match:
+            cpu_time = float(match.group(2))
+
+        # Find out if the solver ended and the runsolver prints the final
+        # statistices
+        if "Solver just ended. Dumping a history of the last" in line:
+            solver_ended_section = True
+        if re.search(r"Real time \(s\): ", line) and solver_ended_section:
+            wallclock_time = float(line.split()[3])
+        if re.search(r"^CPU time \(s\): ", line) and solver_ended_section:
+            cpu_time = float(line.split()[3])
+
+    # According to the runsolver, the period between two prints is
+    # maximally the time the runsolver ran so far
+    if not solver_ended_section:
+        cpu_time *= 2
+        wallclock_time *= 2
+        error = "Runsolver probably crashed!"
+
+    return cpu_time, wallclock_time, error
 
 
-def read_run_instance_output(run_instance_output):
-    """
-    Read the run_instance output file
-    """
-    fh = open(run_instance_output, "r")
-    run_instance_content = fh.readlines()
-    fh.close()
+def read_run_instance_output(run_instance_output_string):
     result_string = None
     result_array = None
-    for line in run_instance_content:
+    assert type(run_instance_output_string) == list, type(
+        run_instance_output_string)
+    for line in run_instance_output_string:
         match = re.search(r"\s*[Rr]esult\s+(?:([Ff]or)|([oO]f))\s"
-            r"+(?:(HAL)|(ParamILS)|(SMAC)|([tT]his "
-            r"[wW]rapper)|(this algorithm run))", line)
+                          r"+(?:(HAL)|(ParamILS)|(SMAC)|([tT]his "
+                          r"[wW]rapper)|(this algorithm run))", line)
         if match:
             pos = match.start(0)
             result_string = line[pos:].strip()
@@ -92,8 +118,8 @@ def read_run_instance_output(run_instance_output):
     # If we do not find a result string, return the last three lines of the
     # run_instance output
     # TODO: there must be some better way to tell the user what happend
-    if not result_string and len(run_instance_content) >= 3:
-        result_string = "".join(run_instance_content[-3:])
+    if not result_string and len(run_instance_output_string) >= 3:
+        result_string = "".join(run_instance_output_string[-3:])
 
     return result_array, result_string
 
@@ -129,11 +155,12 @@ def _make_runsolver_command(cfg, output_filename):
     return cmd
 
 
-def parse_output_files(cfg, run_instance_output, runsolver_output_file):
-    cpu_time, measured_wallclock_time, error = read_runsolver_output(
-        runsolver_output_file)
-    result_array, result_string = read_run_instance_output(run_instance_output)
-    additional_data = " ".join(result_array[8:])
+def parse_output(cfg, run_instance_content, runsolver_output_content,
+                 measured_time):
+    cpu_time, measured_wallclock_time, error = \
+        read_runsolver_output(runsolver_output_content)
+    result_array, result_string = read_run_instance_output(run_instance_content)
+
     if not result_array:
         logger.critical("We could not find anything matching our regexp. "
                         "Setting the target algorithm runtime to the time "
@@ -141,48 +168,92 @@ def parse_output_files(cfg, run_instance_output, runsolver_output_file):
                         "output:\n%s"
                         % result_string)
         instance_wallclock_time = measured_wallclock_time
-        result_array = [None]*7
+        result_array = [None]*8
     else:
         instance_wallclock_time = float(result_array[4])
+    additional_data = " ".join(result_array[8:])
 
     if cfg.getboolean("HPOLIB", "use_own_time_measurement") is True:
-        wallclock_time = measured_wallclock_time
+        # if the runsolver time measurement is available
+        if error != "Runsolver probably crashed!":
+            wallclock_time = measured_wallclock_time
+        # if it is not available, we don't use the guess by read runsolver
+        # output, but use the own time measurement
+        else:
+            wallclock_time = measured_time
     else:
-        wallclock_time = instance_wallclock_time
+        if cfg.getfloat("HPOLIB", "runtime_on_terminate") <= 0:
+            raise ValueError('Configuration error: You cannot use the '
+                             'option "use_own_time_measurement = False'
+                             ' without setting "runtime_on_crash".')
+        if error != "Runsolver probably crashed!":
+            wallclock_time = instance_wallclock_time
+        else:
+            wallclock_time = cfg.getfloat("HPOLIB", "runtime_on_terminate")
 
-    if error is None and result_string is None:
-        additional_data = "No result string returned. Please have a look " \
-                          "at " + run_instance_output
-        rval = (cpu_time, wallclock_time, "CRASHED",
-                cfg.getfloat("HPOLIB", "result_on_terminate"), additional_data)
-        os.remove(runsolver_output_file)
-
-    elif error is None and result_array[3] != "SAT":
-        rval = (cpu_time, wallclock_time, "CRASHED",
-                cfg.getfloat("HPOLIB", "result_on_terminate"), additional_data)
-        os.remove(runsolver_output_file)
-
-    elif error is None and not np.isfinite(float(result_array[6].strip(","))):
-        rval = (cpu_time, wallclock_time, "UNSAT",
-                cfg.getfloat("HPOLIB", "result_on_terminate"), additional_data)
-
-    elif error is None:
-        if cfg.getboolean("HPOLIB", "remove_target_algorithm_output"):
-            os.remove(run_instance_output)
-        os.remove(runsolver_output_file)
-        rval = (cpu_time, wallclock_time, "SAT", float(result_array[6].strip(",")),
-                additional_data)
-
+    if result_array is not None and result_array[0] is not None:
+        if error is None:
+            if result_array[3] != "SAT":
+                rval = (cpu_time, wallclock_time, "CRASHED",
+                        cfg.getfloat("HPOLIB", "result_on_terminate"),
+                        additional_data)
+            elif not np.isfinite(float(result_array[6].strip(","))):
+                rval = (cpu_time, wallclock_time, "CRASHED",
+                    cfg.getfloat("HPOLIB", "result_on_terminate"), additional_data)
+            else:
+                rval = (cpu_time, wallclock_time, "SAT",
+                        float(result_array[6].strip(",")),
+                        additional_data)
+        else:
+            if error != "Runsolver probably crashed!":
+                # The runsolver terminated the target algorithm, so there should be
+                # no additional run info and we can use the field
+                # TODO: there should be the runsolver output file in the
+                # additional information!
+                rval = (cpu_time, wallclock_time, "CRASHED",
+                        cfg.getfloat("HPOLIB", "result_on_terminate"),
+                        error + " Please have a look at the runsolver output "
+                                "file.")
+                # It is useful to have the run_instance_output for debugging
+                # os.remove(run_instance_output)
+            else:
+                if result_array[3] != "SAT":
+                    rval = (cpu_time, wallclock_time, "CRASHED",
+                            cfg.getfloat("HPOLIB", "result_on_terminate"),
+                            additional_data)
+                elif not np.isfinite(float(result_array[6].strip(","))):
+                    rval = (cpu_time, wallclock_time, "CRASHED",
+                        cfg.getfloat("HPOLIB", "result_on_terminate"),
+                        additional_data)
+                else:
+                    rval = (cpu_time, wallclock_time, "SAT",
+                            float(result_array[6].strip(",")),
+                            additional_data)
     else:
-        # The runsolver terminated the target algorithm, so there should be
-        # no additional run info and we can use the field
-        rval = (cpu_time, wallclock_time, "CRASHED",
-                cfg.getfloat("HPOLIB", "result_on_terminate"),
-                error + " Please have a look at " +
-                runsolver_output_file)
-        # It is useful to have the run_instance_output for debugging
-        # os.remove(run_instance_output)
-
+        if error is None:
+            # There should really be the runinstance output filename here!
+            rval = (cpu_time, wallclock_time, "CRASHED",
+                    cfg.getfloat("HPOLIB", "result_on_terminate"),
+                    "No result string returned. Please have a look " \
+                    "at the runinstance output")
+        else:
+            if error != "Runsolver probably crashed!":
+                # The runsolver terminated the target algorithm, so there should be
+                # no additional run info and we can use the field
+                rval = (cpu_time, wallclock_time, "CRASHED",
+                        cfg.getfloat("HPOLIB", "result_on_terminate"),
+                        error + " Please have a look at the runsolver output "
+                        "file.")
+                # It is useful to have the run_instance_output for debugging
+                # os.remove(run_instance_output)
+            else:
+                # There is no result string and the runsolver crashed
+                rval = (cpu_time, wallclock_time, "CRASHED",
+                        cfg.getfloat("HPOLIB", "result_on_terminate"),
+                        "There is no result string and it seems that the "
+                        "runsolver crashed. Please have a look at the "
+                        "runsolver output file.")
+                
     return rval
 
 
@@ -195,12 +266,26 @@ def dispatch(cfg, fold, params):
                                          time_string + "_runsolver.out")
     cmd = make_command(cfg, fold, param_string, run_instance_output)
 
+    starttime = time.time()
     fh = open(runsolver_output_file, "w")
     _run_command_with_shell(cmd, fh)
     fh.close()
+    endtime = time.time()
+
+    with open(run_instance_output, "r") as fh:
+        run_instance_content = fh.readlines()
+    with open(runsolver_output_file, "r") as fh:
+        runsolver_output_content = fh.readlines()
 
     cpu_time, wallclock_time, status, result, additional_data = \
-        parse_output_files(cfg, run_instance_output, runsolver_output_file)
+        parse_output(cfg, run_instance_content, runsolver_output_content,
+                     measured_time=endtime-starttime)
+
+    if status == "SAT":
+        if cfg.getboolean("HPOLIB", "remove_target_algorithm_output"):
+            os.remove(run_instance_output)
+        os.remove(runsolver_output_file)
+
     return additional_data, result, status, wallclock_time
 
 

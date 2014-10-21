@@ -554,7 +554,8 @@ def main():
 
 
         fh.close()
-
+        # TODO: here should be a synchronization point for the two different
+        # threads, so no deadlocks can happen!
 
         # call target_function.setup()
         fn_teardown = config.get("HPOLIB", "function_teardown")
