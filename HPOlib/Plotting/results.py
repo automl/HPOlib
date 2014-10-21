@@ -31,6 +31,15 @@ def get_instance_durations(trials):
 
     return instance_durations
 
+def get_total_time(trials):
+    total_time = 0
+    print 
+    for starttime, endtime in zip(trials['starttime'], trials['endtime']):
+        total_time += endtime - starttime
+    if total_time < 1:
+        print "Time might be inaccurate"
+        total_time = trials['cv_endtime'][-1] - trials['starttime'][0]
+    return total_time
 
 def collect_results(directory):
     locker = Locker()
@@ -94,9 +103,10 @@ def collect_results(directory):
                     instance_durations = get_instance_durations(pkl)
                     mean_instance_durations = np.mean(instance_durations)
 
+                    total_runtime = get_total_time(pkl)
                     results[optimizer].append([optimizer, int(seed),
                         configurations, instance_runs, crashs,
-                        best_performance, mean_instance_durations])
+                        best_performance, mean_instance_durations, total_runtime])
 
     def comparator(left, right):
         if left[0] < right[0]:
@@ -116,19 +126,21 @@ def collect_results(directory):
 
         results_for_mean = []
         runtimes_for_mean = []
+        total_times_for_mean = []
 
         for result in results[optimizer]:
             results_for_mean.append(float(result[5]))
             runtimes_for_mean.append(float(result[6]))
-            sio.write("%30s | %6d | %7d/%7d/%7d | %10f | %10f\n"
+            total_times_for_mean.append(float(result[7]))
+            sio.write("%30s | %6d | %7d/%7d/%7d | %10f | %10f | %10f\n"
                       % (result[0], result[1], result[2],
-                         result[3], result[4], result[5], result[6]))
+                         result[3], result[4], result[5], result[6], result[7]))
 
         sio.write("#NumRuns %5d | Mean %5f | Std %5f | Best %5f | Median %5f "
-                  "| AvgRunTime %10f \n"
+                  "| AvgRunTime %10f | AvgTotTime %10f\n"
                   % (len(results_for_mean), np.mean(results_for_mean),
                      np.std(results_for_mean), np.min(results_for_mean),
-                     np.median(results_for_mean), np.mean(runtimes_for_mean)))
+                     np.median(results_for_mean), np.mean(runtimes_for_mean), np.mean(total_times_for_mean),))
 
     if len(errors) > 0:
         sio.write("\nCouldn't read the following .pkl files\n")
