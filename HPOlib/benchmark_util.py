@@ -38,6 +38,7 @@ def parse_cli():
     - All arguments after --params are treated as hyperparameters to the
      learning algorithm. Every parameter name must start with one minus and must
      have exactly one value which has to be given in single quotes.
+    - Arguments with no value before --params are treated as boolean arguments
 
     Example:
     python neural_network.py --folds 10 --fold 1 --dataset convex  --params
@@ -63,9 +64,13 @@ def parse_cli():
 
         elif arg[0:2] == "--" and not found_params:
             if cli_args[idx+1][0] == "-":
-                raise ValueError("Argument name is not allowed to have a "
-                                 "leading minus %s" % cli_args[idx + 1])
-            args[cli_args[idx][2:]] = cli_args[idx+1]
+                # This is a boolean argument
+                args[cli_args[idx][2:]] = True
+                skip = False
+                #raise ValueError("Argument name is not allowed to have a "
+                #                 "leading minus %s" % cli_args[idx + 1])
+            else:
+                args[cli_args[idx][2:]] = cli_args[idx+1]
 
         elif arg[0:2] == "--" and found_params:
             raise ValueError("You are trying to specify an argument after the "
