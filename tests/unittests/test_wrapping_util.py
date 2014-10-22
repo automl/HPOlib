@@ -52,6 +52,7 @@ class WrappingTestUtil(unittest.TestCase):
                                 "number_of_jobs = 1\n" \
                                 "result_on_terminate = 1\n"\
                                 "function = 1\n"\
+                                "use_own_time_measurement = True\n"\
                                 "total_time_limit = None\n"\
                                 "[GRIDSEARCH]\n" \
                                 "params = params.pcs\n"
@@ -70,6 +71,7 @@ class WrappingTestUtil(unittest.TestCase):
                                 "number_of_jobs = 1\n" \
                                 "result_on_terminate = 1\n"\
                                 "function = 1\n"\
+                                "use_own_time_measurement = True\n"\
                                 "[GRIDSEARCH]\n" \
                                 "params = params.pcs\n"
 
