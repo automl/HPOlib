@@ -277,5 +277,5 @@ class Mock(MagicMock):
 
 
 MOCK_MODULES = ['argparse', 'numpy', 'pandas', 'scipy', 'numpy.distutils',
-                'matplotlib', 'numpy.distutils.core']
+                'numpy.distutils.core', 'matplotlib', 'numpy.distutils.core']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)

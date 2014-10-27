@@ -338,7 +338,7 @@ Theano is either configured with theano flags, by changing the value of a variab
 in the target program (not recommended as you have to change source code)
 or by using a :bash:`.theanorc` file. The :bash:`.theanorc` file is good for
 global configurations and you can find more information on how to use it on the
-[http://deeplearning.net/software/theano/library/config.html](theano config page).
+`theano config page <http://deeplearning.net/software/theano/library/config.html>`_.
 For a more fine-grained control of theano you have to use theano flags.
 
 Unfortunately, setting them in the shell before invoking :bash:`HPOlib-run`
