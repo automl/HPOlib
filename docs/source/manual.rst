@@ -27,8 +27,7 @@ listed here, follow these steps:
 
 Let's say you want to run the logistic regression:
 
-1.  Read the description for :ref:`logistic regression
-    <algorithms_and_datasets.html#logreg>`
+1.  Read the description for :ref:`logistic regression <logreg>`
     and install the dependencies (which are `THEANO <http://deeplearning.net/software/theano/>`_
     and `scikit-data <http://jaberg.github.io/skdata/>`_) and maybe recommended
     software.
