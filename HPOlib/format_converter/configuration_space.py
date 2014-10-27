@@ -45,10 +45,12 @@ class Hyperparameter(object):
             self.conditions = [[]]
         # Hopefully this is a array of arrays
         if type(self.conditions) != list:
-            raise ValueError("Conditions are not a list: %s" % str(self.conditions))
+            raise ValueError("Conditions are not a list: %s" %
+                             str(self.conditions))
         for o_r in self.conditions:
             if type(o_r) != list:
-                raise ValueError("This conditions are not a list: %s" % str(o_r))
+                raise ValueError("These conditions are not a list: %s" %
+                                 str(o_r))
 
     def has_conditions(self):
         return len(self.conditions[0]) > 0
@@ -59,7 +61,8 @@ class Hyperparameter(object):
 
     def append_condition(self, condition):
         if type(condition) != list:
-            raise ValueError("Condition Argument is not a list: %s" % str(condition))
+            raise ValueError("Condition Argument is not a list: %s" %
+                             str(condition))
 
         added = False
         if not condition:
@@ -85,14 +88,14 @@ class Hyperparameter(object):
                         else:
                             condition_values.append(condition_to_add)
                             self.conditions[i][0] = "%s in %s" % (depends_on,
-                                "{" + ",".join(condition_values) + "}")
+                                        "{" + ",".join(condition_values) + "}")
                     else:
                         if condition_to_add == condition_values:
                             added = True
                             break
                         else:
-                            condition_values = [condition_values]
-                            condition_values.append(condition_to_add)
+                            condition_values = [condition_values,
+                                                condition_to_add]
                             self.conditions[i][0] = "%s in %s" % (depends_on,
                                 "{" + ",".join(condition_values) + "}")
                     added = True
@@ -116,10 +119,10 @@ class Constant(Hyperparameter):
         self.check_conditions()
 
     def __repr__(self):
-        repr_str = ["Name: %s" % self.name]
-        repr_str.append("Type: Constant")
-        repr_str.append("Value: %s" % self.value)
-        repr_str.append(self.get_conditions_as_string())
+        repr_str = ["Name: %s" % self.name,
+                    "Type: Constant",
+                    "Value: %s" % self.value,
+                    self.get_conditions_as_string()]
         return ", ".join(repr_str)
 
     def __eq__(self, other):
@@ -145,10 +148,9 @@ class IntegerHyperparameter(NumericalHyperparameter):
     def check_int(self, parameter, name):
         if abs(np.round(parameter, 5) - parameter) > 0.00001 and \
                 type(parameter) is not int:
-            raise ValueError("For the Integer parameter %s, "
-                 "the value must be an Integer, too. Right now it "
-                 "is a %s with value %s" %
-                 (name, type(parameter), str(parameter)))
+            raise ValueError("For the Integer parameter %s, the value must be "
+                             "an Integer, too. Right now it is a %s with value"
+                             " %s" % (name, type(parameter), str(parameter)))
         return int(parameter)
 
 
@@ -160,10 +162,10 @@ class CategoricalHyperparameter(Hyperparameter):
         self.check_conditions()
 
     def __repr__(self):
-        repr_str = ["Name: %s" % self.name]
-        repr_str.append("Type: Categorical")
-        repr_str.append("Choices: %s" % str(self.choices))
-        repr_str.append(self.get_conditions_as_string())
+        repr_str = ["Name: %s" % self.name,
+                    "Type: Categorical",
+                    "Choices: %s" % str(self.choices),
+                    self.get_conditions_as_string()]
         return ", ".join(repr_str)
 
     def __eq__(self, other):
@@ -193,12 +195,12 @@ class UniformFloatHyperparameter(FloatHyperparameter):
         self.check_name()
 
     def __repr__(self):
-        repr_str = ["Name: %s" % self.name]
-        repr_str.append("Type: UniformFloat")
-        repr_str.append("Range: [%s, %s]" % (str(self.lower), str(self.upper)))
-        repr_str.append("Base: %s" % self.base)
-        repr_str.append("Q: %s" % self.q)
-        repr_str.append(self.get_conditions_as_string())
+        repr_str = ["Name: %s" % self.name,
+                    "Type: UniformFloat",
+                    "Range: [%s, %s]" % (str(self.lower), str(self.upper)),
+                    "Base: %s" % self.base,
+                    "Q: %s" % self.q,
+                    self.get_conditions_as_string()]
         return ", ".join(repr_str)
 
     def __eq__(self, other):
@@ -260,12 +262,12 @@ class NormalFloatHyperparameter(FloatHyperparameter):
         self.check_conditions()
 
     def __repr__(self):
-        repr_str = ["Name: %s" % self.name]
-        repr_str.append("Type: NormalFloat")
-        repr_str.append("Mu: %s Sigma: %s" % (str(self.mu), str(self.sigma)))
-        repr_str.append("Base: %s" % self.base)
-        repr_str.append("Q: %s" % self.q)
-        repr_str.append(self.get_conditions_as_string())
+        repr_str = ["Name: %s" % self.name,
+                    "Type: NormalFloat",
+                    "Mu: %s Sigma: %s" % (str(self.mu), str(self.sigma)),
+                    "Base: %s" % self.base,
+                    "Q: %s" % self.q,
+                    self.get_conditions_as_string()]
         return ", ".join(repr_str)
 
     def __eq__(self, other):
@@ -285,13 +287,17 @@ class NormalFloatHyperparameter(FloatHyperparameter):
     def to_uniform(self, z=3):
         if self.base is not None:
             return UniformFloatHyperparameter(self.name,
-                np.power(self.base, self.mu-(z*self.sigma)),
-                np.power(self.base, self.mu+(z*self.sigma)),
+                np.power(self.base, self.mu - (z * self.sigma)),
+                np.power(self.base, self.mu + (z * self.sigma)),
                 q=self.q, base=self.base, conditions=self.conditions)
         else:
             return UniformFloatHyperparameter(self.name,
-                self.mu-(z*self.sigma), self.mu+(z*self.sigma),
-                q=self.q, base=self.base, conditions=self.conditions)
+                                              self.mu - (z * self.sigma),
+                                              self.mu + (z * self.sigma),
+                                              q=self.q,
+                                              base=self.base,
+                                              conditions=self.conditions)
+
     def to_integer(self):
         raise NotImplementedError()
 
@@ -311,12 +317,12 @@ class UniformIntegerHyperparameter(IntegerHyperparameter):
         self.check_name()
 
     def __repr__(self):
-        repr_str = ["Name: %s" % self.name]
-        repr_str.append("Type: UniformInteger")
-        repr_str.append("Range: [%s, %s]" % (str(self.lower), str(self.upper)))
-        repr_str.append("Base: %s" % self.base)
-        repr_str.append("Q: %s" % self.q)
-        repr_str.append(self.get_conditions_as_string())
+        repr_str = ["Name: %s" % self.name,
+                    "Type: UniformInteger",
+                    "Range: [%s, %s]" % (str(self.lower), str(self.upper)),
+                    "Base: %s" % self.base,
+                    "Q: %s" % self.q,
+                    self.get_conditions_as_string()]
         return ", ".join(repr_str)
 
     def __eq__(self, other):
@@ -376,12 +382,12 @@ class NormalIntegerHyperparameter(IntegerHyperparameter):
         self.check_conditions()
 
     def __repr__(self):
-        repr_str = ["Name: %s" % self.name]
-        repr_str.append("Type: NormalInteger")
-        repr_str.append("Mu: %s Sigma: %s" % (str(self.mu), str(self.sigma)))
-        repr_str.append("Base: %s" % self.base)
-        repr_str.append("Q: %s" % self.q)
-        repr_str.append(self.get_conditions_as_string())
+        repr_str = ["Name: %s" % self.name,
+                    "Type: NormalInteger",
+                    "Mu: %s Sigma: %s" % (str(self.mu), str(self.sigma)),
+                    "Base: %s" % self.base,
+                    "Q: %s" % self.q,
+                    self.get_conditions_as_string()]
         return ", ".join(repr_str)
 
     def __eq__(self, other):
@@ -420,9 +426,8 @@ def create_dag_from_hyperparameters(hyperparameters):
                          (type(hyperparameters), str(hyperparameters)))
     hyperparameters.sort(key=lambda theta: theta.name, reverse=True)
 
-
-    DG = nx.DiGraph()
-    DG.add_node('__HPOlib_configuration_space_root__')
+    dg = nx.DiGraph()
+    dg.add_node('__HPOlib_configuration_space_root__')
     to_visit = deque(hyperparameters)
     visited = dict()
 
@@ -460,23 +465,23 @@ def create_dag_from_hyperparameters(hyperparameters):
             depends_on = []
 
         visited[name] = hyperparameter
-        DG.add_node(name, hyperparameter=hyperparameter)
+        dg.add_node(name, hyperparameter=hyperparameter)
 
         if len(depends_on) == 0:
-            DG.add_edge('__HPOlib_configuration_space_root__', name)
+            dg.add_edge('__HPOlib_configuration_space_root__', name)
         else:
             for dependency_path in depends_on:
                 if len(dependency_path) == 1:
                     d_name, op, value = dependency_path[0]
-                    DG.add_edge(d_name, name, condition=(d_name, op, value))
+                    dg.add_edge(d_name, name, condition=(d_name, op, value))
                 else:
-                    # Add links to all direct parents, these can be less than the
-                    # number of values in depends_on. The direct parent depends on
-                    # all other values in depends_on except itself
+                    # Add links to all direct parents, these can be less than
+                    # the number of values in depends_on. The direct parent
+                    # depends on all other values in depends_on except itself
                     parents = []
                     for i, d in enumerate(dependency_path):
                         d_name, op, value = d
-                        parents.append(nx.ancestors(DG, d_name))
+                        parents.append(nx.ancestors(dg, d_name))
 
                     candidates = []
                     for i, d in enumerate(dependency_path):
@@ -498,12 +503,12 @@ def create_dag_from_hyperparameters(hyperparameters):
                     parent = dependency_path[candidates[0]][0]
                     condition = dependency_path[candidates[0]]
 
-                    DG.add_edge(parent, name, condition=condition)
+                    dg.add_edge(parent, name, condition=condition)
 
-    if not nx.is_directed_acyclic_graph(DG):
-        cycles = list(nx.simple_cycles(DG))
+    if not nx.is_directed_acyclic_graph(dg):
+        cycles = list(nx.simple_cycles(dg))
         raise ValueError("Hyperparameter configurations contain a cycle %s" %
-            str(cycles))
+                         str(cycles))
     """
     nx.write_dot(DG, "hyperparameters.dot")
     import matplotlib.pyplot as plt
@@ -512,7 +517,7 @@ def create_dag_from_hyperparameters(hyperparameters):
     nx.draw(DG, pos, with_labels=True)
     plt.savefig('nx_test.png')
     """
-    return DG
+    return dg
 
 
 def get_dag(dag):
@@ -524,8 +529,9 @@ def get_dag(dag):
         sorted_dag.adj[adj] = OrderedDict(
             sorted(sorted_dag.adj[adj].items(), key=lambda item: item[0]))
 
-    nodes = nx.dfs_postorder_nodes\
-        (sorted_dag, source='__HPOlib_configuration_space_root__')
-    nodes = [node for node in nodes if node != '__HPOlib_configuration_space_root__']
+    nodes = nx.dfs_postorder_nodes(sorted_dag,
+                                   source='__HPOlib_configuration_space_root__')
+    nodes = [node for node in nodes if node !=
+             '__HPOlib_configuration_space_root__']
     return nodes
 

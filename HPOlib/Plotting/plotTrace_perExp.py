@@ -36,8 +36,8 @@ __contact__ = "automl.org"
 def plot_optimization_trace_cv(trial_list, name_list, optimum=0, title="",
                                log=True, save="", y_max=0, y_min=0,
                                linewidth=1,
-                               linestyles=plot_util.empty_iterator(),
-                               colors=None, markers=plot_util.empty_iterator(),
+                               linestyles=plot_util.get_empty_iterator(),
+                               colors=None, markers=plot_util.get_empty_iterator(),
                                markersize=6, ylabel=None, xlabel=None):
 
     if colors is None:
