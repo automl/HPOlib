@@ -1,4 +1,3 @@
-[![Stories in Ready](https://badge.waffle.io/automl/HPOlib.png?label=ready&title=Ready)](https://waffle.io/automl/HPOlib)
 HPOlib: A hyperparameter optimization library.
 ===============================================================
 
@@ -19,3 +18,7 @@ Status for development branch
 
 [![Build Status](https://travis-ci.org/automl/HPOlib.svg?branch=development)](https://travis-ci.org/automl/HPOlib)
 [![Code Health](https://landscape.io/github/automl/HPOlib/development/landscape.png)](https://landscape.io/github/automl/HPOlib/development)
+
+Issue tracking
+
+[![Issue Tracking](https://badge.waffle.io/automl/HPOlib.png?label=ready&title=Ready)](https://waffle.io/automl/HPOlib)
