@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/automl/HPOlib.png?label=ready&title=Ready)](https://waffle.io/automl/HPOlib)
 HPOlib: A hyperparameter optimization library.
 ===============================================================
 
