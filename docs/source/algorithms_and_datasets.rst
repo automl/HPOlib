@@ -2,6 +2,9 @@
 Algorithms and Datasets
 =======================
 
+.. role:: bash(code)
+    :language: bash
+
 .. |br| raw:: html
 
     <br />
@@ -41,7 +44,7 @@ Whether it makes sense to do so is indicated in the column CV.
         </thead>
         <tbody>
         <tr>
-            <td align="center"><a href="benchmarks.html#braninhar6camel">Branin</a></td>
+            <td align="center"><a href="algorithms_and_datasets.html#braninhar6camel">Branin</a></td>
             <td align="center">2(-)</td>
             <td align="center">2/-</td>
             <td align="center">-</td>
@@ -51,7 +54,7 @@ Whether it makes sense to do so is indicated in the column CV.
             <td aligh="center">no</td>
         </tr>
         <tr>
-            <td align="center"><a href="benchmarks.html#braninhar6camel">Camelback function</a></td>
+            <td align="center"><a href="algorithms_and_datasets.html#braninhar6camel">Camelback function</a></td>
             <td align="center">2(-)</td>
             <td align="center">2/-</td>
             <td align="center">-</td>
@@ -61,7 +64,7 @@ Whether it makes sense to do so is indicated in the column CV.
             <td aligh="center">no</td>
         </tr>
         <tr>
-            <td align="center"><a href="benchmarks.html#braninhar6camel">Hartmann 6d</a></td>
+            <td align="center"><a href="algorithms_and_datasets.html#braninhar6camel">Hartmann 6d</a></td>
             <td align="center">6(-)</td>
             <td align="center">6/-</td>
             <td align="center">-</td>
@@ -72,7 +75,7 @@ Whether it makes sense to do so is indicated in the column CV.
         </tr>
         </tbody><tbody>
         <tr>
-            <td align="center"><a href="benchmarks.html#svmlda">LDA ongrid<a></td>
+            <td align="center"><a href="algorithms_and_datasets.html#svmlda">LDA ongrid<a></td>
             <td align="center">3(-)</td>
             <td align="center">-/3</td>
             <td align="center">wikipedia articles</td>
@@ -82,7 +85,7 @@ Whether it makes sense to do so is indicated in the column CV.
             <td aligh="center">no</td>
         </tr>
         <tr>
-            <td align="center"><a href="benchmarks.html#svmlda">SVM ongrid</a></td>
+            <td align="center"><a href="algorithms_and_datasets.html#svmlda">SVM ongrid</a></td>
             <td align="center">3(-)</td>
             <td align="center">-/3</td>
             <td align="center">UniPROBE</td>
@@ -92,7 +95,7 @@ Whether it makes sense to do so is indicated in the column CV.
             <td aligh="center">no</td>
         </tr>
         <tr>
-            <td align="center"><a href="benchmarks.html#logreg">Logistic Regression</a></td>
+            <td align="center"><a href="algorithms_and_datasets.html#logreg">Logistic Regression</a></td>
             <td align="center">4(-)</td>
             <td align="center">4/-</td>
             <td align="center">MNIST</td>
@@ -103,7 +106,7 @@ Whether it makes sense to do so is indicated in the column CV.
         </tr>
         </tbody><tbody>
         <tr>
-            <td align="center"><a href="benchmarks.html#nnetdbnet">hp-nnet</a></td>
+            <td align="center"><a href="algorithms_and_datasets.html#nnetdbnet">hp-nnet</a></td>
             <td align="center">14(4)</td>
             <td align="center">7/7</td>
             <td align="center">MRBI<br>convex</td>
@@ -113,7 +116,7 @@ Whether it makes sense to do so is indicated in the column CV.
             <td aligh="center">yes</td>
         </tr>
         <tr>
-            <td align="center"><a href="benchmarks.html#nnetdbnet">hp-dbnet</a></td>
+            <td align="center"><a href="algorithms_and_datasets.html#nnetdbnet">hp-dbnet</a></td>
             <td align="center">38(29)</td>
             <td align="center">19/17</td>
             <td align="center">MRBI<br>convex</td>
@@ -124,7 +127,7 @@ Whether it makes sense to do so is indicated in the column CV.
         </tr>
         </tbody> <tbody>
         <tr>
-            <td align="center"><a href="benchmarks.html#autoweka">autoweka</a></td>
+            <td align="center"><a href="algorithms_and_datasets.html#autoweka">autoweka</a></td>
             <td align="center">786(784)</td>
             <td align="center">296/490</td>
             <td align="center">convex</td>
@@ -180,7 +183,7 @@ in `Online Learning for Latent Dirichlet Allocation <http://www.cs.princeton.edu
 Latent Structured Support Vector Machine code is written by Kevin Mill et. al.
 and explained in the paper `Max-Margin Min-Entropy Models <http://jmlr.org/proceedings/papers/v22/miller12/miller12.pdf>`_.
 The grid search was performed by Jasper Snoek and previously used in
-`Practical Bayesian Optimization of Machine Learning Algorithms <http://www.cs.toronto.edu/~jasper/bayesopt.pdf>`_.
+`Practical Bayesian Optimization of Machine Learning Algorithms <http://papers.nips.cc/paper/4522-practical-bayesian-optimization-of-machine-learning-algorithms>`_.
 
 .. _logreg:
 
@@ -191,27 +194,27 @@ ___________________
 `scikit-data <http://jaberg.github.io/skdata/>`_ |br|
 **Recommended:** `CUDA <https://developer.nvidia.com/cuda-downloads>`_
 
-**NOTE:** `scikit-data` downloads the dataset from
+**NOTE:** *scikit-data* downloads the dataset from
 the internet when using the benchmark for the first time. |br|
 **NOTE:** This benchmarks can use a gpu, but this
 feature is switched off to run it off-the-shelf. To use a gpu you need to
-change the THEANO flags in :bash:`config.cfg `. See <a href="benchmarks
-.html#howto">here</a>
+change the THEANO flags in :bash:`config.cfg`. See the :ref:`HowTo <configure_theano>`
 for changing to gpu and for further information about the THEANO configuration
 `here <http://deeplearning.net/software/theano/library/config.html#envvar-THEANO_FLAGS>`_ |br|
 **NOTE:** In order to run the benchmark you must adjust the paths in the config files.
 
-You can download this benchmark by clicking `here <logistic.tar.gz>` or
+You can download this benchmark by clicking `here <http://www.automl.org/logreg.tar.gz>`_ or
 running this command from a shell:
+
 .. code:: bash
 
-    wget www.automl.org/logistic.tar.gz
+    wget http://www.automl.org/logreg.tar.gz
     tar -xf logistic.tar.gz
 
 This benchmark performs a logistic regression to classifiy the popular MNIST
 dataset. The implementation is Theano based, so that a GPU can be used.
 The software is written by Jasper Snoek and was first used in the paper
-`Practical Bayesian Optimization of Machine Learning Algorithms <http://www.cs.toronto.edu/~jasper/bayesopt.pdf>`_.
+`Practical Bayesian Optimization of Machine Learning Algorithms <http://papers.nips.cc/paper/4522-practical-bayesian-optimization-of-machine-learning-algorithms>`_.
 
 **NOTE:** This benchmark comes with the version of
 `hyperopt-nnet <https://github.com/hyperopt/hyperopt-nnet>`_ which we used for
@@ -230,20 +233,23 @@ ____________________
 `hyperopt-nnet <https://github.com/hyperopt/hyperopt-nnet>`_ which we used for
 our experiments. There might be a newer version with improvements. |br|
 **NOTE:** `scikit-data` downloads the dataset
-from the internet when using the benchmark for the first time. <br />
-**NOTE:** In order to run the benchmark you must adjust the paths in the config files. <br />
+from the internet when using the benchmark for the first time. |br|
+**NOTE:** In order to run the benchmark you must adjust the paths in the
+config files. |br|
 
-You can download this benchmark by clicking `here <hpnnet.tar.gz>`_ or running
+You can download this benchmark by clicking `here <http://www.automl.org/hpnnet.tar.gz>`_ or running
 this command from a shell:
+
 .. code::bash
 
-    wget www.automl.org/hpnnet.tar.gz
+    wget http://www.automl.org/hpnnet.tar.gz
     tar -xf hpnnet.tar.gz
 
 
 The HP-Nnet (HP-DBNet) is a Theano based implementation of a (deep) neural network.
 It can be run on a CPU, but is drastically faster on a GPU (please follow the
-theano flags instructions of the [logistic regression](benchmarks.html#logreg) example).
+theano flags instructions of the
+:ref:`logistic regression <logreg>` example).
 Both of them are written by James Bergstra and were used in the papers
 `Random Search for Hyper-Parameter Optimization <http://jmlr.org/papers/v13/bergstra12a.html>`_
 and `Algorithms for Hyper-Parameter Optimization <http://books.nips.cc/papers/files/nips24/NIPS2011_1385.pdf>`_.
