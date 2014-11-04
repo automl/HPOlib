@@ -214,7 +214,7 @@ class AdditionalInstall(install):
                                                               "_mod_src.tar.gz",
                                                           md5='6c89c387b2062cd8319a4b4936a1dded') # '340fc0da97a30454d633ce9781b05369')
             smac_2_08 = self._copy_and_download_optimizer(optimizer_dir=optimizer_dir,
-                                                          optimizer_name='smac_2_08',
+                                                          optimizer_name='smac',
                                                           optimizer_tar_name="smac_2_08_00-master_src.tar.gz",
                                                           url="http://www.automl.org/smac_2_08_00-master_src.tar.gz",
                                                           md5='2be626a5437b56da2eba1b67b7a94367')
