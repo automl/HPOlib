@@ -1,6 +1,7 @@
 = Version 0.2.0 =
 
 === Bugfixes ===
++ REMOVED THE LEADING MINUS IN THE EXPRIMENT.PKL and providing a method to fix 'broken' .pkls
 
 === Functionality ===
 

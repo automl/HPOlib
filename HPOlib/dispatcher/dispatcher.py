@@ -100,6 +100,11 @@ def parse_command_line():
 
 def get_parameters():
     params = dict(zip(sys.argv[6::2], sys.argv[7::2]))
+    # Now remove the leading minus
+    for key in params.keys():
+        new_key = re.sub('^-', '', key)
+        params[new_key] = params[key]
+        del params[key]
     remove_param_metadata(params)
     params = OrderedDict(sorted(params.items(), key=lambda t: t[0]))
     return params
