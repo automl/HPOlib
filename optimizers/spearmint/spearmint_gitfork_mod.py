@@ -16,12 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import cPickle
 import logging
 import os
-import sys
-
-import numpy as np
 
 import HPOlib.wrapping_util
 
@@ -37,13 +33,15 @@ path_to_optimizer = "optimizers/spearmint_march2014_mod/"
 version_info = ("# %76s #\n" % "git version march 2014")
 
 
+# noinspection PyUnresolvedReferences
 def check_dependencies():
     try:
         import google.protobuf
         try:
             from google.protobuf.internal import enum_type_wrapper
         except ImportError:
-            raise ImportError("Installed google.protobuf version is too old, you need at least 2.5.0")
+            raise ImportError("Installed google.protobuf version is too old, "
+                              "you need at least 2.5.0")
     except ImportError:
         raise ImportError("Google protobuf cannot be imported. Are you sure "
                           "it's  installed?")
@@ -70,14 +68,19 @@ def build_spearmint_call(config, options, optimizer_dir):
                          'spearmint') + os.pathsep + os.environ['PYTHONPATH']
     print os.environ['PYTHONPATH']
     call = 'python ' + \
-            os.path.join(config.get('SPEARMINT', 'path_to_optimizer'), 'spearmint', 'spearmint', 'main.py')
-    call = ' '.join([call, os.path.join(optimizer_dir, config.get('SPEARMINT', 'config')),
+           os.path.join(config.get('SPEARMINT', 'path_to_optimizer'),
+                        'spearmint', 'spearmint', 'main.py')
+    call = ' '.join([call, os.path.join(optimizer_dir,
+                                        config.get('SPEARMINT', 'config')),
                      '--driver=local',
-                     '--max-concurrent', config.get('HPOLIB', 'number_of_concurrent_jobs'),
-                     '--max-finished-jobs', config.get('SPEARMINT', 'max_finished_jobs'),
-                     '--polling-time', config.get('SPEARMINT', 'spearmint_polling_time'),
+                     '--max-concurrent',
+                     config.get('HPOLIB', 'number_of_concurrent_jobs'),
+                     '--max-finished-jobs',
+                     config.get('SPEARMINT', 'max_finished_jobs'),
+                     '--polling-time',
+                     config.get('SPEARMINT', 'spearmint_polling_time'),
                      '--grid-size', config.get('SPEARMINT', 'grid_size'),
-                     '--method',  config.get('SPEARMINT', 'method'),
+                     '--method', config.get('SPEARMINT', 'method'),
                      '--method-args=' + config.get('SPEARMINT', 'method_args'),
                      '--grid-seed', str(options.seed)])
     if config.get('SPEARMINT', 'method') != "GPEIChooser" and \
@@ -93,7 +96,8 @@ def restore(config, optimizer_dir, **kwargs):
 
 
 #noinspection PyUnusedLocal
-def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs):
+def main(config, options, experiment_dir, experiment_directory_prefix,
+         **kwargs):
     # config:           Loaded .cfg file
     # options:          Options containing seed, restore_dir,
     # experiment_dir:   Experiment directory/Benchmark_directory
@@ -124,10 +128,13 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
         if not os.path.exists(os.path.join(optimizer_dir, configpb)):
             os.symlink(os.path.join(experiment_dir, optimizer_str, configpb),
                        os.path.join(optimizer_dir, configpb))
-    logger.info("### INFORMATION ################################################################")
-    logger.info("# You're running %40s                      #" % path_to_optimizer)
-    logger.info("%s" % version_info)
-    logger.info("# A newer version might be available, but not yet built in.                    #")
-    logger.info("# Please use this version only to reproduce our results on automl.org          #")
-    logger.info("################################################################################")
+    logger.info("""
+    ### INFORMATION ############################################################
+    # You're running: %40s                 #
+    # Version:        %40s                 #
+    # A newer version might be available, but not yet built in.                #
+    # Please use this version only to reproduce our results on automl.org      #
+    ############################################################################
+    """ % (path_to_optimizer, version_info))
+
     return cmd, optimizer_dir
