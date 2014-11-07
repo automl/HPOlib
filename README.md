@@ -22,3 +22,7 @@ Status for development branch
 Issue tracking
 
 [![Issue Tracking](https://badge.waffle.io/automl/HPOlib.png?label=ready&title=Ready)](https://waffle.io/automl/HPOlib)
+
+Documentation
+
+[![Documentation Status](https://readthedocs.org/projects/hpolib/badge/?version=development)](https://readthedocs.org/projects/hpolib/?badge=development)
