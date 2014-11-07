@@ -204,7 +204,7 @@ class AdditionalInstall(install):
                                                           optimizer_tar_name="spearmint_april2013_mod_src.tar.gz",
                                                           url="http://www.automl.org/spearmint_april2013" +
                                                               "_mod_src.tar.gz",
-                                                          md5='340fc0da97a30454d633ce9781b05369')
+                                                          md5='6c89c387b2062cd8319a4b4936a1dded') # '340fc0da97a30454d633ce9781b05369')
 
         # Do whatever you want to do
         # TODO: Normally one wants to call run(self), but this runs distutils and ignores install_requirements for unknown reasons
