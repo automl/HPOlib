@@ -25,4 +25,4 @@ Issue tracking
 
 Documentation
 
-[![Documentation Status](https://readthedocs.org/projects/hpolib/badge/?version=development)](https://readthedocs.org/projects/hpolib/?badge=development)
+[![Documentation Status](https://readthedocs.org/projects/hpolib/badge/?version=development)](http://hpolib.readthedocs.org/en/development/)
