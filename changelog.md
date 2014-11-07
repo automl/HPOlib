@@ -27,4 +27,5 @@
 * HPOlib/Experiment.py: the experiment pickle is only saved when the function _save_jobs() is invoked.
 
 === Minor ===
-* Print a Warning, when a user uses a development version
+* Print a warning, when a user uses a development version
+* Print a warning, when user tries to run smac and does not use java version 1.7.0_65
