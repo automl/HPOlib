@@ -129,9 +129,10 @@ def make_command(cfg, fold, param_string, run_instance_output, function=None):
         fn = cfg.get("HPOLIB", "function")
     else:
         fn = cfg.get("HPOLIB", function)
-    python_cmd = cfg.get("HPOLIB", "leading_algo_info") + " " + fn
-    python_cmd += " --fold %d --folds %d --params %s" % (fold, cfg.getint(
-        "HPOLIB", "number_cv_folds"), param_string)
+
+    python_cmd = fn + " --fold %d --folds %d --params %s" % \
+                      (fold, cfg.getint("HPOLIB", "number_cv_folds"),
+                       param_string)
     # Do not write the actual task in quotes because runsolver will not work
     # then; also we need use-pty and timestamp so that the "solver" output
     # is flushed to the output directory

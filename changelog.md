@@ -22,13 +22,15 @@
 * `HPOlib/cv.py` can now handle spearmint runs with parametersizes > 1. It converts a parameter `k` of size `n` to n-paramenters k_1, .., k_n.
 * `HPOlib/format_converter`: Replace current converter scripts with one parser for each format. A parser reads a searchspace into a dict with the format specified in `configuration_space.py`. The `write` method outputs a searchspace maitaining as much information as possible.
 * It is now possible to store the call for each target algorithm evaluation. The option can be set in the config file
+
 === Internals ===
 
 * HPOlib/Experiment.py: the experiment pickle is only saved when the function _save_jobs() is invoked.
 
 === Minor ===
 * Print a warning, when a user uses a development version
-* Print a warning, when user tries to run smac and does not use java version 1.7.0_65
+* Print a warning, when user tries to run smac and does not have java version 1.7.0_65
+* Remove leading_algo_info from config.cfg; Information can be set with the target algorithm call
 
 === Evaluation scripts ===
 * getTopK outputs the k best (worst) configurations
