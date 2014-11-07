@@ -60,8 +60,14 @@ def check_dependencies():
 
 
 def build_spearmint_call(config, options, optimizer_dir):
-    os.environ['PYTHONPATH'] = os.path.join(config.get('SPEARMINT', 'path_to_optimizer'), 'spearmint') + \
-                               os.pathsep + os.environ['PYTHONPATH']
+    if not 'PYTHONPATH' in os.environ:
+        os.environ['PYTHONPATH'] = \
+            os.path.join(config.get('SPEARMINT', 'path_to_optimizer'),
+                         'spearmint') + os.pathsep
+    else:
+        os.environ['PYTHONPATH'] = \
+            os.path.join(config.get('SPEARMINT', 'path_to_optimizer'),
+                         'spearmint') + os.pathsep + os.environ['PYTHONPATH']
     print os.environ['PYTHONPATH']
     call = 'python ' + \
             os.path.join(config.get('SPEARMINT', 'path_to_optimizer'), 'spearmint', 'spearmint', 'main.py')
