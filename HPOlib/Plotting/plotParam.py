@@ -102,7 +102,7 @@ def plot_params(value_list, result_list, name, save="", title="", jitter=0):
         value_list[idx] += float((np.random.rand(1) - 0.5) * jitter)
 
     # Plot
-    ax.scatter(value_list, result_list, facecolor=color, edgecolor=color, marker=marker, s=size*50)
+    ax.scatter(value_list, result_list, facecolor=color, edgecolor='', marker=marker, s=size*50, alpha=0.5)
     ax.scatter(best_value, best_result, facecolor='r',
                edgecolor='r', s=size*150, marker='o', alpha=0.5,
                label="f[%5.3f]=%5.3f" % (best_value, best_result))
@@ -135,6 +135,8 @@ def main(pkl_list, name_list, param, save="", title="", jitter=0):
 
     mod_param = "-" + param
 
+    string_to_value_map = dict()
+
     value_list = list()
     result_list = list()
     param_set = set()
@@ -145,7 +147,17 @@ def main(pkl_list, name_list, param, save="", title="", jitter=0):
         for t in trials["trials"]:
             if mod_param in t["params"]:
                 k, value = translate_para(param, t["params"][mod_param])
-                value_list.append(float(value.strip("'")))
+                value = value.strip()
+                try:
+                    value = float(value)
+                except:
+                    if value in string_to_value_map:
+                        value = string_to_value_map[value]
+                    else:
+                        key = len(string_to_value_map.keys())+1
+                        string_to_value_map[value] = key
+                        value = key
+                value_list.append(value)
                 result_list.append(t["result"])
             param_set.update(t["params"].keys())
 
@@ -156,8 +168,8 @@ def main(pkl_list, name_list, param, save="", title="", jitter=0):
     else:
         print "Found %s values for %s" % (str(len(value_list)), param)
 
-    plot_params(value_list=value_list, result_list=result_list, name=param, save=save, title=title,
-                jitter=jitter)
+    plot_params(value_list=value_list, result_list=result_list, name=param,
+                save=save, title=title, jitter=jitter)
 
 if __name__ == "__main__":
     prog = "python plot_param.py WhatIsThis <pathTo.pkl>* "
