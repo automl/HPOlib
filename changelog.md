@@ -21,7 +21,7 @@
     runsolver target process, which should end itself after some time.
 * `HPOlib/cv.py` can now handle spearmint runs with parametersizes > 1. It converts a parameter `k` of size `n` to n-paramenters k_1, .., k_n.
 * `HPOlib/format_converter`: Replace current converter scripts with one parser for each format. A parser reads a searchspace into a dict with the format specified in `configuration_space.py`. The `write` method outputs a searchspace maitaining as much information as possible.
-
+* It is now possible to store the call for each target algorithm evaluation. The option can be set in the config file
 === Internals ===
 
 * HPOlib/Experiment.py: the experiment pickle is only saved when the function _save_jobs() is invoked.

@@ -257,6 +257,22 @@ def parse_output(cfg, run_instance_content, runsolver_output_content,
     return rval
 
 
+def store_target_algorithm_calls(path, wallclock_time, result, additional_data, call):
+    # Save the call to the target algorithm
+    if not os.path.exists(path):
+        fh = open(path, 'w')
+        fh.write(",".join(["RESULT", "DURATION", "ADDITIONAL_INFO", "CALL"]) + "\n")
+    else:
+            fh = open(path, "a")
+
+    try:
+        fh.write(",".join([str(result), str(wallclock_time),
+                               str(additional_data), call]) + "\n")
+    finally:
+        fh.close()
+    return
+
+
 def dispatch(cfg, fold, params):
     param_string = " ".join([key + " " + str(params[key]) for key in params])
     time_string = wrapping_util.get_time_string()
@@ -285,6 +301,12 @@ def dispatch(cfg, fold, params):
         if cfg.getboolean("HPOLIB", "remove_target_algorithm_output"):
             os.remove(run_instance_output)
         os.remove(runsolver_output_file)
+
+    if cfg.getboolean("HPOLIB", "store_target_algorithm_calls"):
+        store_target_algorithm_calls(
+            path=os.path.join(os.getcwd(), "target_algorithm_calls.csv"),
+            wallclock_time=wallclock_time, result=result,
+            additional_data=additional_data, call=cmd)
 
     return additional_data, result, status, wallclock_time
 
