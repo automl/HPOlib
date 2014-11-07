@@ -133,7 +133,7 @@ def main(pkl_list, name_list, param, save="", title="", jitter=0):
     if len(name_list) > 1:
         raise NotImplementedError("No support for more than one experiment")
 
-    mod_param = "-" + param
+    mod_param = param
 
     string_to_value_map = dict()
 
@@ -147,6 +147,8 @@ def main(pkl_list, name_list, param, save="", title="", jitter=0):
         for t in trials["trials"]:
             if mod_param in t["params"]:
                 k, value = translate_para(param, t["params"][mod_param])
+                k = re.sub('^-', '', k)
+                print k, value
                 value = value.strip()
                 try:
                     value = float(value)
@@ -154,16 +156,16 @@ def main(pkl_list, name_list, param, save="", title="", jitter=0):
                     if value in string_to_value_map:
                         value = string_to_value_map[value]
                     else:
-                        key = len(string_to_value_map.keys())+1
+                        key = len(string_to_value_map.keys()) + 1
                         string_to_value_map[value] = key
                         value = key
                 value_list.append(value)
                 result_list.append(t["result"])
-            param_set.update(t["params"].keys())
+                param_set.add(k)
 
     if len(value_list) == 0:
         print("No values found for param '%s', Available params:\n%s" %
-              (param, "\n".join([p[1:] for p in param_set])))
+              (param, "\n".join([p for p in param_set])))
         sys.exit(1)
     else:
         print "Found %s values for %s" % (str(len(value_list)), param)
