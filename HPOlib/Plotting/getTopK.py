@@ -37,6 +37,8 @@ if __name__ == "__main__":
 
     parser.add_argument("-k", dest="k", type=int,
                         default=10, help="How many outputs?")
+    parser.add_argument("-i", dest="invers", action="store_true",
+                        default=False, help="Plot worst k configs")
 
     args, unknown = parser.parse_known_args()
 
@@ -60,13 +62,20 @@ if __name__ == "__main__":
     results = result_dict.keys()
     results.sort()
 
+    if args.invers:
+        results.reverse()
+
     topK = list()
     ct = 0
+
+    if args.k > len(result_dict):
+        args.k = len(result_dict)
+        print "Reduce number of configurations"
+
     while len(topK) < args.k:
         topK.append(result_dict[results[ct]])
         ct += 1
-
+    print "Found %d different results" % len(result_dict)
     for k in topK:
-        print
-        print k[0]['result']
-        print "\n".join([str(i['params']) for i in k])
+        print "%10f" % k[0]['result'], ", ".join(["%s = %3s" % (key.strip('-'), k[0]['params'][key])
+                                        for key in k[0]['params']])

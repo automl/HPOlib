@@ -29,3 +29,6 @@
 === Minor ===
 * Print a warning, when a user uses a development version
 * Print a warning, when user tries to run smac and does not use java version 1.7.0_65
+
+=== Evaluation scripts ===
+* getTopK outputs the k best (worst) configurations
