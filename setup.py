@@ -23,7 +23,8 @@ package_dir = {'HPOlib': 'HPOlib',
                'HPOlib.config_parser': 'HPOlib/config_parser',
                'HPOlib.Plotting': 'HPOlib/Plotting',
                'HPOlib.format_converter': 'HPOlib/format_converter',
-               'HPOlib.disptacher': 'HPOlib/dispatcher'}
+               'HPOlib.dispatcher': 'HPOlib/dispatcher',
+               'HPOlib.benchmarks': 'HPOlib/benchmarks'}
 package_data = {'HPOlib.config_parser': ['*.cfg']}
 
 data_files = []
@@ -39,7 +40,8 @@ def get_find_packages():
                 'HPOlib.config_parser',
                 'HPOlib.Plotting',
                 'HPOlib.format_converter',
-                'HPOlib.dispatcher']
+                'HPOlib.dispatcher',
+                'HPOlib.benchmarks']
     return packages
 
 
