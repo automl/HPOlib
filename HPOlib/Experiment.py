@@ -118,27 +118,34 @@ class Experiment:
             # Load in from the pickle.
             self._load_jobs()
 
-    def create_trial(self):
+    def _create_trial(self):
         trial = dict()
         # Status of the trial object
         trial['status'] = 0
+        trial['test_status'] = 0
         trial['params'] = dict()
         # Stores the validation error
         trial['result'] = np.NaN
         trial['test_error'] = np.NaN
         # Validation error for every instance
         trial['instance_results'] = np.ones((self.folds)) * np.NaN
+        trial['test_instance_results'] = np.ones((1,)) * np.NaN
         # Status for every instance
         trial['instance_status'] = np.zeros((self.folds), dtype=int)
+        trial['test_instance_status'] = np.zeros((1,), dtype=int)
         # Contains the standard deviation in case of cross validation
         trial['std'] = np.NaN
+        trial['test_std'] = np.NaN
         # Accumulated duration over all instances
         trial['duration'] = np.NaN
+        trial['test_duration'] = np.NaN
         # Stores the duration for every instance
         trial['instance_durations'] = np.ones((self.folds)) * np.NaN
-        # Store additional data in form of strings for every fold, this can
+        trial['test_instance_durations'] = np.ones((1,)) * np.NaN
+        # Store additional data in form of strings for every fold, this canv
         # e.g. be a machine learning model which is saved to the disk
         trial['additional_data'] = defaultdict(str)
+        trial['test_additional_data'] = defaultdict(str)
         return trial
 
     def __del__(self):
@@ -153,56 +160,101 @@ class Experiment:
         result = np.array([trial['result'] for trial in self.trials])
         return result
 
+    def test_result_array(self):
+        test_result = np.array([trial['test_result'] for trial in self.trials])
+        return test_result
+
     def instance_results_array(self):
         instance_results = np.array([trial['instance_results'] for trial in
                                      self.trials])
         return instance_results
 
+    def test_instance_results_array(self):
+        test_instance_results = np.array([trial['test_instance_results'] for
+                                          trial in self.trials])
+        return test_instance_results
+
     def status_array(self):
         status = np.array([trial['status'] for trial in self.trials])
         return status
 
-    def result_array(self):
-        results = np.array([trial['result'] for trial in self.trials])
-        return results
+    def test_status_array(self):
+        test_status = np.array([trial['test_status'] for trial in self.trials])
+        return test_status
 
     # Return the ID of all candidate jobs
     def get_candidate_jobs(self):
-        return np.nonzero(self.status_array() == CANDIDATE_STATE)[0]
+        return self._get_jobs_by_status(CANDIDATE_STATE, False)
+
+    def get_candidate_test_jobs(self):
+        return self._get_jobs_by_status(CANDIDATE_STATE, True)
 
     # Return the ID of all running jobs
     def get_running_jobs(self):
-        return np.nonzero(self.status_array() == RUNNING_STATE)[0]
+        return self._get_jobs_by_status(RUNNING_STATE, False)
+
+    def get_running_test_jobs(self):
+        return self._get_jobs_by_status(RUNNING_STATE, True)
 
     # Return the ID of all incomplete jobs
     def get_incomplete_jobs(self):
-        return np.nonzero(self.status_array() == INCOMPLETE_STATE)[0]
+        return self._get_jobs_by_status(INCOMPLETE_STATE, False)
+
+    def get_incomplete_test_jobs(self):
+        return self._get_jobs_by_status(INCOMPLETE_STATE, True)
 
     # Return the ID of all complete jobs
     def get_complete_jobs(self):
-        return np.nonzero(self.status_array() == COMPLETE_STATE)[0]
+        return self._get_jobs_by_status(COMPLETE_STATE, False)
+
+    def get_complete_test_jobs(self):
+        return self._get_jobs_by_status(COMPLETE_STATE, True)
 
     # Return the ID of all broken jobs
     def get_broken_jobs(self):
-        return np.nonzero(self.status_array() == BROKEN_STATE)[0]
+        return self._get_jobs_by_status(BROKEN_STATE, False)
 
-    # Get the job id of the best value so far, if there is no result
-    # available, this method consults the instance_results. If there are more
-    #  than one trials with the same response value, the first trial is
-    # considered to be the best. If no trial with a better response value
-    # than sys.maxint is found, a ValueError is raised.
-    # TODO: add a method that incomplete jobs are not considered
-    def get_arg_best(self):
+    def get_broken_test_jobs(self):
+        return self._get_jobs_by_status(BROKEN_STATE, True)
+
+    # The basic functionality to return all jobs with a given state
+    def _get_jobs_by_status(self, status, test=False):
+        if test:
+            return np.nonzero(self.test_status_array() == status)[0]
+        else:
+            return np.nonzero(self.status_array() == status)[0]
+
+    def get_arg_best(self, consider_incomplete=False):
+        """Get the job id of the best result.
+
+        If there is no result for a configuration, the behaviour depends on
+        the argument ``consider_incomplete``. If it is set to True, the mean
+        of all non-NaN values is considered.
+
+        Parameters
+        ----------
+        consider_incomplete : bool, default=False
+            Consider the nanmean of incomplete trials if True.
+
+        Returns
+        -------
+        int
+            ID of the best hyperparameter configuration found so far.
+
+        Raises
+        ------
+        ValueError
+            If no non-NaN value is found.
+        """
         best_idx = -1
         best_value = sys.maxint
         for i, trial in enumerate(self.trials):
             tmp_res = np.NaN
             if np.isfinite(trial['result']):
                 tmp_res = trial['result']
-            elif np.isfinite(trial['instance_results']).any():
+            elif consider_incomplete and np.isfinite(trial[\
+                    'instance_results']).any():
                 tmp_res = wrapping_util.nan_mean(trial['instance_results'])
-                # np.nanmean is not available in older numpy versions
-                # tmp_res = scipy.nanmean(trial['instance_results'])
             else:
                 continue
             if tmp_res < best_value:
@@ -212,10 +264,21 @@ class Experiment:
             raise ValueError("No best value found.")
         return best_idx
 
-    # Get the best value so far, for more documentation see get_arg_best
     def get_best(self):
-        best_idx = self.get_arg_best()
-        return self.trials[best_idx]
+        """Get the result of the ID returned by get_arg_best.
+
+        Returns
+        -------
+        float
+            Best validation result found so far.
+
+        Raises
+        ------
+        ValueError
+            If no non-NaN value is found.
+        """
+        best_idx = self.get_arg_best(consider_incomplete=False)
+        return self.trials[best_idx]['result']
 
     def get_trial_from_id(self, _id):
         try:
@@ -225,112 +288,269 @@ class Experiment:
                             "%d, accessed index: %d" % (len(self.trials), _id))
             raise e
 
-
-    # Add a job to the list of all jobs
     def add_job(self, params):
-        trial = self.create_trial()
+        """Create a trials dictionary for a hyperparameter configuration.
+
+        Parameters
+        ----------
+        configuration : dict
+            A dictionary of hyperparameters.
+
+        Returns
+        -------
+        int
+            The trial ID of the created trials dictionary
+        """
+        trial = self._create_trial()
         trial['params'] = params
         self.trials.append(trial)
-        # Save this out.
         self._sanity_check()
-        # self._save_jobs()
         return len(self.trials) - 1
 
-    # Set the status of a job to be running
     def set_one_fold_running(self, _id, fold):
+        """Change the status of one fold to running.
+
+        Parameters
+        ----------
+        _id : int
+            The ID of the trial dictionary
+        fold : int
+            The fold is set running
+        """
+        trial = self.get_trial_from_id(_id)
         assert(self.get_trial_from_id(_id)['instance_status'][fold] ==
                CANDIDATE_STATE)
-        self.get_trial_from_id(_id)['status'] = RUNNING_STATE
-        self.get_trial_from_id(_id)['instance_status'][fold] = RUNNING_STATE
+        trial['status'] = RUNNING_STATE
+        trial['instance_status'][fold] = RUNNING_STATE
         self.instance_order.append((_id, fold))
         self._sanity_check()
-        # self._save_jobs()
 
-    # Set the status of a job to be crashed
+    def set_one_test_fold_running(self, _id, fold):
+        """Change the status of one test fold to running.
+
+        Parameters
+        ----------
+        _id : int
+            The ID of the trial dictionary
+        fold : int
+            The test fold is set running
+        """
+        if fold != 0:
+            raise ValueError("Currently, only one test instance is allowed.")
+        trial = self.get_trial_from_id(_id)
+        assert(trial['test_instance_status'][fold] == CANDIDATE_STATE)
+        trial['test_status'] = RUNNING_STATE
+        trial['test_instance_status'][fold] = RUNNING_STATE
+        self._sanity_check()
+
     def set_one_fold_crashed(self, _id, fold, result, duration,
                              additional_data=None):
-        assert(self.get_trial_from_id(_id)['instance_status'][fold] ==
-               RUNNING_STATE)
-        self.trials[_id]['instance_status'][fold] = BROKEN_STATE
-        self.trials[_id]['instance_durations'][fold] = duration
-        self.trials[_id]['instance_results'][fold] = result
-        self.trials[_id]['additional_data'][fold] = additional_data
-        if (self.trials[_id]['instance_status'] != RUNNING_STATE).all():
-            self.trials[_id]['status'] = INCOMPLETE_STATE
-        self.check_cv_finished(_id)
+        """Change the status of one fold to crashed.
+
+        Parameters
+        ----------
+        _id : int
+            The ID of the trial dictionary
+        fold : int
+            The fold is set crashed
+        result : float
+            The result of the algorithm run
+        duration : float
+            Number of seconds the algorithm run until it crashed
+        additional_data : str
+            A string with additional data from the algorithm run which crashed.
+        """
+        trial = self.get_trial_from_id(_id)
+        assert(trial['instance_status'][fold] == RUNNING_STATE)
+        trial['instance_status'][fold] = BROKEN_STATE
+        trial['instance_durations'][fold] = duration
+        trial['instance_results'][fold] = result
+        trial['additional_data'][fold] = additional_data
+        if (trial['instance_status'] != RUNNING_STATE).all():
+            trial['status'] = INCOMPLETE_STATE
+        self._check_cv_finished(_id)
         self.total_wallclock_time += duration
         self._sanity_check()
-        # self._save_jobs()
 
-    # Set the results of one fold of crossvalidation (SMAC)
+    def set_one_test_fold_crashed(self, _id, fold, result, duration,
+                                  additional_data=None):
+        """Change the status of one test fold to crashed.
+
+        Parameters
+        ----------
+        _id : int
+            The ID of the trial dictionary
+        fold : int
+            The test fold is set crashed
+        result : float
+            The result of the algorithm run
+        duration : float
+            Number of seconds the algorithm run until it crashed
+        additional_data : str
+            A string with additional data from the algorithm run which crashed.
+        """
+        if fold != 0:
+            raise ValueError("Currently, only one test instance is allowed.")
+        trial = self.get_trial_from_id(_id)
+        assert (trial['test_instance_status'][fold] == RUNNING_STATE)
+        trial['test_instance_status'][fold] = BROKEN_STATE
+        trial['test_instance_durations'][fold] = duration
+        trial['test_instance_results'][fold] = result
+        trial['test_additional_data'][fold] = additional_data
+        if (trial['test_instance_status'] != RUNNING_STATE).all():
+            trial['test_status'] = INCOMPLETE_STATE
+        self._check_test_finished(_id)
+        self.total_wallclock_time += duration
+        self._sanity_check()
+
     def set_one_fold_complete(self, _id, fold, result, duration,
                               additional_data=None):
-        assert(self.get_trial_from_id(_id)['instance_status'][fold] ==
-               RUNNING_STATE)
-        self.get_trial_from_id(_id)['instance_results'][fold] = result
-        self.get_trial_from_id(_id)['instance_status'][fold] = COMPLETE_STATE
-        self.get_trial_from_id(_id)['instance_durations'][fold] = duration
-        self.get_trial_from_id(_id)['additional_data'][fold] = additional_data
+        """Change the status of one test fold to complete.
+
+        Parameters
+        ----------
+        _id : int
+            The ID of the trial dictionary
+        fold : int
+            The fold is set complete
+        result : float
+            The result of the algorithm run
+        duration : float
+            Number of seconds the algorithm run needed
+        additional_data : str
+            A string with additional data from the algorithm run
+        """
+
+        trial = self.get_trial_from_id(_id)
+        assert(trial['instance_status'][fold] == RUNNING_STATE)
+        trial['instance_results'][fold] = result
+        trial['instance_status'][fold] = COMPLETE_STATE
+        trial['instance_durations'][fold] = duration
+        trial['additional_data'][fold] = additional_data
         # Set to incomplete if no job is running
-        if (self.trials[_id]['instance_status'] != RUNNING_STATE).all():
-            self.trials[_id]['status'] = INCOMPLETE_STATE
+        if (trial['instance_status'] != RUNNING_STATE).all():
+            trial['status'] = INCOMPLETE_STATE
         # Check if all runs are finished
-        self.check_cv_finished(_id)
+        self._check_cv_finished(_id)
         self.total_wallclock_time += duration
         self._sanity_check()
-        # self._save_jobs()
-        
-    # Set the timer for the start of a new cross-validation
+
+    def set_one_test_fold_complete(self, _id, fold, result, duration,
+                                   additional_data=None):
+        """Change the status of one test fold to complete.
+
+        Parameters
+        ----------
+        _id : int
+            The ID of the trial dictionary
+        fold : int
+            The test fold is set complete
+        result : float
+            The result of the algorithm run
+        duration : float
+            Number of seconds the algorithm run needed
+        additional_data : str
+            A string with additional data from the algorithm run
+        """
+        if fold != 0:
+            raise ValueError("Currently, only one test instance is allowed.")
+        trial = self.get_trial_from_id(_id)
+        assert (trial['test_instance_status'][fold] == RUNNING_STATE)
+        trial['test_instance_results'][fold] = result
+        trial['test_instance_status'][fold] = COMPLETE_STATE
+        trial['test_instance_durations'][fold] = duration
+        trial['test_additional_data'][fold] = additional_data
+        # Set to incomplete if no job is running
+        if (trial['test_instance_status'] != RUNNING_STATE).all():
+            trial['test_status'] = INCOMPLETE_STATE
+        # Check if all runs are finished
+        self._check_test_finished(_id)
+        self.total_wallclock_time += duration
+        self._sanity_check()
+
     def start_cv(self, time):
+        """Set the timer for the start of a new cross-validation run.
+
+        Parameters
+        ----------
+        time : float
+            Start time of the new cross-validation run.
+        """
         self.cv_starttime.append(time)
-        # self._save_jobs()
-    
-    # Set the timer for the end of a cross validation
+
     def end_cv(self, time):
+        """Set the timer for the end of a running cross-validation run.
+
+        Parameters
+        ----------
+        time : float
+            End time of the running cross-validation run.
+        """
         self.cv_endtime.append(time)
-        # self._save_jobs()
-    
-    # Check if one set of cross validations is finished
-    def check_cv_finished(self, _id):
-        if np.isfinite(self.get_trial_from_id(_id)["instance_results"]).all():
-            if np.sum(self.get_trial_from_id(_id)['instance_status'] == -1) == self.folds:
-                self.get_trial_from_id(_id)['status'] = BROKEN_STATE
+
+    def _check_cv_finished(self, _id):
+        trial = self.get_trial_from_id(_id)
+        if np.isfinite(trial["instance_results"]).all():
+            if np.sum(trial['instance_status'] == -1) == self.folds:
+                trial['status'] = BROKEN_STATE
             else:
-                self.get_trial_from_id(_id)['status'] = COMPLETE_STATE
-            self.get_trial_from_id(_id)['result'] = \
-                np.sum(self.get_trial_from_id(_id)['instance_results'])\
-                / self.folds
-            self.get_trial_from_id(_id)['std'] =\
-                np.std(self.get_trial_from_id(_id)['instance_results'])
-            self.get_trial_from_id(_id)['duration'] =\
-                np.sum(self.get_trial_from_id(_id)['instance_durations'])
+                trial['status'] = COMPLETE_STATE
+            trial['result'] = np.sum(trial['instance_results']) / self.folds
+            trial['std'] = np.std(trial['instance_results'])
+            trial['duration'] = np.sum(trial['instance_durations'])
             return True
         else:
             return False
-    
-    # Deletes all instance runs except the first ones which are specified by the
-    # parameters. Useful to delete all unnecessary entries after a crash in order
-    # to restart
+
+    def _check_test_finished(self, _id):
+        trial = self.get_trial_from_id(_id)
+        if np.isfinite(trial["test_instance_results"]).all():
+            if np.sum(trial['test_instance_status'] == BROKEN_STATE) == \
+                    len(trial['test_instance_status']):
+                trial['test_status'] = BROKEN_STATE
+            else:
+                trial['test_status'] = COMPLETE_STATE
+            trial['test_result'] = np.sum(trial['test_instance_results']) / \
+                                   len(trial['test_instance_results'])
+            trial['test_std'] = np.std(trial['test_instance_results'])
+            trial['test_duration'] = np.sum(trial['test_instance_durations'])
+            return True
+        else:
+            return False
+
     def remove_all_but_first_runs(self, restored_runs):
+        """Delete all but the first *restored_runs* instances.
+
+        Useful to delete all unnecessary entries after a crash in order to
+        restart.
+
+        Parameters
+        ----------
+        int : restored runs
+            The number of instance runs to restore. In contrast to most other
+            arguments, this argument is 1-based.
+        """
         logger.info("Restored runs %d", restored_runs)
-        logger.info("%s %s" ,self.instance_order, len(self.instance_order))
+        logger.info("%s %s", self.instance_order, len(self.instance_order))
         if len(self.instance_order) == restored_runs:
             pass
         else:
             for _id, instance in self.instance_order[-1:restored_runs - 1:-1]:
                 logger.info("Deleting %d %d", _id, instance)
-                if np.isfinite(self.trials[_id]['instance_durations'][instance]):
-                    self.total_wallclock_time -= \
-                        self.trials[_id]['instance_durations'][instance]
 
-                self.trials[_id]['instance_durations'][instance] = np.NaN
-                self.trials[_id]['instance_results'][instance] = np.NaN
-                self.trials[_id]['instance_status'][instance] = 0
+                trial = self.get_trial_from_id(_id)
+                if np.isfinite(trial['instance_durations'][instance]):
+                    self.total_wallclock_time -= \
+                        trial['instance_durations'][instance]
+
+                trial['instance_durations'][instance] = np.NaN
+                trial['instance_results'][instance] = np.NaN
+                trial['instance_status'][instance] = 0
                 self.instance_order.pop()
                 
-                self.trials[_id]['duration'] = np.NaN
+                trial['duration'] = np.NaN
                 
-                if not np.isfinite(self.trials[_id]['instance_results']).any():
+                if not np.isfinite(trial['instance_results']).any():
                     del self.trials[_id]
 
             # now delete all unnecessary entries in instance_order
@@ -363,12 +583,23 @@ class Experiment:
         assert(len(self.cv_starttime) == len(self.cv_endtime)),\
             (len(self.cv_starttime), len(self.cv_endtime))
         
-        self._sanity_check()   
-        # self._save_jobs()
+        self._sanity_check()
 
     def _trial_sanity_check(self, trial):
-        assert(len(trial['instance_results']) == len(trial['instance_status'])
-               == len(trial['instance_durations']))
+        for key in ['instance_results', 'instance_status',
+                    'instance_durations']:
+            if len(trial[key]) != self.folds:
+                raise ValueError("Length of array %s (%d) is not equal to the "
+                                 "number of folds (%d)." %
+                                 (key, len(trial[key], trial.folds)))
+
+        for key in ['test_instance_results', 'test_instance_status',
+                    'test_instance_durations']:
+            if len(trial[key]) != 1:
+                raise ValueError("Length of array %s (%d) is not equal to the "
+                                 "number of test folds (%d)." %
+                                 (key, len(trial[key]), 1))
+
         for i in range(len(trial['instance_results'])):
             assert ((np.isfinite(trial['instance_results'][i]) and
                     trial['instance_status'][i] in (COMPLETE_STATE, BROKEN_STATE)) or
@@ -376,9 +607,15 @@ class Experiment:
                     trial['instance_status'][i] not in (COMPLETE_STATE, BROKEN_STATE))), \
                    (trial['instance_results'][i], trial['instance_status'][i])
 
+        for i in range(len(trial['test_instance_results'])):
+            assert ((np.isfinite(trial['test_instance_results'][i]) and
+                     trial['test_instance_status'][i] in (COMPLETE_STATE, BROKEN_STATE)) or
+                    (not np.isfinite(trial['test_instance_results'][i]) and
+                     trial['test_instance_status'][i] not in (COMPLETE_STATE, BROKEN_STATE))), \
+                (trial['test_instance_results'][i], trial['test_instance_status'][i])
+
     def _sanity_check(self):
         total_wallclock_time = 0
-        finite_instance_results = 0
         for trial in self.trials:
             self._trial_sanity_check(trial)
 
@@ -386,10 +623,17 @@ class Experiment:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 wallclock_time = np.nansum(trial['instance_durations'])
-                total_wallclock_time += wallclock_time if np.isfinite(wallclock_time) else 0
-        assert (wrapping_util.float_eq(total_wallclock_time,
-                                       self.total_wallclock_time)), \
-            (total_wallclock_time, self.total_wallclock_time)
+                test_wallclock_time = np.nansum(trial['test_instance_durations'])
+                total_wallclock_time += wallclock_time if \
+                    np.isfinite(wallclock_time) else 0
+                total_wallclock_time += test_wallclock_time if \
+                    np.isfinite(test_wallclock_time) else 0
+
+        if not wrapping_util.float_eq(total_wallclock_time,
+                                       self.total_wallclock_time):
+            raise ValueError("Found an error in the time measurement. The "
+                             "values %f and %f should be equal, but aren't" %
+                             (total_wallclock_time, self.total_wallclock_time))
 
     # Automatically loads this object from a pickle file
     def _load_jobs(self):

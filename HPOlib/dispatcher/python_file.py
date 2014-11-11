@@ -12,13 +12,16 @@ hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.dispatcher.python_file")
 
 
-def dispatch(cfg, fold, params):
+def dispatch(cfg, fold, params, test=False):
     starttime = time.time()
     wallclock_time = None
     result = float("NaN")
 
     fn_module = cfg.get("HPOLIB", "python_module")
-    fn_name = cfg.get("HPOLIB", "python_function")
+    if test:
+        fn_name = cfg.get("HPOLIB", "python_test_function")
+    else:
+        fn_name = cfg.get("HPOLIB", "python_function")
     folds = cfg.getint("HPOLIB", "number_cv_folds")
 
     if not cfg.getboolean("HPOLIB", "use_own_time_measurement"):

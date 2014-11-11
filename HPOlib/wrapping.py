@@ -50,55 +50,6 @@ hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.wrapping")
 
 
-def kill_children(sig):
-    # TODO: somehow wait, until the Experiment pickle is written to disk
-    process = psutil.Process(os.getpid())
-    # Ubuntu 14.04 and older versions ship with a deprecated version of
-    # psutil. Use the old interface only if the old version is installed:
-    if psutil.version_info[0] >= 2:
-        children = process.children()
-    else:
-        children = process.get_children()
-
-    pids_with_commands = []
-    for child in children:
-        pids_with_commands.append((child.pid, child.cmdline()))
-
-    logger.debug("Running %s" % str(pids_with_commands))
-    for child in children:
-        try:
-            os.kill(child.pid, sig)
-        except Exception as e:
-            logger.error(type(e))
-            logger.error(e)
-
-
-class Exit:
-    def __init__(self):
-        self.exit_flag = False
-        self.signal = None
-
-    def true(self):
-        self.exit_flag = True
-
-    def false(self):
-        self.exit_flag = False
-
-    def set_exit_flag(self, exit):
-        self.exit_flag = exit
-
-    def get_exit(self):
-        return self.exit_flag
-
-    def signal_callback(self, signal_, frame):
-        SIGNALS_TO_NAMES_DICT = dict((getattr(signal, n), n) \
-            for n in dir(signal) if n.startswith('SIG') and '_' not in n )
-
-        logger.critical("Received signal %s" % SIGNALS_TO_NAMES_DICT[signal_])
-        self.true()
-        self.signal = signal_
-
-
 def calculate_wrapping_overhead(trials):
     wrapping_time = 0
     for times in zip(trials.cv_starttime, trials.cv_endtime):
@@ -359,7 +310,7 @@ def main():
     else:
         # Use a flag which is set to true as soon as all children are
         # supposed to be killed
-        exit_ = Exit()
+        exit_ = wrapping_util.Exit()
         signal.signal(signal.SIGTERM, exit_.signal_callback)
         signal.signal(signal.SIGABRT, exit_.signal_callback)
         signal.signal(signal.SIGINT, exit_.signal_callback)
@@ -521,21 +472,21 @@ def main():
 
             if exit_.get_exit() == True and not sent_SIGINT:
                 logger.critical("Shutdown procedure: Sending SIGINT")
-                kill_children(signal.SIGINT)
+                wrapping_util.kill_children(signal.SIGINT)
                 sent_SIGINT_time = time.time()
                 sent_SIGINT = True
 
             if exit_.get_exit() == True and not sent_SIGTERM and time.time() \
                     > sent_SIGINT_time + 5:
                 logger.critical("Shutdown procedure: Sending SIGTERM")
-                kill_children(signal.SIGTERM)
+                wrapping_util.kill_children(signal.SIGTERM)
                 sent_SIGTERM_time = time.time()
                 sent_SIGTERM = True
 
             if exit_.get_exit() == True and not sent_SIGKILL and time.time() \
                     > sent_SIGTERM_time + 5:
                 logger.critical("Shutdown procedure: Sending SIGKILL")
-                kill_children(signal.SIGKILL)
+                wrapping_util.kill_children(signal.SIGKILL)
                 sent_SIGKILL_time = time.time()
                 sent_SIGKILL = True
 

@@ -43,7 +43,6 @@ def get_instance_durations(trials):
 
 def get_total_time(trials):
     total_time = 0
-    print 
     for starttime, endtime in zip(trials['starttime'], trials['endtime']):
         total_time += endtime - starttime
     if total_time < 1:
@@ -145,8 +144,8 @@ def collect_results(directory):
         total_times_for_mean = []
 
         for result in results[optimizer]:
-            results_for_mean.append(float(result[5]))
-            runtimes_for_mean.append(float(result[6]))
+            results_for_mean.append(float(result[10]))
+            runtimes_for_mean.append(float(result[11]))
             sio.write("%30s | %6d | %7s/%7s/%7s/%7s/%7s/%7s/%7s/%7s | %10f | %10f\n"
                       % (result[0], result[1], result[2], result[3], result[4],
                          result[5], result[6], result[7], result[8], result[9],

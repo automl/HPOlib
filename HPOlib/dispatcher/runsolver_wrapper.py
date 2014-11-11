@@ -124,12 +124,15 @@ def read_run_instance_output(run_instance_output_string):
     return result_array, result_string
 
 
-def make_command(cfg, fold, param_string, run_instance_output, function=None):
-    if function is None:
-        fn = cfg.get("HPOLIB", "function")
+def make_command(cfg, fold, param_string, run_instance_output, test=False):
+    if test:
+        fn = cfg.get("HPOLIB", "test_function")
+        # TODO: test if test_function exists! probably in the startup script!
     else:
-        fn = cfg.get("HPOLIB", function)
+        fn = cfg.get("HPOLIB", "function")
+
     python_cmd = cfg.get("HPOLIB", "leading_algo_info") + " " + fn
+
     python_cmd += " --fold %d --folds %d --params %s" % (fold, cfg.getint(
         "HPOLIB", "number_cv_folds"), param_string)
     # Do not write the actual task in quotes because runsolver will not work
@@ -142,7 +145,7 @@ def make_command(cfg, fold, param_string, run_instance_output, function=None):
 
 def _make_runsolver_command(cfg, output_filename):
     cmd = cfg.get("HPOLIB", "leading_runsolver_info")
-    cmd += " runsolver -o %s --timestamp --use-pty" % output_filename
+    cmd += " runsolver -o \"%s\" --timestamp --use-pty" % output_filename
     if cfg.get('HPOLIB', 'runsolver_time_limit'):
         cmd += " -W %d" % cfg.getint('HPOLIB', 'runsolver_time_limit')
     if cfg.get('HPOLIB', 'cpu_limit'):
@@ -257,14 +260,14 @@ def parse_output(cfg, run_instance_content, runsolver_output_content,
     return rval
 
 
-def dispatch(cfg, fold, params):
+def dispatch(cfg, fold, params, test=False):
     param_string = " ".join([key + " " + str(params[key]) for key in params])
     time_string = wrapping_util.get_time_string()
     run_instance_output = os.path.join(os.getcwd(),
                                        time_string + "_run_instance.out")
     runsolver_output_file = os.path.join(os.getcwd(),
                                          time_string + "_runsolver.out")
-    cmd = make_command(cfg, fold, param_string, run_instance_output)
+    cmd = make_command(cfg, fold, param_string, run_instance_output, test=test)
 
     starttime = time.time()
     fh = open(runsolver_output_file, "w")
@@ -296,6 +299,5 @@ def _run_command_with_shell(command, output):
                                executable="/bin/bash")
     logger.info(
         "-----------------------RUNNING RUNSOLVER----------------------------")
-    process.wait()
 
-    return
+    process.wait()

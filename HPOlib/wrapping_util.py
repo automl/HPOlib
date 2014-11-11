@@ -25,6 +25,8 @@ import math
 import numpy as np
 import traceback
 import os
+import psutil
+import signal
 from StringIO import StringIO
 import sys
 import types
@@ -266,3 +268,53 @@ def save_config_to_file(file_handle, config, write_nones=True):
             if (config.get(section, key) is None and write_nones) or \
                 config.get(section, key) is not None:
                     file_handle.write("%s = %s\n" % (key, config.get(section, key)))
+
+
+def kill_children(sig):
+    # TODO: somehow wait, until the Experiment pickle is written to disk
+    process = psutil.Process(os.getpid())
+    # Ubuntu 14.04 and older versions ship with a deprecated version of
+    # psutil. Use the old interface only if the old version is installed:
+    if psutil.version_info[0] >= 2:
+        children = process.children()
+    else:
+        children = process.get_children()
+
+    pids_with_commands = []
+    for child in children:
+        pids_with_commands.append((child.pid, child.cmdline()))
+
+    logger.debug("Running %s" % str(pids_with_commands))
+    for child in children:
+        try:
+            os.kill(child.pid, sig)
+        except Exception as e:
+            logger.error(type(e))
+            logger.error(e)
+
+
+class Exit:
+    def __init__(self):
+        self.exit_flag = False
+        self.signal = None
+
+    def true(self):
+        self.exit_flag = True
+
+    def false(self):
+        self.exit_flag = False
+
+    def set_exit_flag(self, exit):
+        self.exit_flag = exit
+
+    def get_exit(self):
+        return self.exit_flag
+
+    def signal_callback(self, signal_, frame):
+        SIGNALS_TO_NAMES_DICT = dict((getattr(signal, n), n) \
+                                     for n in dir(signal) if
+                                     n.startswith('SIG') and '_' not in n)
+
+        logger.critical("Received signal %s" % SIGNALS_TO_NAMES_DICT[signal_])
+        self.true()
+        self.signal = signal_

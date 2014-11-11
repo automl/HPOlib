@@ -480,3 +480,28 @@ Convert Search Spaces
 .. raw:: html
 
     <a href="https://github.com/automl/HPOlib"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/652c5b9acfaddf3a9c326fa6bde407b87f7be0f4/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6f72616e67655f6666373630302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png"></a>
+
+Test/Validate the Best Configuration(s)
+=======================================
+
+To get an unbiased performance estimate of the best configuration(s) found,
+HPOlib offers a script to run a test function with these configurations. The
+scripts is called like:
+
+.. code:: bash
+
+    HPOlib-testbest --all|--best|--trajectory --cwd path/to/the/optimization/directory
+
+HPOlib-testbest will open the experiment pickle
+file which is used for HPOlib bookkeeping, extract the hyperparameters for
+the best configuration and call the test function specified in the
+configuration file. The result of the test function is then stored in the
+experiment pickle and can be further processed.
+
+As an example, consider the usecase that we ran SMAC to optimize the
+:ref:`logistic regression <logreg>` and want to get the test performance for
+the best configuration.
+
+.. code:: bash
+
+    HPOlib-testbest --best --cwd logreg/nocv/smac_2_08_00-master_2000_2014-11-7--16-49-28-166127/

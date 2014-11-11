@@ -20,7 +20,7 @@ import os
 import unittest
 import sys
 
-import HPOlib.benchmark_util as benchmark_util
+import HPOlib.benchmarks.benchmark_util as benchmark_util
 
 
 class BenchmarkUtilTest(unittest.TestCase):
