@@ -357,16 +357,14 @@ def main():
 
             optimizer_dir_in_experiment = temporary_output_dir
 
-        os.chdir(optimizer_dir_in_experiment)
-
         # call target_function.setup()
         fn_setup = config.get("HPOLIB", "function_setup")
         if fn_setup:
-            if temporary_output_dir:
-                logger.critical("The options 'temporary_output_directory' "
-                                "and 'function_setup' cannot be used "
-                                "together.")
-                sys.exit(1)
+            #if temporary_output_dir:
+            #    logger.critical("The options 'temporary_output_directory' "
+            #                    "and 'function_setup' cannot be used "
+            #                    "together.")
+            #    sys.exit(1)
 
             fn_setup_output = os.path.join(os.getcwd(),
                                            "function_setup.out")
@@ -378,6 +376,7 @@ def main():
             runsolver_wrapper._run_command_with_shell(setup_cmd,
                                                       runsolver_output)
 
+        os.chdir(optimizer_dir_in_experiment)
 
         logger.info(cmd)
         output_file = optimizer_output_file
@@ -522,14 +521,17 @@ def main():
         # TODO: here should be a synchronization point for the two different
         # threads, so no deadlocks can happen!
 
+        # Change back into to directory
+        os.chdir(dir_before_exp)
+
         # call target_function.setup()
         fn_teardown = config.get("HPOLIB", "function_teardown")
         if fn_teardown:
-            if temporary_output_dir:
-                logger.critical("The options 'temporary_output_directory' "
-                                "and 'function_teardown' cannot be used "
-                                "together.")
-                sys.exit(1)
+            #if temporary_output_dir:
+            #    logger.critical("The options 'temporary_output_directory' "
+            #                    "and 'function_teardown' cannot be used "
+            #                    "together.")
+            #    sys.exit(1)
 
             fn_teardown_output = os.path.join(os.getcwd(),
                                               "function_teardown.out")
@@ -541,9 +543,6 @@ def main():
             runsolver_wrapper._run_command_with_shell(teardown_cmd,
                                                       runsolver_output)
 
-
-        # Change back into to directory
-        os.chdir(dir_before_exp)
         if temporary_output_dir:
             # We cannot be sure that the directory
             # optimizer_dir_in_experiment in dir_before_exp got deleted
