@@ -57,6 +57,14 @@ def check_dependencies():
                         "Are you sure that it's installed?\n"
                         "Your $PATH is: " + os.environ['PATH'])
 
+    # Check Java Version
+    version_str = 'java version "1.7.0_65"'
+    output = subprocess.check_output(["java", "-version"],
+                                     stderr=subprocess.STDOUT)
+    if version_str not in output:
+        logger.critical("Java version (%s) does not contain %s,"
+                        "you continue at you own risk" % (output, version_str))
+
 
 def _get_state_run(optimizer_dir):
     rungroups = glob.glob(optimizer_dir + "scenario-SMAC*")

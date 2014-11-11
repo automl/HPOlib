@@ -42,6 +42,15 @@ import HPOlib.dispatcher.runsolver_wrapper as runsolver_wrapper
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
+INFODEVEL = """
+##############################################################################
+# Your are using the DEVELOPMENT version. This means we might change things  #
+# on a daily basis, commit untested code and remove or add features without  #
+# announcements. We do not intend to break any functionality, but cannot     #
+# guarantee to not do it.                                                    #
+##############################################################################
+"""
+IS_DEVELOPMENT = True
 
 logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
                            'message)s', datefmt='%H:%M:%S')
@@ -194,6 +203,11 @@ def use_arg_parser():
 def main():
     """Start an optimization of the HPOlib. For documentation see the
     comments inside this function and the general HPOlib documentation."""
+
+    # First of all print the infodevel
+    if IS_DEVELOPMENT:
+        logger.critical(INFODEVEL)
+
     args, unknown_arguments = use_arg_parser()
 
     # Convert the path to the optimizer to be an absolute path, which is
@@ -247,10 +261,10 @@ def main():
     # So the optimizer module can acces the seed from the config and
     config.set("HPOLIB", "seed", str(args.seed))
     experiment_directory_prefix = config.get("HPOLIB", "experiment_directory_prefix")
-    optimizer_call, optimizer_dir_in_experiment = optimizer_module.main(config=config,
-                                                                        options=args,
-                                                                        experiment_dir=experiment_dir,
-                                                                        experiment_directory_prefix=experiment_directory_prefix)
+    optimizer_call, optimizer_dir_in_experiment = \
+        optimizer_module.main(config=config, options=args,
+                              experiment_dir=experiment_dir,
+                              experiment_directory_prefix=experiment_directory_prefix)
     cmd = optimizer_call
 
     with open(os.path.join(optimizer_dir_in_experiment, "config.cfg"), "w") as f:

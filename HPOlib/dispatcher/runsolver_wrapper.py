@@ -131,10 +131,10 @@ def make_command(cfg, fold, param_string, run_instance_output, test=False):
     else:
         fn = cfg.get("HPOLIB", "function")
 
-    python_cmd = cfg.get("HPOLIB", "leading_algo_info") + " " + fn
 
-    python_cmd += " --fold %d --folds %d --params %s" % (fold, cfg.getint(
-        "HPOLIB", "number_cv_folds"), param_string)
+    python_cmd = fn + " --fold %d --folds %d --params %s" % \
+                      (fold, cfg.getint("HPOLIB", "number_cv_folds"),
+                       param_string)
     # Do not write the actual task in quotes because runsolver will not work
     # then; also we need use-pty and timestamp so that the "solver" output
     # is flushed to the output directory
@@ -171,7 +171,7 @@ def parse_output(cfg, run_instance_content, runsolver_output_content,
                         "output:\n%s"
                         % result_string)
         instance_wallclock_time = measured_wallclock_time
-        result_array = [None]*8
+        result_array = [None] * 8
     else:
         instance_wallclock_time = float(result_array[4])
     additional_data = " ".join(result_array[8:])
@@ -202,15 +202,16 @@ def parse_output(cfg, run_instance_content, runsolver_output_content,
                         additional_data)
             elif not np.isfinite(float(result_array[6].strip(","))):
                 rval = (cpu_time, wallclock_time, "CRASHED",
-                    cfg.getfloat("HPOLIB", "result_on_terminate"), additional_data)
+                        cfg.getfloat("HPOLIB", "result_on_terminate"),
+                        additional_data)
             else:
                 rval = (cpu_time, wallclock_time, "SAT",
                         float(result_array[6].strip(",")),
                         additional_data)
         else:
             if error != "Runsolver probably crashed!":
-                # The runsolver terminated the target algorithm, so there should be
-                # no additional run info and we can use the field
+                # The runsolver terminated the target algorithm, so there should
+                # be no additional run info and we can use the field
                 # TODO: there should be the runsolver output file in the
                 # additional information!
                 rval = (cpu_time, wallclock_time, "CRASHED",
@@ -226,8 +227,8 @@ def parse_output(cfg, run_instance_content, runsolver_output_content,
                             additional_data)
                 elif not np.isfinite(float(result_array[6].strip(","))):
                     rval = (cpu_time, wallclock_time, "CRASHED",
-                        cfg.getfloat("HPOLIB", "result_on_terminate"),
-                        additional_data)
+                            cfg.getfloat("HPOLIB", "result_on_terminate"),
+                            additional_data)
                 else:
                     rval = (cpu_time, wallclock_time, "SAT",
                             float(result_array[6].strip(",")),
@@ -237,12 +238,12 @@ def parse_output(cfg, run_instance_content, runsolver_output_content,
             # There should really be the runinstance output filename here!
             rval = (cpu_time, wallclock_time, "CRASHED",
                     cfg.getfloat("HPOLIB", "result_on_terminate"),
-                    "No result string returned. Please have a look " \
+                    "No result string returned. Please have a look "
                     "at the runinstance output")
         else:
             if error != "Runsolver probably crashed!":
-                # The runsolver terminated the target algorithm, so there should be
-                # no additional run info and we can use the field
+                # The runsolver terminated the target algorithm, so there should
+                # be no additional run info and we can use the field
                 rval = (cpu_time, wallclock_time, "CRASHED",
                         cfg.getfloat("HPOLIB", "result_on_terminate"),
                         error + " Please have a look at the runsolver output "
@@ -258,6 +259,24 @@ def parse_output(cfg, run_instance_content, runsolver_output_content,
                         "runsolver output file.")
                 
     return rval
+
+
+def store_target_algorithm_calls(path, wallclock_time, result, additional_data,
+                                 call):
+    # Save the call to the target algorithm
+    if not os.path.exists(path):
+        fh = open(path, 'w')
+        fh.write(",".join(["RESULT", "DURATION", "ADDITIONAL_INFO", "CALL"]) +
+                 "\n")
+    else:
+            fh = open(path, "a")
+
+    try:
+        fh.write(",".join([str(result), str(wallclock_time),
+                               str(additional_data), call]) + "\n")
+    finally:
+        fh.close()
+    return
 
 
 def dispatch(cfg, fold, params, test=False):
@@ -282,12 +301,18 @@ def dispatch(cfg, fold, params, test=False):
 
     cpu_time, wallclock_time, status, result, additional_data = \
         parse_output(cfg, run_instance_content, runsolver_output_content,
-                     measured_time=endtime-starttime)
+                     measured_time=endtime - starttime)
 
     if status == "SAT":
         if cfg.getboolean("HPOLIB", "remove_target_algorithm_output"):
             os.remove(run_instance_output)
         os.remove(runsolver_output_file)
+
+    if cfg.getboolean("HPOLIB", "store_target_algorithm_calls"):
+        store_target_algorithm_calls(
+            path=os.path.join(os.getcwd(), "target_algorithm_calls.csv"),
+            wallclock_time=wallclock_time, result=result,
+            additional_data=additional_data, call=cmd)
 
     return additional_data, result, status, wallclock_time
 

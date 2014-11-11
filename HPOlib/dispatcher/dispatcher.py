@@ -64,7 +64,8 @@ def get_trial_index(experiment, fold, params):
     for idx, trial in enumerate(experiment.trials):
         exp = trial['params']
         if exp == params and (idx, fold) not in experiment.instance_order and \
-                (experiment.get_trial_from_id(idx)['instance_results'][fold] == np.NaN or
+                (experiment.get_trial_from_id(idx)['instance_results'][fold] ==
+                     np.NaN or
                  experiment.get_trial_from_id(idx)['instance_results'][fold] !=
                  experiment.get_trial_from_id(idx)['instance_results'][fold]):
             new = False
@@ -99,6 +100,11 @@ def parse_command_line():
 
 def get_parameters():
     params = dict(zip(sys.argv[6::2], sys.argv[7::2]))
+    # Now remove the leading minus
+    for key in params.keys():
+        new_key = re.sub('^-', '', key)
+        params[new_key] = params[key]
+        del params[key]
     remove_param_metadata(params)
     params = OrderedDict(sorted(params.items(), key=lambda t: t[0]))
     return params
@@ -114,8 +120,8 @@ def format_return_string(status, runtime, runlength, quality, seed,
 def main():
     """
     If we are not called from cv means we are called from CLI. This means
-    the optimizer itself handles crossvalidation (smac). To keep a nice .pkl we have to do some
-    bookkeeping here
+    the optimizer itself handles crossvalidation (smac). To keep a nice .pkl we
+    have to do some bookkeeping here
     """
 
     cfg = wrapping_util.load_experiment_config_file()
@@ -158,7 +164,8 @@ def main():
         result = float("NaN")
         status = "CRASHED"
         wallclock_time = 0.
-        logger.error("Invalid value %s for HPOLIB:dispatcher" % dispatch_function)
+        logger.error("Invalid value %s for HPOLIB:dispatcher" %
+                     dispatch_function)
 
     experiment = Experiment.load_experiment_file()
     if status == "SAT":
@@ -184,10 +191,9 @@ def main():
         experiment._save_jobs()
         del experiment
 
-    logger.info(return_string)
     print return_string
+    logger.info(return_string)
     return return_string
-
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,7 @@
 = Version 0.2.0 =
 
 === Bugfixes ===
++ REMOVED THE LEADING MINUS IN THE EXPRIMENT.PKL and providing a method to fix 'broken' .pkls
 
 === Functionality ===
 
@@ -33,6 +34,17 @@
 * `scripts/HPOlib-testbest`: New script which takes a directory created by a
     previous optimization run. It then runs a test function on all
     configurations which were evaluated.
+* It is now possible to store the call for each target algorithm evaluation.
+    The option can be set in the config file.
+
 === Internals ===
 
 * HPOlib/Experiment.py: the experiment pickle is only saved when the function _save_jobs() is invoked.
+
+=== Minor ===
+* Print a warning, when a user uses a development version
+* Print a warning, when user tries to run smac and does not have java version 1.7.0_65
+* Remove leading_algo_info from config.cfg; Information can be set with the target algorithm call
+
+=== Evaluation scripts ===
+* getTopK outputs the k best (worst) configurations

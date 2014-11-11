@@ -3,7 +3,8 @@ HPOlib: A hyperparameter optimization library.
 
 This software provides a commen interface to the three hyperparameter
 ptimization packages hyperopt(TPE), SMAC and spearmint. For further information,
-please visit the accompanying website http://www.automl.org/hpolib.
+please visit the accompanying website http://www.automl.org/hpolib. The
+documentation can be found at [http://hpolib.readthedocs.org](http://hpolib.readthedocs.org).
 
 This software is licensed under the GPL license. You find the license text
 shipped with this package.
@@ -22,3 +23,6 @@ Issue tracking
 
 [![Issue Tracking](https://badge.waffle.io/automl/HPOlib.png?label=ready&title=Ready)](https://waffle.io/automl/HPOlib)
 
+Documentation
+
+[![Documentation Status](https://readthedocs.org/projects/hpolib/badge/?version=development)](http://hpolib.readthedocs.org/en/development/)
