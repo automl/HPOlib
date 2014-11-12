@@ -280,7 +280,7 @@ def store_target_algorithm_calls(path, wallclock_time, result, additional_data,
 
 
 def dispatch(cfg, fold, params, test=False):
-    param_string = " ".join([key + " " + str(params[key]) for key in params])
+    param_string = " ".join(["-" + key + " " + str(params[key]) for key in params])
     time_string = wrapping_util.get_time_string()
     run_instance_output = os.path.join(os.getcwd(),
                                        time_string + "_run_instance.out")
