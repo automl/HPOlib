@@ -42,6 +42,23 @@ class BenchmarkUtilTest(unittest.TestCase):
         self.assertEqual(params, {'x': '3'})
         self.assertEqual(args, {'folds': '10', 'fold': '0'})
 
+        sys.argv = ["test.py", "--folds", "10", "--fold", "0", "--long",
+                    "long", "long", "li", "long", "long", "long", "HEY",
+                    "--params", "-x", "3"]
+        args, params = benchmark_util.parse_cli()
+        self.assertEqual(params, {'x': '3'})
+        self.assertEqual(args, {'folds': '10', 'fold': '0',
+                                'long': "long long li long long long HEY"})
+
+        sys.argv = ["test.py", "--folds", "10", "--fold", "0", "--long", '"',
+                    "long", "long", "li", "long", "long", "'", "lng", "HEY",
+                    "--params", "-x", "3"]
+        args, params = benchmark_util.parse_cli()
+        self.assertEqual(params, {'x': '3'})
+        self.assertEqual(args, {'folds': '10', 'fold': '0',
+                                'long': "\" long long li long long \' lng HEY"})
+
+
         # illegal call, arguments with one minus before --params
         sys.argv = ["test.py", "-folds", "10", "--fold", "0", "--params", "-x",
                     "3"]

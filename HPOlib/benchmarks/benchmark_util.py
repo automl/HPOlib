@@ -45,12 +45,15 @@ def parse_cli():
         -depth '3' -n_hid_0 '1024' -n_hid_1 '1024' -n_hid_2 '1024' -lr '0.01'
     """
     args = {}
+    arg_name = None
+    arg_values = None
     parameters = {}
 
     cli_args = sys.argv
     found_params = False
     skip = True
     iterator = enumerate(cli_args)
+
     for idx, arg in iterator:
         if skip:
             skip = False
@@ -59,18 +62,17 @@ def parse_cli():
             skip = True
 
         if arg == "--params":
+            if arg_name:
+                args[arg_name] = " ".join(arg_values)
             found_params = True
             skip = False
 
         elif arg[0:2] == "--" and not found_params:
-            if cli_args[idx+1][0] == "-":
-                # This is a boolean argument
-                args[cli_args[idx][2:]] = True
-                skip = False
-                #raise ValueError("Argument name is not allowed to have a "
-                #                 "leading minus %s" % cli_args[idx + 1])
-            else:
-                args[cli_args[idx][2:]] = cli_args[idx+1]
+            if arg_name:
+                args[arg_name] = " ".join(arg_values)
+            arg_name = arg[2:]
+            arg_values = []
+            skip = False
 
         elif arg[0:2] == "--" and found_params:
             raise ValueError("You are trying to specify an argument after the "
@@ -84,6 +86,9 @@ def parse_cli():
                              "ding minus or try to specify a hyperparameter bef"
                              "ore the --params argument. %s" %
                              " ".join(cli_args))
+        elif arg[0:2] != "--" and not found_params:
+            arg_values.append(arg)
+            skip = False
 
         elif not found_params:
             raise ValueError("Illegal command line string, expected an argument"
