@@ -27,6 +27,9 @@ import json
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
+# TODO document this as soon as there is an official documentation
+# TODO this is the string to start up workers:
+"""bash mysql-worker --pool branin --mysql-database braninSearch --log-output-dir ~/mhome/aeatk-out --auto-adjust-batch-size true --delay-between-requests 10 --max-runs-to-batch 10 --min-runs-to-batch 1 --retry-crashed-count 5"""
 
 logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
                            'message)s', datefmt='%H:%M:%S')
@@ -88,26 +91,11 @@ def make_command(cfg, fold, test=False):
     else:
         fn = cfg.get("HPOLIB", "function")
 
-    python_cmd = "runsolver -w /dev/null " + fn + " --fold %d --folds %d" % \
-                      (fold, cfg.getint("HPOLIB", "number_cv_folds"))
     # Do not write the actual task in quotes because runsolver will not work
     # then; also we need use-pty and timestamp so that the "solver" output
     # is flushed to the output directory
-    return python_cmd
-
-
-def _make_worker_command(cfg, output_filename):
-    cmd = cfg.get("HPOLIB", "leading_runsolver_info")
-    cmd += " runsolver -o \"%s\" --timestamp --use-pty" % output_filename
-    if cfg.get('HPOLIB', 'runsolver_time_limit'):
-        cmd += " -W %d" % cfg.getint('HPOLIB', 'runsolver_time_limit')
-    if cfg.get('HPOLIB', 'cpu_limit'):
-        cmd += " -C %d" % cfg.getint('HPOLIB', 'cpu_limit')
-    if cfg.get('HPOLIB', 'memory_limit'):
-        cmd += " -M %d" % cfg.getint('HPOLIB', 'memory_limit')
-    delay = 0
-    if delay is not None:
-        cmd += " -d %d" % int(delay)
+    cmd = "runsolver -w /dev/null " + fn + " --fold %d --folds %d" % \
+        (fold, cfg.getint("HPOLIB", "number_cv_folds"))
     return cmd
 
 
@@ -130,16 +118,15 @@ def store_target_algorithm_calls(path, wallclock_time, result, additional_data,
 
 
 def dispatch(cfg, fold, params, test=False):
-    #param_string = " ".join([key + " " + str(params[key]) for key in params])
-    #time_string = wrapping_util.get_time_string()
-    #run_instance_output = os.path.join(os.getcwd(),
-    #                                   time_string + "_run_instance.out")
-    #runsolver_output_file = os.path.join(os.getcwd(),
-    #                                     time_string + "_runsolver.out")
-    # cmd = make_command(cfg, fold, param_string, run_instance_output, test=test)
-    import shlex
+    # Most information about the database we are talking to is stored in the
+    # two global options files, namely ~/.aeatk/mysqldbtae.opt and
+    # ~/.aeatk/mysqlworker.opt. Only the pool must be specified on a
+    # per-experiment base; furthermore, the database name can be specified on
+    # a per-experiment base.
+    pool = cfg.get("MYSQLDBTAE", "pool")
+    database = cfg.get("MYSQLDBTAE", "database")
 
-    # Values we need for json
+    # Values we need as ids for json
     t = int(time.time() * 1000000) % 10000
     rc_id = os.getpid()
     algo_exec_config_id = t
@@ -157,23 +144,28 @@ def dispatch(cfg, fold, params, test=False):
     json_str = json_template % (rc_id, algo_exec_config_id, algo_exec,
                                 algo_exec_dir, pcs_id, pcs_filename, pcs_text,
                                 pisp_id, pi_id, pc_id, pcs_id, pc_setting)
-    cmd = ["json-executor", "--tae", "MYSQLDB", "--mysqldbtae-pool", "branin",
-           "--mysqldbtae-username", "aad", "--mysqldbtae-password", "***",
-           "--mysqldbtae-hostname", "metasql.rz.ki.privat", "--mysqldbtae-port",
-           "3306", "--mysqldbtae-database", "braninSearch"]
-    logger.critical(json_str)
+    json_executor = os.path.join(os.path.dirname(__file__),
+                                 "MySQLDBTAE", "util", "json-executor")
+    cmd = ["bash", json_executor, "--tae", "MYSQLDB",
+           "--mysqldbtae-pool", pool]
+    if database:
+        cmd += ["--mysqldbtae-database", database]
+    logger.debug("Calling %s", " ".join(cmd))
+    logger.debug("Calling with this json: %s", json_str)
+
+    # --mysqlTaeDefaultsFile
 
     starttime = time.time()
     proc = subprocess.Popen(args=cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE)
     stdoutdata, stderrdata = proc.communicate(json_str)
     endtime = time.time()
 
-    logger.critical("JSON")
-    logger.critical(json_str)
-    logger.critical("STDERR")
-    logger.critical(stderrdata)
-    logger.critical("STDOUT")
-    logger.critical(stdoutdata)
+    logger.debug("JSON")
+    logger.debug(json_str)
+    logger.debug("STDERR")
+    logger.debug(stderrdata)
+    logger.debug("STDOUT")
+    logger.debug(stdoutdata)
 
     startstring = "\n******JSON******\n"
     endstring = "\n********\n"
@@ -181,21 +173,20 @@ def dispatch(cfg, fold, params, test=False):
     json_start = stdoutdata.find(startstring)
     json_end = stdoutdata.find(endstring)
 
-    logger.critical(json_start)
-    logger.critical(json_end)
-
     if json_start != json_end and json_start < json_end:
         raw_json_return = stdoutdata[json_start + len(startstring):json_end]
         jason = json.loads(raw_json_return)
-        logger.critical(jason)
+
+        logger.debug("JSON representation in python:")
+        logger.debug(jason)
+
         result = jason[0]["r-quality"]
         status = jason[0]["r-run-result"]
         additional_data = jason[0]["r-addl-run-data"]
         wallclock_time = jason[0]["r-wallclock-time"]
         runtime = jason[0]["r-runtime"]
-        logger.critical(str(result) + " " + str(type(result)))
     else:
-        logger.critical("Dispatcher 'use_worker' could not find any valid json "
+        logger.critical("Dispatcher 'mysqldbtae' could not find any valid json "
                         "return string. This is what the json-executor "
                         "returned:\n %s" % stdoutdata)
         result = cfg.getfloat("HPOLIB", "result_on_terminate")

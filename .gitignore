@@ -8,9 +8,14 @@ docs/build/*
 
 # Runsolver
 runsolver/src/*
+runsolver-3.3.4.tar.bz2
 
 # benchmark runs
 HPOlib/benchmarks/*/*_*/*
+
+# Java plugins
+HPOlib/dispatcher/MySQLDBTAE
+MySQLDBTAE.tar.gz
 
 # C extensions
 *.so

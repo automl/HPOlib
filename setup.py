@@ -27,7 +27,9 @@ package_dir = {'HPOlib': 'HPOlib',
                'HPOlib.benchmarks': 'HPOlib/benchmarks'}
 package_data = {'HPOlib.config_parser': ['*.cfg']}
 
-data_files = []
+data_files = [] + \
+             [(d, [os.path.join(d, f) for f in files])
+              for d, folders, files in os.walk("HPOlib/dispatcher/MySQLDBTAE")]
 scripts = ['scripts/HPOlib-run', 'scripts/HPOlib-plot', 'runsolver/src/runsolver', 'scripts/HPOlib-convert', 'scripts/remove_minus.py']
 
 
@@ -58,10 +60,10 @@ def download_source(download_url, md5, save_as):
     return True
 
 
-def extract_source(fn_name, extract_as):
-    if tarfile.is_tarfile(fn_name):
+def extract_source(filename, extract_as):
+    if tarfile.is_tarfile(filename):
         try:
-            tfile = tarfile.open(fn_name)
+            tfile = tarfile.open(filename)
             tfile.extractall(extract_as)
         except Exception, e:
             sys.stdout.write("Error occurred during extraction: %s\n" % e)
@@ -175,7 +177,7 @@ class AdditionalInstall(install):
 
         if runsolver_needs_to_be_installed and downloaded:
             sys.stdout.write("Extracting runsolver to %s\n" % os.path.join(here_we_are, runsolver_name))
-            extracted = extract_source(fn_name=os.path.join(here_we_are, runsolver_tar_name), extract_as=here_we_are)
+            extracted = extract_source(filename=os.path.join(here_we_are, runsolver_tar_name), extract_as=here_we_are)
 
         if runsolver_needs_to_be_installed and extracted:
             sys.stdout.write("Building runsolver\n")
@@ -221,6 +223,21 @@ class AdditionalInstall(install):
                                                           url="http://www.automl.org/smac_2_08_00-master_src.tar.gz",
                                                           md5='2be626a5437b56da2eba1b67b7a94367')
 
+
+        downloaded_aeatk, extracted_aeatk = (False, False)
+        # Download the AEATK/MySQLTAE-bundle
+        aeatk_bundle_base_url = "http://automl.org"
+        aeatk_bundle_filename = "aeatk-v2.08.01-development-4.tar.gz"
+        aeatk_url = aeatk_bundle_base_url + aeatk_bundle_filename
+        sys.stdout.write("[INFO] downloading MySQLDBTAE from %s\n" % aeatk_url)
+        downloaded_aeatk = download_source(aeatk_url,
+                                           "2cff55a2301c0104363f573d67f08c14",
+            save_as=os.path.join(here_we_are, "MySQLDBTAE.tar.gz"))
+        if downloaded:
+            extracted_aeatk = extract_source(
+                os.path.join(here_we_are, "MySQLDBTAE.tar.gz"),
+                extract_as=os.path.join(here_we_are, 'HPOlib', 'dispatcher'))
+
         # TODO: Normally one wants to call run(self), but this runs distutils and ignores install_requirements for unknown reasons
         # if anyone knows a better way, feel free to change
         install.do_egg_install(self)
@@ -243,6 +260,9 @@ class AdditionalInstall(install):
                              "tar -xf spearmint_april2013_mod_src.tar.gz \n" +
                              "mv spearmint_april2013_mod_src spearmint/ \n\n" +
                              "Thank You!\n")
+        if not extracted_aeatk:
+            sys.stdout.write("[ERROR] MySQLDBTAE for the dispatcher "
+                             "use_workers could not be installed.\n")
         if runsolver_needs_to_be_installed and not built:
             sys.stdout.write("[ERROR] Please install runsolver on your own! You can download it from:\n%s%s\n" % \
                   ('http://www.cril.univ-artois.fr/~roussel/runsolver/%s', runsolver_tar_name))
