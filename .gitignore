@@ -11,6 +11,7 @@ runsolver/src/*
 
 # benchmark runs
 HPOlib/benchmarks/*/*_*/*
+runsolver-3.3.4.tar.bz2
 
 # C extensions
 *.so

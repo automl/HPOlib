@@ -1,0 +1,4 @@
+source ~/virtualenvs/development/bin/activate
+export PATH=$PATH:/home/feurerm/mhome/HPOlib/Software/bin_cluster
+export PYTHONPATH=$PYTHONPATH:/home/feurerm/mhome/HPOlib/Software/HPOlib
+export PATH=$PATH:/home/feurerm/mhome/HPOlib/Software/HPOlib/scripts
