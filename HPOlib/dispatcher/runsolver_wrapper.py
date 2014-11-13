@@ -188,7 +188,9 @@ def parse_output(cfg, run_instance_content, runsolver_output_content,
         if cfg.getfloat("HPOLIB", "runtime_on_terminate") <= 0:
             raise ValueError('Configuration error: You cannot use the '
                              'option "use_own_time_measurement = False'
-                             ' without setting "runtime_on_crash".')
+                             ' without setting "runtime_on_terminate" '
+                             'or setting a negative values for '
+                             '"runtime_on_terminate".')
         if error != "Runsolver probably crashed!":
             wallclock_time = instance_wallclock_time
         else:
