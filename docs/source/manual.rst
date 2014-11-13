@@ -368,6 +368,8 @@ with the path to your CUDA installation.
 How to run your own optimizer
 =============================
 
+Before you integrate your own optimization algorithm, make sure that you know
+how the HPOlib is structured and read the section :ref:`structure`.
 The interface to include your own optimizer is straight-forward. Let's assume
 that you have written a hyperparameter optimization package called BayesOpt2.
 You tell the HPOlib to use your software with the command line argument
@@ -385,8 +387,14 @@ files (replace BayesOpt2 if your optimization package has a different name):
     optimization algorithm based on HPOlib defaults
 * BayesOpt2Default.cfg: default configuration for your optimization algorithm
 
-The rest of this section will explain interface these scripts must provide and
-the functionality which they must perform
+Moreover, your algorithm has to call a script of the HPOlib namely
+:bash:`cv.py`, which does bookkeeping and manages a potential cross validation.
+The rest of this section will explain how to call :bash:`cv.py` and the
+interface your scripts must provide and the functionality which they must
+perform.
+
+Calling :bash:`cv.py`
+---------------------
 
 BayesOpt2.py
 ------------

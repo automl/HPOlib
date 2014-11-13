@@ -14,6 +14,8 @@ Contents:
    install
    algorithms_and_datasets
    manual
+   structure
+   cite
 
 
 

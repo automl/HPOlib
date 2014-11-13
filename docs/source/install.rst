@@ -1,7 +1,7 @@
 .. _install:
 
 ====================================
-INSTALLATION INSTRUCTIONS FOR HPOlib
+Installation Instructions For HPOlib
 ====================================
 
 .. role:: bash(code)
