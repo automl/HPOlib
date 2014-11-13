@@ -176,7 +176,7 @@ def parse_output(cfg, run_instance_content, runsolver_output_content,
         instance_wallclock_time = float(result_array[4])
     additional_data = " ".join(result_array[8:])
 
-    if cfg.getboolean("HPOLIB", "use_own_time_measurement") is True:
+    if cfg.getboolean("HPOLIB", "use_HPOlib_time_measurement") is True:
         # if the runsolver time measurement is available
         if error != "Runsolver probably crashed!":
             wallclock_time = measured_wallclock_time
@@ -187,9 +187,9 @@ def parse_output(cfg, run_instance_content, runsolver_output_content,
     else:
         if cfg.getfloat("HPOLIB", "runtime_on_terminate") <= 0:
             raise ValueError('Configuration error: You cannot use the '
-                             'option "use_own_time_measurement = False'
+                             'option "use_HPOlib_time_measurement = False'
                              ' without setting "runtime_on_terminate" '
-                             'or setting a negative values for '
+                             'or setting a negative value for '
                              '"runtime_on_terminate".')
         if error != "Runsolver probably crashed!":
             wallclock_time = instance_wallclock_time

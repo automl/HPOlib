@@ -57,6 +57,18 @@ def check_config(config):
     if config.getint('HPOLIB', "number_cv_folds") < 1:
         raise Exception("The number of crossvalidation folds must be at least one!")
 
+    # --------------------------------------------------------------------------
+    # Check for forbidden values/combinations
+    # --------------------------------------------------------------------------
+    if not config.getboolean('HPOLIB', 'use_HPOlib_time_measurement'):
+        runtime_on_terminate = config.getfloat('HPOLIB', 'runtime_on_terminate')
+        if runtime_on_terminate <= 0:
+            raise Exception('Configuration error: You cannot use the '
+                             'option "use_HPOlib_time_measurement = False'
+                             ' without setting "runtime_on_terminate" '
+                             'or setting a negative value for '
+                             '"runtime_on_terminate".')
+
     # -----------
     # Check function
     # -----------

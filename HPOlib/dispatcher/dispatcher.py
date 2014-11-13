@@ -8,6 +8,7 @@ import time
 import HPOlib.wrapping_util as wrapping_util
 import HPOlib.dispatcher.runsolver_wrapper as runsolver_wrapper
 import HPOlib.dispatcher.python_file as python_file
+from HPOlib.dispatcher import use_worker
 import HPOlib.Experiment as Experiment
 
 
@@ -159,6 +160,10 @@ def main():
     elif dispatch_function == "python_function.py":
         additional_data, result, status, wallclock_time = \
             python_file.dispatch(cfg, fold, params)
+    elif dispatch_function == "use_worker.py":
+        additional_data, result, status, wallclock_time = \
+            use_worker.dispatch(cfg, fold, params)
+
     else:
         additional_data = ""
         result = float("NaN")
