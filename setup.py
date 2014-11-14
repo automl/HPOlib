@@ -227,7 +227,7 @@ class AdditionalInstall(install):
 
         downloaded_aeatk, extracted_aeatk = (False, False)
         # Download the AEATK/MySQLTAE-bundle
-        aeatk_bundle_base_url = "http://automl.org"
+        aeatk_bundle_base_url = "http://automl.org/"
         aeatk_bundle_filename = "aeatk-v2.08.01-development-4.tar.gz"
         aeatk_url = aeatk_bundle_base_url + aeatk_bundle_filename
         sys.stdout.write("[INFO] downloading MySQLDBTAE from %s\n" % aeatk_url)
