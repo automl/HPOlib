@@ -35,7 +35,7 @@ logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
                            'message)s', datefmt='%H:%M:%S')
 hpolib_logger = logging.getLogger("HPOlib")
 hpolib_logger.setLevel(logging.INFO)
-logger = logging.getLogger("HPOlib.dispatcher.use_worker")
+logger = logging.getLogger("HPOlib.dispatcher.mysqldbtae")
 
 json_template = \
 """

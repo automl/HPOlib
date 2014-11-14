@@ -1,8 +1,5 @@
-from collections import OrderedDict
 import logging
 import numpy as np
-import re
-import sys
 import time
 
 import HPOlib.wrapping_util as wrapping_util
@@ -17,42 +14,6 @@ logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
 hpolib_logger = logging.getLogger("HPOlib")
 hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.dispatcher.dispatcher")
-
-
-def remove_param_metadata(params):
-    """
-    Check whether some params are defined on the Log scale or with a Q value,
-    must be marked with "LOG$_{paramname}" or Q[0-999]_$paramname
-    LOG_/Q_ will be removed from the paramname
-    """
-    for para in params:
-        new_name = para
-
-        if isinstance(params[para], str):
-            params[para] = params[para].strip("'")
-        if "LOG10_" in para:
-            pos = para.find("LOG10_")
-            new_name = para[0:pos] + para[pos + 6:]
-            params[new_name] = np.power(10, float(params[para]))
-            del params[para]
-        elif "LOG2_" in para:
-            pos = para.find("LOG2_")
-            new_name = para[0:pos] + para[pos + 5:]
-            params[new_name] = np.power(2, float(params[para]))
-            del params[para]
-        elif "LOG_" in para:
-            pos = para.find("LOG_")
-            new_name = para[0:pos] + para[pos + 4:]
-            params[new_name] = np.exp(float(params[para]))
-            del params[para]
-            #Check for Q value, returns round(x/q)*q
-        m = re.search(r'Q[0-999\.]{1,10}_', para)
-        if m is not None:
-            pos = new_name.find(m.group(0))
-            tmp = new_name[0:pos] + new_name[pos + len(m.group(0)):]
-            q = float(m.group(0)[1:-1])
-            params[tmp] = round(float(params[new_name]) / q) * q
-            del params[new_name]
 
 
 def get_trial_index(experiment, fold, params):
@@ -77,48 +38,16 @@ def get_trial_index(experiment, fold, params):
     return trial_index
 
 
-def parse_command_line():
-    # Parse options and arguments
-    usage = "This script pickles the params and runs the runsolver with " + \
-            "run_instance and extract the output for the optimizer \n" + \
-            "The output is printed im a SMACish way: \n\n" + \
-            "'Result for ParamILS: <solved>, <runtime>, <runlength>, " + \
-            "<quality>, <seed>, <additional rundata>' \n\n" + \
-            "Usage: runsolver_wrapper <instancename> " + \
-            "<instancespecificinformation> <cutofftime> <cutofflength> " + \
-            "<seed> <param> <param> <param>\n" + \
-            "<instancename> might be the optimizer name if not" + \
-            " called by smac\n"
-    if len(sys.argv) < 7:
-        sys.stdout.write(usage)
-        exit(1)
-
-    # Then get some information for run_instance
-    fold = int(sys.argv[1])
-    seed = int(sys.argv[5])
-    return fold, seed
-
-
-def get_parameters():
-    params = dict(zip(sys.argv[6::2], sys.argv[7::2]))
-    # Now remove the leading minus
-    for key in params.keys():
-        new_key = re.sub('^-', '', key)
-        params[new_key] = params[key]
-        del params[key]
-    remove_param_metadata(params)
-    params = OrderedDict(sorted(params.items(), key=lambda t: t[0]))
-    return params
-
-
+"""
 def format_return_string(status, runtime, runlength, quality, seed,
                          additional_data):
     return_string = "Result for ParamILS: %s, %f, %d, %f, %d, %s" % \
                     (status, runtime, runlength, quality, seed, additional_data)
     return return_string
+"""
 
 
-def main():
+def main(arguments, parameters, fold):
     """
     If we are not called from cv means we are called from CLI. This means
     the optimizer itself handles crossvalidation (smac). To keep a nice .pkl we
@@ -141,14 +70,9 @@ def main():
         experiment._save_jobs()
         del experiment
 
-    fold, seed = parse_command_line()
-    # Side-effect: removes all additional information like log and applies
-    # transformations to the parameters
-    params = get_parameters()
-
     experiment = Experiment.load_experiment_file()
     # Side-effect: adds a job if it is not yet in the experiments file
-    trial_index = get_trial_index(experiment, fold, params)
+    trial_index = get_trial_index(experiment, fold, parameters)
     experiment.set_one_fold_running(trial_index, fold)
     experiment._save_jobs()
     del experiment  # release Experiment lock
@@ -156,13 +80,13 @@ def main():
     dispatch_function = cfg.get("HPOLIB", "dispatcher")
     if dispatch_function == "runsolver_wrapper.py":
         additional_data, result, status, wallclock_time = \
-            runsolver_wrapper.dispatch(cfg, fold, params)
+            runsolver_wrapper.dispatch(cfg, fold, parameters)
     elif dispatch_function == "python_function.py":
         additional_data, result, status, wallclock_time = \
-            python_file.dispatch(cfg, fold, params)
+            python_file.dispatch(cfg, fold, parameters)
     elif dispatch_function == "mysqldbtae.py":
         additional_data, result, status, wallclock_time = \
-            mysqldbtae.dispatch(cfg, fold, params)
+            mysqldbtae.dispatch(cfg, fold, parameters)
 
     else:
         additional_data = ""
@@ -187,18 +111,10 @@ def main():
     experiment._save_jobs()
     del experiment  # release lock
 
-    return_string = format_return_string(status, wallclock_time, 1, result,
-                                         seed, additional_data)
-
     if not called_from_cv:
         experiment = Experiment.load_experiment_file()
         experiment.end_cv(time.time())
         experiment._save_jobs()
         del experiment
 
-    print return_string
-    logger.info(return_string)
-    return return_string
-
-if __name__ == "__main__":
-    main()
+    return status, wallclock_time, result, additional_data

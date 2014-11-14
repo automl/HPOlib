@@ -18,45 +18,58 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from argparse import ArgumentParser
-
+from collections import OrderedDict
 import cPickle
 from functools import partial
 from importlib import import_module
 import logging
 import os
+import subprocess
+import StringIO
 import sys
 
+import numpy as np
+
 import hyperopt
-import HPOlib.cv as cv
+
+import HPOlib.optimization_interceptor
+from HPOlib.wrapping_util import flatten_parameter_dict
 
 logger = logging.getLogger("HPOlib.optimizers.tpe.tpecall")
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
-"""
-def pyll_replace_list_with_dict(search_space, indent = 0):
-    ""
-    Recursively traverses a pyll search space and replaces pos_args nodes with
-    dict nodes.
-    ""
 
-    # Convert to apply first. This makes sure every node of the search space is
-    # an apply or literal node which makes it easier to traverse the tree
-    if not isinstance(search_space, hyperopt.pyll.Apply):
-        search_space = hyperopt.pyll.as_apply(search_space)
+def construct_cli_call(cli_target, params):
+    cli_call = StringIO.StringIO()
+    cli_call.write("python -m ")
+    cli_call.write(cli_target)
+    cli_call.write(" --params")
+    params = flatten_parameter_dict(params)
+    params = OrderedDict(sorted(params.items(), key=lambda t: t[0]))
+    for param in params:
+        cli_call.write(" -" + param + " \"'" + str(params[param]) + "'\"")
+    return cli_call.getvalue()
 
-    if search_space.name == "pos_args":
-        print " " * indent + search_space.name, search_space.__dict__
-        param_dict = {}
-        for pos_arg in search_space.pos_args:
-            print " " * indent + pos_arg.name
-            #param_dict["key"] = pos_arg
-    for param in search_space.inputs():
-        pyll_replace_list_with_dict(param, indent=indent+2)
 
-    return search_space
-"""
+def command_line_function(params, cli_target):
+    call = construct_cli_call(cli_target, params)
+    output = subprocess.check_output(call, shell=True)
+
+    lines = output.split("\n")
+
+    result = np.Inf
+    for line in lines:
+        pos = line.find("Result:")
+        if pos != -1:
+            result_string = line[pos:]
+            result_array = result_string.split()
+            result = float(result_array[1].strip(","))
+            break
+
+    # Parse the CLI
+    return result
 
 
 def main():
@@ -97,7 +110,10 @@ def main():
 
     module = import_module(space)
     search_space = module.space
-    fn = cv.main  # doForTPE
+
+    cli_target = HPOlib.optimization_interceptor.__file__
+    cli_target = os.path.splitext(cli_target)[0]
+    fn = partial(command_line_function, cli_target=cli_target)
     
     if args.random:
         # We use a random search

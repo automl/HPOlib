@@ -40,11 +40,9 @@ version_info = ["Automatic Configurator Library ==> v2.06.01-development-643 (a1
 
 #optimizer_str = "smac_2_06_01-dev"
 
-# Some constants which are used multiple times
 def get_algo_exec():
-    import HPOlib
-    return '"python ' + os.path.join(os.path.dirname(HPOlib.__file__),
-                                   'dispatcher', 'dispatcher.py') + '"'
+    return '"python ' + os.path.join(os.path.dirname(__file__),
+                                     'SMAC_to_HPOlib.py') + '"'
 
 
 def check_dependencies():

@@ -1,5 +1,19 @@
+import os
 import StringIO
+import sys
 import unittest
+
+try:
+    import hyperopt
+except:
+    # TODO: Remove this Hackiness when installation fully works!
+    import HPOlib
+
+    hyperopt_path = os.path.join(os.path.dirname(os.path.abspath(
+        HPOlib.__file__)), "../optimizers/tpe/hyperopt_august2013_mod_src")
+    print hyperopt_path
+    sys.path.append(hyperopt_path)
+    import hyperopt
 
 from hyperopt import hp
 import hyperopt
@@ -7,6 +21,8 @@ import numpy as np
 
 import HPOlib.format_converter.configuration_space as configuration_space
 import HPOlib.format_converter.pyll_parser as pyll_parser
+
+
 
 # More complex search space
 classifier = configuration_space.CategoricalHyperparameter("classifier", ["svm", "nn"])
