@@ -3,7 +3,8 @@ HPOlib: A hyperparameter optimization library.
 
 This software provides a common interface to the three hyperparameter
 optimization packages hyperopt(TPE), SMAC and spearmint. For further information,
-please visit the accompanying website http://www.automl.org/hpolib.
+please visit the accompanying website http://www.automl.org/hpolib. The installation
+manual is in the file [INSTALL.md](INSTALL.md)
 
 This software is licensed under the GPL license. You find the license text
 shipped with this package.
