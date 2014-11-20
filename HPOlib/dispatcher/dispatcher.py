@@ -197,7 +197,7 @@ def main():
         del experiment
 
     print return_string
-    logger.info(return_string)
+    logger.debug(return_string)
     return return_string
 
 if __name__ == "__main__":
