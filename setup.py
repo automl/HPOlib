@@ -28,7 +28,9 @@ package_dir = {'HPOlib': 'HPOlib',
 package_data = {'HPOlib.config_parser': ['*.cfg']}
 
 data_files = []
-scripts = ['scripts/HPOlib-run', 'scripts/HPOlib-plot', 'runsolver/src/runsolver', 'scripts/HPOlib-convert', 'scripts/remove_minus.py']
+scripts = ['scripts/HPOlib-run', 'scripts/HPOlib-plot',
+           'runsolver/src/runsolver', 'scripts/HPOlib-convert',
+           'scripts/remove_minus.py', 'scripts/HPOlib-testbest']
 
 
 def read(fname):
