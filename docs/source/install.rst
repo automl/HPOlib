@@ -217,6 +217,7 @@ and try again or install :bash:`pymongo` manually.
 We also provide an updated and adjusted version of spearmint. To also install this version do:
 
 .. code:: bash
+
     cd optimizers
     rm spearmint_gitfork_mod_src
     git clone https://github.com/automl/spearmint.git

@@ -264,7 +264,7 @@ HPOLIB      runsolver_time_limit,                               Enforce resource
             memory_limit, cpu_limit
 HPOLIB      total_time_limit                                    Enforce a total time limit on the hyperparameter optimization.
 HPOLIB      leading_runsolver_info                              Important when using THEANO and CUDA, see :ref:`configure_theano`
-HPOLIB      use_own_time_measurement            :cfg:`True`     When set to True (the default), the runsolver time measurement is saved. Otherwise, the time measurement of the target algorithm is saved.
+HPOLIB      use_HPOlib_time_measurement         :cfg:`True`     When set to True (the default), the runsolver time measurement is saved. Otherwise, the time measured by the target algorithm is saved.
 HPOLIB      number_of_concurrent_jobs           :cfg:`1`        WARNING: this only works for spearmint and SMAC and is not tested!
 HPOLIB      function_setup                                      An executable which is called before the first target algorithm call. This can be for example check if everything is installed properly.
 HPOLIB      function_teardown                                   An executable which is called after the last target algorithm call. This can be for example delete temporary directories.
@@ -504,7 +504,14 @@ HPOlib-testbest will open the experiment pickle
 file which is used for HPOlib bookkeeping, extract the hyperparameters for
 the best configuration and call the test function specified in the
 configuration file. The result of the test function is then stored in the
-experiment pickle and can be further processed.
+experiment pickle and can be further processed. The first argument (either
+:bash:`--all`, :bash:`--best` or :bash:`--trajectory` determines for which
+configurations the HPOlib will call the test script.
+
+* :bash:`--all`: Will call the test-script for all configurations. This is
+  can be very expensive.
+* :bash:`--best`: Call the test-script only for the best configuration.
+* :bash:`--trajectory`: Not yet implemented!
 
 As an example, consider the usecase that we ran SMAC to optimize the
 :ref:`logistic regression <logreg>` and want to get the test performance for
