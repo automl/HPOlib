@@ -24,8 +24,8 @@ def dispatch(cfg, fold, params, test=False):
         fn_name = cfg.get("HPOLIB", "python_function")
     folds = cfg.getint("HPOLIB", "number_cv_folds")
 
-    if not cfg.getboolean("HPOLIB", "use_own_time_measurement"):
-        logger.warn("The configuration HPOLIB:use_own_time_measurment False "
+    if not cfg.getboolean("HPOLIB", "use_HPOlib_time_measurement"):
+        logger.warn("The configuration HPOLIB:use_HPOlib_time_measurement False "
                     "has no effect for the python function dispatcher.")
 
     try:
