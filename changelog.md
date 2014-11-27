@@ -48,3 +48,6 @@
 
 === Evaluation scripts ===
 * getTopK outputs the k best (worst) configurations
+* plotting scripts are more flexible and allow to set properties for matplotlib
++ You can nos choose between plottin mean or median
+
