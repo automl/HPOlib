@@ -51,16 +51,17 @@ def _plot_trace(pkl_list, name_list, save="", cut=sys.maxint, log=False):
 
 
 def _trace_with_std_per_eval(pkl_list, name_list, save="",
-                             cut=sys.maxint, log=False):
+                             cut=sys.maxint, log=False, aggregation="mean"):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
 
     # noinspection PyBroadException
     try:
         os.chdir(plotting_dir)
-        import plotTraceWithStd_perEval
-        plotTraceWithStd_perEval.main(pkl_list, name_list, autofill=True,
-                                      optimum=0, save=save, log=log, cut=cut)
+        import plotTrace_perEval
+        plotTrace_perEval.main(pkl_list, name_list, autofill=True,
+                               aggregation=aggregation, optimum=0,
+                               save=save, log=log, print_lenght_trial_list=True)
         os.chdir(cur_dir)
         sys.stdout.write("passed\n")
     except Exception, e:
@@ -69,16 +70,17 @@ def _trace_with_std_per_eval(pkl_list, name_list, save="",
 
 
 def _trace_with_std_per_time(pkl_list, name_list, save="",
-                             cut=sys.maxint, log=False):
+                             cut=sys.maxint, log=False, aggregation="mean"):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
 
     # noinspection PyBroadException
     try:
         os.chdir(plotting_dir)
-        import plotTraceWithStd_perTime
-        plotTraceWithStd_perTime.main(pkl_list, name_list, autofill=True,
-                                      optimum=0, save=save, log=log, cut=cut)
+        import plotTrace_perTime
+        plotTrace_perTime.main(pkl_list, name_list, autofill=True,
+                               aggregation=aggregation, optimum=0,
+                               save=save, log=log)
         os.chdir(cur_dir)
         sys.stdout.write("passed\n")
     except Exception, e:
@@ -95,8 +97,12 @@ def _optimizer_overhead(pkl_list, name_list, save="",
     try:
         os.chdir(plotting_dir)
         import plotOptimizerOverhead
-        plotOptimizerOverhead.main(pkl_list, name_list, autofill=True,
-                                   log=log, save=save, cut=cut)
+        plotOptimizerOverhead.main(pkl_list=pkl_list, name_list=name_list,
+                                   autofill=True, title="", log=log,
+                                   save=save, cut=cut, ylabel="Time [sec]",
+                                   xlabel="#Function evaluations",
+                                   aggregation="mean", properties=None,
+                                   print_lenght_trial_list=True)
         os.chdir(cur_dir)
         sys.stdout.write("passed\n")
     except Exception, e:
@@ -254,18 +260,18 @@ def main():
 
     # Error Trace with Std
     if save_dir is not "":
-        tmp_save = os.path.join(save_dir, "TraceWithStd_perEval_%s.%s" % (time_str, args.file))
+        tmp_save = os.path.join(save_dir, "MeanTrace_perEval_%s.%s" % (time_str, args.file))
     else:
         tmp_save = save_dir
-    sys.stdout.write("TraceWithStd_perEval.py ... %s ..." % tmp_save)
+    sys.stdout.write("MeanTrace_perEval.py ... %s ..." % tmp_save)
     _trace_with_std_per_eval(pkl_list=pkl_list, name_list=name_list,
                              save=tmp_save, log=log, cut=args.cut)
 
     if save_dir is not "":
-        tmp_save = os.path.join(save_dir, "TraceWithStd_perTime_%s.%s" % (time_str, args.file))
+        tmp_save = os.path.join(save_dir, "MeanTrace_perTime_%s.%s" % (time_str, args.file))
     else:
         tmp_save = save_dir
-    sys.stdout.write("TraceWithStd_perTime.py ... %s ..." % tmp_save)
+    sys.stdout.write("MeanTrace_perTime.py ... %s ..." % tmp_save)
     _trace_with_std_per_time(pkl_list=pkl_list, name_list=name_list,
                              save=tmp_save, log=log, cut=args.cut)
 

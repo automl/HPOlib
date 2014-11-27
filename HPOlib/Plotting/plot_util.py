@@ -31,7 +31,6 @@ __contact__ = "automl.org"
 # A super-simple cache for unpickled objects...
 cache = dict()
 
-
 def get_empty_iterator():
     return itertools.cycle([None])
 
@@ -251,3 +250,30 @@ def get_Trace_cv(trials):
     if np.isnan(trace[-1]):
         del trace[-1]
     return trace
+
+
+def get_defaults():
+    default = {"linestyles": get_single_linestyle(),
+               "colors": get_plot_colors(),
+               "markers": get_empty_iterator(),
+               "markersize": 6,
+               "labelfontsize": 12,
+               "linewidth": 1,
+               "titlefontsize": 15,
+               "gridcolor": 'lightgrey',
+               "gridalpha": 0.5,
+               "dpi": 100
+               }
+    return default
+
+
+def fill_with_defaults(def_dict):
+    defaults = get_defaults()
+    for key in defaults:
+        if key not in def_dict:
+            def_dict[key] = defaults[key]
+        elif def_dict[key] is None:
+            def_dict[key] = defaults[key]
+        else:
+            pass
+    return def_dict

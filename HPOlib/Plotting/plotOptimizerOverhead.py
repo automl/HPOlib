@@ -20,116 +20,27 @@
 from argparse import ArgumentParser
 
 import cPickle
-import itertools
 import sys
 
-import matplotlib.pyplot as plt
-import matplotlib.gridspec
-import numpy as np
+import numpy as numpy
 
-from HPOlib.Plotting import plot_util
+import HPOlib.Plotting.plot_util as plot_util
+import HPOlib.Plotting.plot_trajectory as plot_trajectory
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 
-def plot_time_trace(time_dict, name_list, title="", log=True, save="",
-                    y_max=0, y_min=0, linewidth=1,
-                    linestyles=plot_util.get_single_linestyle(),
-                    colors=None,
-                    markers=plot_util.get_empty_iterator(),
-                    markersize=6, ylabel=None, xlabel=None):
-
-    if colors is None:
-        colors= plot_util.get_plot_colors()
-    ratio = 5
-    gs = matplotlib.gridspec.GridSpec(ratio, 1)
-    fig = plt.figure(1, dpi=100)
-    fig.suptitle(title, fontsize=16)
-    ax1 = plt.subplot(gs[0:ratio, :])
-    ax1.grid(True, linestyle='-', which='major', color='lightgrey', alpha=0.5)
-    min_val = sys.maxint
-    max_val = -sys.maxint
-    max_trials = 0
-
-    trial_list_means = list()
-    trial_list_std = list()
-    num_runs_list = list()
-
-    # Get mean and std for all times and optimizers
-    for entry in name_list:
-        k = entry[0]
-        trial_list_std.append(np.std(np.array(time_dict[k]), axis=0))
-        if log:
-            trial_list_means.append(np.log10(np.mean(np.array(time_dict[k]), axis=0)))
-        else:
-            trial_list_means.append(np.mean(np.array(time_dict[k]), axis=0))
-        num_runs_list.append(len(time_dict[k]))
-
-    for k in range(len(name_list)):
-        # Plot mean and std for optimizer duration
-        c = colors.next()
-        m = markers.next()
-        x = range(len(trial_list_means[k]))
-        l = linestyles.next()
-        ax1.fill_between(x, trial_list_means[k] - trial_list_std[k],
-                         trial_list_means[k] + trial_list_std[k],
-                         facecolor=c, alpha=0.3, edgecolor=c)
-        ax1.plot(x, trial_list_means[k], color=c, linewidth=linewidth,
-                 label=name_list[k][0], marker=m, markersize=markersize,
-                 linestyle=l)
-        # Plot number of func evals for this experiment
-
-        if min(trial_list_means[k] - trial_list_std[k]) < min_val:
-            min_val = min(trial_list_means[k] - trial_list_std[k])
-        if max(trial_list_means[k] + trial_list_std[k]) > max_val:
-            max_val = max(trial_list_means[k] + trial_list_std[k])
-        if len(trial_list_means[k]) > max_trials:
-            max_trials = len(trial_list_means[k])
-
-    # Descript and label the stuff
-    fig.suptitle(title, fontsize=16)
-    leg = ax1.legend(loc='best', fancybox=True)
-    leg.get_frame().set_alpha(0.5)
-    if ylabel is None:
-        if log:
-            ylabel = "log10(Optimizer time in [sec])"
-        else:
-            ylabel = "Optimizer time in [sec]"
-    ax1.set_ylabel(ylabel)
-
-    if xlabel is None:
-        xlabel = "#Function evaluations"
-    ax1.set_xlabel(xlabel)
-
-    if y_max == y_min:
-        ax1.set_ylim([min_val-2, max_val+2])
-    else:
-        ax1.set_ylim([y_min, y_max])
-    ax1.set_xlim([0, max_trials])
-
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.85)
-    if save != "":
-        plt.savefig(save, dpi=100, facecolor='w', edgecolor='w',
-                    orientation='portrait', papertype=None, format=None,
-                    transparent=False, bbox_inches="tight", pad_inches=0.1)
-    else:
-        plt.show()
-
-
 def main(pkl_list, name_list, autofill, title="", log=False, save="",
-         y_min=0, y_max=0, cut=sys.maxint, linewidth=1,
-         linestyles=plot_util.get_single_linestyle(),
-         colors=None, markers=plot_util.get_empty_iterator(), markersize=6,
-         ylabel=None, xlabel=None):
+         y_min=None, y_max=None, cut=sys.maxint, scale_std=1,
+         ylabel="Time [sec]", xlabel="#Function evaluations",
+         aggregation="mean", properties=None,
+         print_lenght_trial_list=True):
 
-    if colors is None:
-        colors= plot_util.get_plot_colors()
-
-    times_dict = dict()
+    x_ticks = list()
+    overhead_list = list()
     for exp in range(len(name_list)):
-        times_dict[name_list[exp][0]] = list()
+        tmp_overhead_list = list()
         for pkl in pkl_list[exp]:
             fh = open(pkl, "r")
             trials = cPickle.load(fh)
@@ -140,9 +51,9 @@ def main(pkl_list, name_list, autofill, title="", log=False, save="",
             cv_endtime = trials["cv_endtime"][:cut]
 
             # Get optimizer duration times
-            time_list = list()
+            overhead = list()
             # First duration
-            time_list.append(cv_starttime[0] - trials["starttime"][0])
+            overhead.append(cv_starttime[0] - trials["starttime"][0])
             time_idx = 0
             for i in range(len(cv_starttime[1:])):
                 # Is there a next restored run?
@@ -153,10 +64,12 @@ def main(pkl_list, name_list, autofill, title="", log=False, save="",
                     # Equals means that the run crashed
                     if cv_endtime[i] < trials["endtime"][time_idx]:
                         # No .. everything is fine
-                        time_list.append((trials["endtime"][time_idx] - cv_endtime[i]))
-                        time_list.append((cv_starttime[i + 1] - trials["starttime"][time_idx+1]))
+                        overhead.append((trials["endtime"][time_idx] -
+                                         cv_endtime[i]))
+                        overhead.append((cv_starttime[i + 1] -
+                                         trials["starttime"][time_idx+1]))
                     elif trials["endtime"][time_idx] == cv_endtime[i]:
-                        # Yes, but BBoM managed to set an endtime
+                        # Yes, but HPOlib managed to set an endtime
                         pass
                     else:
                         # Yes ... trouble
@@ -166,29 +79,36 @@ def main(pkl_list, name_list, autofill, title="", log=False, save="",
                     time_idx += 1
                 # everything ...
                 else:
-                    time_list.append(cv_starttime[i + 1] - cv_endtime[i])
-            times_dict[name_list[exp][0]].append(time_list)
+                    overhead.append(cv_starttime[i + 1] - cv_endtime[i])
+            tmp_overhead_list.append(overhead)
+        overhead_list.append(tmp_overhead_list)
 
-    for key in times_dict.keys():
-        max_len = max([len(ls) for ls in times_dict[key]])
-        for t in range(len(times_dict[key])):
-            if len(times_dict[key][t]) < max_len and autofill:
-                diff = max_len - len(times_dict[key][t])
+    for i in range(len(overhead_list)):
+        max_len = max([len(ls) for ls in overhead_list[i]])
+        for t in range(len(overhead_list[i])):
+            if len(overhead_list[i][t]) < max_len and autofill:
+                diff = max_len - len(overhead_list[i][t])
                 # noinspection PyUnusedLocal
-                times_dict[key][t] = np.append(times_dict[key][t], [times_dict[key][t][-1] for x in range(diff)])
-            elif len(times_dict[key][t]) < max_len and not autofill:
-                raise ValueError("(%s != %s), Traces do not have the same length, please use -a" %
-                                 (str(max_len), str(len(times_dict[key][t]))))
+                overhead_list[i][t] = numpy.append(overhead_list[i][t],
+                                             [overhead_list[i][t][-1]
+                                              for x in range(diff)])
+            elif len(overhead_list[i][t]) < max_len and not autofill:
+                raise ValueError("(%s != %s), Traces do not have the same "
+                                 "length, please use -a" %
+                                 (str(max_len), str(len(overhead_list[i][t]))))
+        x_ticks.append(range(numpy.max([len(ls) for ls in overhead_list[i]])))
 
-    plot_time_trace(times_dict, name_list, title=title, log=log, save=save,
-                    y_min=y_min, y_max=y_max, linewidth=linewidth,
-                    linestyles=linestyles, colors=colors, markers=markers,
-                    markersize=markersize, ylabel=ylabel, xlabel=xlabel)
 
-    if save != "":
-        sys.stdout.write("Saved plot to " + save + "\n")
-    else:
-        sys.stdout.write("..Done\n")
+    plot_trajectory.plot_trajectories(trial_list=overhead_list,
+                                      name_list=name_list, x_ticks=x_ticks,
+                                      optimum=0, aggregation=aggregation,
+                                      scale_std=scale_std, log=log,
+                                      properties=properties,
+                                      y_max=y_max, y_min=y_min,
+                                      print_lenght_trial_list=
+                                      print_lenght_trial_list,
+                                      ylabel=ylabel, xlabel=xlabel,
+                                      title=title, save=save)
 
 if __name__ == "__main__":
     prog = "python plotOptimizerOverhead.py WhatIsThis <oneOrMorePickles> [WhatIsThis <oneOrMorePickles>]"
@@ -199,26 +119,56 @@ if __name__ == "__main__":
     # General Options
     parser.add_argument("-c", "--cut", type=int, default=sys.maxint,
                         help="Cut the experiment pickle length.")
+    parser.add_argument("-t", "--title", dest="title",
+                        default="", help="Optional supertitle for plot")
+    parser.add_argument("--xlabel", dest="xlabel",
+                        default="Duration [sec]", help="x axis")
+    parser.add_argument("--ylabel", dest="ylabel",
+                        default="Minfunction value", help="y label")
+    parser.add_argument("-s", "--save", dest="save",
+                        default="",
+                        help="Where to save plot instead of showing it?")
     parser.add_argument("-l", "--log", action="store_true", dest="log",
                         default=False, help="Plot on log scale")
-    parser.add_argument("--max", type=float, dest="max",
-                        default=0, help="Maximum of the plot")
-    parser.add_argument("--min", type=float, dest="min",
-                        default=0, help="Minimum of the plot")
-    parser.add_argument("-s", "--save", dest="save",
-                        default="", help="Where to save plot instead of showing it?")
-    parser.add_argument("-t", "--title", dest="title",
-                        default="", help="Choose a supertitle for the plot")
+    parser.add_argument("--max", dest="max", type=float,
+                        default=None, help="Maximum of the plot")
+    parser.add_argument("--min", dest="min", type=float,
+                        default=None, help="Minimum of the plot")
 
     # Options which are available only for this plot
+    parser.add_argument("--scale", type=float, dest="scale",
+                        default=1, help="Multiply std to get a nicer plot")
     parser.add_argument("-a", "--autofill", action="store_true", dest="autofill",
                         default=False, help="Fill trace automatically")
+    parser.add_argument("--printLength", dest="printlength", default=False,
+                        action="store_true",
+                        help="Print number of optimizer runs "
+                             "in brackets (legend)")
+    parser.add_argument("--aggregation", dest="aggregation", default="mean",
+                        choices=("mean", "median"),
+                        help="Print Median/Quantile or Mean/Std")
+
+    # Properties
+    # We need this to show defaults for -h
+    defaults = plot_util.get_defaults()
+    for key in defaults:
+        parser.add_argument("--%s" % key, dest=key, default=None,
+                            help="%s, default: %s" % (key, str(defaults[key])))
 
     args, unknown = parser.parse_known_args()
 
     sys.stdout.write("\nFound " + str(len(unknown)) + " arguments\n")
 
     pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
-    main(pkl_list_main, name_list_main, autofill=args.autofill, title=args.title,
-         log=args.log, save=args.save, y_min=args.min, y_max=args.max,
-         cut=args.cut)
+
+    prop = {}
+    args_dict = vars(args)
+    for key in defaults:
+        prop[key] = args_dict[key]
+
+    main(pkl_list_main, name_list_main, autofill=args.autofill,
+         save=args.save, title=args.title, log=args.log,
+         y_min=args.min, y_max=args.max, cut=args.cut,
+         aggregation=args.aggregation, scale_std=args.scale,
+         xlabel=args.xlabel, ylabel=args.ylabel, properties=prop,
+         print_lenght_trial_list=args.printlength)
