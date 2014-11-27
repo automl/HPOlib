@@ -34,12 +34,23 @@
 * `scripts/HPOlib-testbest`: New script which takes a directory created by a
     previous optimization run. It then runs a test function on all
     configurations which were evaluated.
+* `scripts/HPOlib-export`: New script which outputs the content of an
+    experiment pickle in a format readable by other programming languages.
 * It is now possible to store the call for each target algorithm evaluation.
     The option can be set in the config file.
+
+=== Benchmarks ===
+
+* Add new benchmark logistic regression on a grid. This is the first
+    benchmark which is bundled with the HPOlib and has a test function included.
+* Moved all benchmark related stuff into a new package `benchmark`.
 
 === Internals ===
 
 * HPOlib/Experiment.py: the experiment pickle is only saved when the function _save_jobs() is invoked.
+* Renamed several options:
+* `HPOlib/cv.py` does no longer call `HPOlib/dispatcher.py` via CLI,
+    but imports it.
 
 === Minor ===
 * Print a warning, when a user uses a development version

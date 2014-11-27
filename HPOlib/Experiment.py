@@ -126,7 +126,7 @@ class Experiment:
         trial['params'] = dict()
         # Stores the validation error
         trial['result'] = np.NaN
-        trial['test_error'] = np.NaN
+        trial['test_result'] = np.NaN
         # Validation error for every instance
         trial['instance_results'] = np.ones((self.folds)) * np.NaN
         trial['test_instance_results'] = np.ones((1,)) * np.NaN
