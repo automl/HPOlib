@@ -25,7 +25,6 @@ import warnings
 
 import numpy as np
 
-from HPOlib.dispatcher import dispatcher
 from HPOlib.Experiment import Experiment
 from HPOlib.wrapping_util import format_traceback, load_experiment_config_file
 
@@ -89,7 +88,7 @@ def do_cv(params, folds=10):
             if stderrdata:
                 logger.error(stderrdata)
 
-            # Read the dispatcher.py output
+            # Read the runsolver_wrapper output
             lines = stdoutdata.split("\n")
             result_string = None
             for line in lines:
@@ -137,9 +136,9 @@ def do_cv(params, folds=10):
 
 
 def flatten_parameter_dict(params):
-    # TODO: Generalize this, every optimizer should do this by itself
-    # TODO: use the HPOlibConfigSpace here!
-
+    """
+    TODO: Generalize this, every optimizer should do this by itself
+    """
     # Flat nested dicts and shorten lists
     # FORCES SMAC TO FOLLOW SOME CONVENTIONS, e.g.
     # lr_penalty': hp.choice('lr_penalty', [{
@@ -197,24 +196,8 @@ def flatten_parameter_dict(params):
     return params
 
 
-def main(instance_name, instance_specific_information, cutofftime,
-         cutofflength, *parameters):
-    """HPOlib bookkeeping and training instance management.
-
-    Gets called the following way:
-    * SMAC: <instancename> <instancespecificinformation> <cutofftime> <cutofflength> " + \
-        # "<seed> <param> <param> <param>
-    * Spearmint: imports cv.py and calls main directly!
-    * Hyperopt: import cv.py and calls main directly!
-
-    Should be called the following way:
-    python -m HPOlib.cv <instancename> <instancespecificinformation>
-        <cutofftime> <cutofflength> <seed> <param> <param> <param>
-    Or maybe be callable the same way as our benchmarks are called. The maybe
-    add another necessary wrapper which imports cv.py!
-    """
-    logger.critical('instancename: %s, instancespecificinformation %s, '
-                    'cutofftime %s, cutofflength %s, ')
+def main(*args, **kwargs):
+    logger.critical('args: %s kwargs: %s', str(args), str(kwargs))
 
     params = None
 
