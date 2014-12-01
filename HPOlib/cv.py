@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from logging.handlers import SocketHandler, DEFAULT_TCP_LOGGING_PORT
 import os
 import subprocess
 import sys
@@ -33,10 +34,7 @@ __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __license__ = "3-clause BSD License"
 __contact__ = "automl.org"
 
-logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
-                           'message)s', datefmt='%H:%M:%S')
 hpolib_logger = logging.getLogger("HPOlib")
-hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.cv")
 
 
@@ -62,7 +60,6 @@ def do_cv(params, folds=10):
     results = []
 
     try:
-        logger.info("%s",  params)
         param_array = ["-" + str(param_name) + " " + str(params[param_name]) for param_name in params]
         param_string = " ".join(param_array)
         
@@ -197,6 +194,12 @@ def flatten_parameter_dict(params):
 
 
 def main(*args, **kwargs):
+    hpolib_logger.setLevel(logging.INFO)
+    host = 'localhost'
+    port = DEFAULT_TCP_LOGGING_PORT
+    socketh = SocketHandler(host, port)
+    logger.addHandler(socketh)
+
     logger.critical('args: %s kwargs: %s', str(args), str(kwargs))
 
     params = None

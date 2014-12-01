@@ -11,10 +11,7 @@ import HPOlib.dispatcher.python_file as python_file
 import HPOlib.Experiment as Experiment
 
 
-logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
-                           'message)s', datefmt='%H:%M:%S')
 hpolib_logger = logging.getLogger("HPOlib")
-hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.dispatcher.dispatcher")
 
 
@@ -123,6 +120,9 @@ def main():
     the optimizer itself handles crossvalidation (smac). To keep a nice .pkl we
     have to do some bookkeeping here
     """
+    logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
+                               'message)s', datefmt='%H:%M:%S')
+    hpolib_logger.setLevel(logging.INFO)
 
     cfg = wrapping_util.load_experiment_config_file()
     called_from_cv = True
