@@ -576,18 +576,17 @@ def main():
         trials._save_jobs()
         # trials.finish_experiment()
         total_time = 0
-        logger.info("Best result")
-        logger.info(trials.get_best())
+        logger.info("Best result %f", trials.get_best())
         logger.info("Durations")
         try:
             for starttime, endtime in zip(trials.starttime, trials.endtime):
                 total_time += endtime - starttime
-            logger.info("Needed a total of %f seconds", total_time)
-            logger.info("The optimizer %s took %10.5f seconds",
+            logger.info("  Needed a total of %f seconds", total_time)
+            logger.info("  The optimizer %s took %10.5f seconds",
                   optimizer, float(calculate_optimizer_time(trials)))
-            logger.info("The overhead of HPOlib is %f seconds",
+            logger.info("  The overhead of HPOlib is %f seconds",
                   calculate_wrapping_overhead(trials))
-            logger.info("The benchmark itself took %f seconds" % \
+            logger.info("  The benchmark itself took %f seconds" % \
                   trials.total_wallclock_time)
         except Exception as e:
             logger.error(HPOlib.wrapping_util.format_traceback(sys.exc_info()))
