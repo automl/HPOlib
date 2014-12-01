@@ -27,14 +27,34 @@ import json
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
-# TODO document this as soon as there is an official documentation
-# TODO this is the string to start up workers:
-"""bash mysql-worker --pool branin --mysql-database braninSearch --log-output-dir ~/mhome/aeatk-out --auto-adjust-batch-size true --delay-between-requests 10 --max-runs-to-batch 10 --min-runs-to-batch 1 --retry-crashed-count 5"""
+"""Dispatch runs via the MySQLDBTAE.
 
-logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
-                           'message)s', datefmt='%H:%M:%S')
-hpolib_logger = logging.getLogger("HPOlib")
-hpolib_logger.setLevel(logging.INFO)
+Things that need to be done in order to work:
+
+* Set up a directory ~/.aeatk
+* Create the file ~/.aeatk/mysqldbtae.opt and fill in the following keys:
+    * mysqldbtae-database
+    * mysqldbtae-username
+    * mysqldbtae-password
+    * mysqldbtae-hostname
+    * mysqldbtae-port
+* Create the file ~/.aeatk/mysqlworker.opt and fill in the following keys:
+    * mysql-database
+    * mysql-username
+    * mysql-password
+    * mysql-hostname
+    * mysql-port
+* Start your MySQL server and create a database with the same name as above.
+  The workers or the TAE should then create the necessary tables.
+* start one or more workers with bash
+
+  .. code:: bash
+
+      mysql-worker --pool example
+
+* Run the HPOlib.
+"""
+
 logger = logging.getLogger("HPOlib.dispatcher.mysqldbtae")
 
 json_template = \
@@ -51,11 +71,11 @@ json_template = \
       "pcs-text" : "-param {--params} [--params]\\n%s",
       "pcs-subspace" : { }
     },
-    "algo-cutoff" : 1.7976931348623157E308,
+    "algo-cutoff" : 1,
     "algo-deterministic" : true,
     "algo-tae-context" : { }
   },
-  "rc-cutoff" : 1.7976931348623157E308,
+  "rc-cutoff" : %s,
   "rc-pisp" : {
     "@pisp-id" : %d,
     "pisp-pi" : {
@@ -125,6 +145,7 @@ def dispatch(cfg, fold, params, test=False):
     # a per-experiment base.
     pool = cfg.get("MYSQLDBTAE", "pool")
     database = cfg.get("MYSQLDBTAE", "database")
+    rc_cutoff = cfg.get("MYSQLDBTAE", "rc_cutoff")
 
     # Values we need as ids for json
     t = int(time.time() * 1000000) % 10000
@@ -143,7 +164,8 @@ def dispatch(cfg, fold, params, test=False):
 
     json_str = json_template % (rc_id, algo_exec_config_id, algo_exec,
                                 algo_exec_dir, pcs_id, pcs_filename, pcs_text,
-                                pisp_id, pi_id, pc_id, pcs_id, pc_setting)
+                                rc_cutoff, pisp_id, pi_id, pc_id, pcs_id,
+                                pc_setting)
     json_executor = os.path.join(os.path.dirname(__file__),
                                  "MySQLDBTAE", "util", "json-executor")
     cmd = ["bash", json_executor, "--tae", "MYSQLDB",
@@ -151,6 +173,7 @@ def dispatch(cfg, fold, params, test=False):
     if database:
         cmd += ["--mysqldbtae-database", database]
     logger.debug("Calling %s", " ".join(cmd))
+    logger.info("Algo-exec is %", algo_exec)
     logger.debug("Calling with this json: %s", json_str)
 
     # --mysqlTaeDefaultsFile

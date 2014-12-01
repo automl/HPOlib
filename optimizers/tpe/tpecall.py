@@ -55,9 +55,14 @@ def construct_cli_call(cli_target, params):
 
 def command_line_function(params, cli_target):
     call = construct_cli_call(cli_target, params)
-    output = subprocess.check_output(call, shell=True)
+    proc = subprocess.Popen(call, shell=True, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    stdout, stderr = proc.communicate()
+    if proc.returncode != 0:
+        print stdout
+        print stderr
 
-    lines = output.split("\n")
+    lines = stdout.split("\n")
 
     result = np.Inf
     for line in lines:

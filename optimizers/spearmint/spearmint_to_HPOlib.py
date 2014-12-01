@@ -1,12 +1,15 @@
 from collections import OrderedDict
+import logging
 import os
 import StringIO
 import subprocess
 
 import numpy as np
 
-from HPOlib.wrapping_util import flatten_parameter_dict
-import HPOlib.optimization_interceptor
+from HPOlib.wrapping_util import flatten_parameter_dict, \
+    load_experiment_config_file
+
+logger = logging.getLogger("spearmint_to_HPOlib")
 
 def construct_cli_call(cli_target, params):
     cli_call = StringIO.StringIO()
@@ -22,9 +25,17 @@ def construct_cli_call(cli_target, params):
 
 def command_line_function(params, cli_target):
     call = construct_cli_call(cli_target, params)
-    output = subprocess.check_output(call, shell=True)
+    logger.info("CLI call: %s" % call)
+    proc = subprocess.Popen(call, shell=True, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    stdout, stderr = proc.communicate()
+    logger.info("STDOUT:")
+    logger.info(stdout)
+    if stderr:
+        logger.error("STDERR:")
+        logger.error(stderr)
 
-    lines = output.split("\n")
+    lines = stdout.split("\n")
 
     result = np.Inf
     for line in lines:
@@ -41,8 +52,13 @@ def command_line_function(params, cli_target):
 
 def main(job_id, params):
     """Implement the Spearmint interface and then call HPOlib"""
-    cli_target = HPOlib.optimization_interceptor.__file__
-    cli_target = os.path.splitext(cli_target)[0]
+    cfg = load_experiment_config_file()
+    log_level = cfg.getint("HPOLIB", "loglevel")
+    logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
+                               'message)s', datefmt='%H:%M:%S')
+    logger.setLevel(log_level)
+
+    cli_target = "HPOlib.optimization_interceptor"
     result = command_line_function(params, cli_target)
     return result
 

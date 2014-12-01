@@ -512,8 +512,14 @@ Dispatchers: Different ways to invoke the Target Algorithm
 Runsolver Wrapper
 -----------------
 
+.. automodule:: HPOlib.dispatcher.runsolver_wrapper
+
 Python Function
 ---------------
 
+.. automodule:: HPOlib.dispatcher.python_file
+
 MySQL-Database Target Algorithm Evaluator
 -----------------------------------------
+
+.. automodule::  HPOlib.dispatcher.mysqldbtae

@@ -20,7 +20,6 @@ from argparse import ArgumentParser
 from collections import OrderedDict
 import logging
 import os
-import re
 import sys
 import time
 import warnings
@@ -127,6 +126,9 @@ def run_one_instance(arguments, parameters):
         logger.error(format_traceback(sys.exc_info()))
         logger.error("Instance evaluation failed: %s %s", sys.exc_info()[0], e)
         result = np.NaN
+        status = "CRASHED"
+        wallclock_time = np.NaN
+        additional_data = str(e)
 
     # Do not return any kind of nan because this would break spearmint
     with warnings.catch_warnings():
@@ -160,6 +162,8 @@ def parse_params(params_list):
     for idx, i in enumerate(params_list[0::2]):
         key = params_list[idx * 2]
         value = params_list[idx * 2 + 1]
+        key = key.strip("'").strip('"')
+        value = value.strip("'").strip('"')
 
         if key[0] != "-":
             raise ValueError("Expected a parameter name that start with '-' at "

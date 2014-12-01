@@ -1,5 +1,5 @@
 from collections import OrderedDict
-import os
+import logging
 import re
 import StringIO
 import subprocess
@@ -8,9 +8,10 @@ import time
 
 import numpy as np
 
-from HPOlib.wrapping_util import remove_param_metadata
-import HPOlib.optimization_interceptor
+from HPOlib.wrapping_util import remove_param_metadata, \
+    load_experiment_config_file
 
+logger = logging.getLogger("SMAC_to_HPOlib")
 
 def construct_cli_call(cli_target, fold, params):
     cli_call = StringIO.StringIO()
@@ -26,9 +27,17 @@ def construct_cli_call(cli_target, fold, params):
 
 def command_line_function(params, fold, cli_target):
     call = construct_cli_call(cli_target, fold, params)
-    output = subprocess.check_output(call, shell=True)
+    logger.info("CLI call: %s" % call)
+    proc = subprocess.Popen(call, shell=True, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    stdout, stderr = proc.communicate()
+    logger.info("STDOUT:")
+    logger.info(stdout)
+    if stderr:
+        logger.error("STDERR:")
+        logger.error(stderr)
 
-    lines = output.split("\n")
+    lines = stdout.split("\n")
 
     result = np.Inf
     for line in lines:
@@ -54,8 +63,8 @@ def get_parameters():
     # Now remove the leading minus
     for key in params.keys():
         new_key = re.sub('^-', '', key)
-    params[new_key] = params[key]
-    del params[key]
+        params[new_key] = params[key]
+        del params[key]
     remove_param_metadata(params)
     params = OrderedDict(sorted(params.items(), key=lambda t: t[0]))
     return params
@@ -70,9 +79,14 @@ def format_return_string(status, runtime, runlength, quality, seed,
 
 
 def main():
-    """Implement the Spearmint interface and then call HPOlib"""
-    cli_target = HPOlib.optimization_interceptor.__file__
-    cli_target = os.path.splitext(cli_target)[0]
+    """Implement the SMAC interface and then call HPOlib"""
+    cfg = load_experiment_config_file()
+    log_level = cfg.getint("HPOLIB", "loglevel")
+    logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
+                               'message)s', datefmt='%H:%M:%S')
+    logger.setLevel(log_level)
+
+    cli_target = "HPOlib.optimization_interceptor"
 
     fold, seed = parse_command_line()
     params = get_parameters()
