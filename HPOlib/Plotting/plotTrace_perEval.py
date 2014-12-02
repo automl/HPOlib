@@ -27,7 +27,8 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec
 import numpy as np
 
-from HPOlib.Plotting import plot_util
+import HPOlib.Plotting.plot_util as plot_util
+import HPOlib.Plotting.plot_trajectory as plot_trajectory
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -40,6 +41,7 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="",
                             markers=plot_util.get_empty_iterator(),
                             markersize=6, print_lenght_trial_list=True,
                             ylabel=None, xlabel=None):
+
 
     if colors is None:
         colors= plot_util.get_plot_colors()
@@ -60,10 +62,12 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="",
     # One trialList represents all runs from one optimizer
     for i in range(len(trial_list)):
         if log:
-            trial_list_means.append(np.log10(np.nanmean(np.array(trial_list[i]), axis=0)))
+            trial_list_means.append(np.log10(np.nanmean(np.array(trial_list[i]),
+                                                        axis=0)))
         else:
             trial_list_means.append(np.nanmean(np.array(trial_list[i]), axis=0))
-        trial_list_std.append(np.nanstd(np.array(trial_list[i]), axis=0)*scale_std)
+        trial_list_std.append(np.nanstd(np.array(trial_list[i]), axis=0) *
+                              scale_std)
 
     fig.suptitle(title, fontsize=16)
 
@@ -112,7 +116,8 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="",
 
     if y_max == y_min:
          # Set axes limits
-        ax1.set_ylim([min_val-0.1*abs((max_val-min_val)), max_val+0.1*abs((max_val-min_val))])
+        ax1.set_ylim([min_val - 0.1 * abs((max_val - min_val)),
+                      max_val + 0.1 * abs((max_val - min_val))])
     else:
         ax1.set_ylim([y_min, y_max])
     ax1.set_xlim([0, max_trials + 1])
@@ -130,15 +135,12 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="",
 
 
 def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
-         y_min=0, y_max=0, scale_std=1, cut=sys.maxint, linewidth=1,
-         linestyles=plot_util.get_single_linestyle(),
-         colors=None, markers=plot_util.get_empty_iterator(),
-         markersize=6, print_lenght_trial_list=True, ylabel=None, xlabel=None):
-
-    if colors is None:
-        colors = plot_util.get_plot_colors()
+         y_min=None, y_max=None, scale_std=1, aggregation="mean",
+         cut=sys.maxint, xlabel="#Function evaluations", ylabel="Loss",
+         properties=None, print_lenght_trial_list=False):
 
     trial_list = list()
+    x_ticks = list()
     for i in range(len(pkl_list)):
         trial_list.append(list())
         for pkl in pkl_list[i]:
@@ -159,50 +161,78 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
             if len(trial_list[i][t]) < max_len and autofill:
                 diff = max_len - len(trial_list[i][t])
                 # noinspection PyUnusedLocal
-                trial_list[i][t] = np.append(trial_list[i][t], [trial_list[i][t][-1] for x in range(diff)])
+                trial_list[i][t] = np.append(trial_list[i][t],
+                                             [trial_list[i][t][-1]
+                                              for x in range(diff)])
             elif len(trial_list[i][t]) < max_len and not autofill:
-                raise ValueError("(%s != %s), Traces do not have the same length, please use -a" %
+                raise ValueError("(%s != %s), Traces do not have the same "
+                                 "length, please use -a" %
                                  (str(max_len), str(len(trial_list[i][t]))))
+        x_ticks.append(range(np.max([len(ls) for ls in trial_list[i]])))
 
-    plot_optimization_trace(trial_list, name_list, optimum, title=title, log=log,
-                            save=save, y_min=y_min, y_max=y_max,
-                            scale_std=scale_std, linewidth=linewidth,
-                            linestyles=linestyles, colors=colors,
-                            markers=markers, markersize=markersize,
-                            print_lenght_trial_list=print_lenght_trial_list,
-                            ylabel=ylabel, xlabel=xlabel)
-
-    if save != "":
-        sys.stdout.write("Saved plot to " + save + "\n")
-    else:
-        sys.stdout.write("..Done\n")
+    plot_trajectory.plot_trajectories(trial_list=trial_list,
+                                      name_list=name_list, x_ticks=x_ticks,
+                                      optimum=optimum,
+                                      y_min=y_min, y_max=y_max,
+                                      title=title, ylabel=ylabel, xlabel=xlabel,
+                                      log=log, save=save,
+                                      aggregation=aggregation,
+                                      properties=properties,
+                                      scale_std=scale_std,
+                                      print_lenght_trial_list=
+                                      print_lenght_trial_list)
+    return
 
 if __name__ == "__main__":
-    prog = "python plotTraceWithStd.py WhatIsThis <oneOrMorePickles> [WhatIsThis <oneOrMorePickles>]"
+    prog = "python plotTraceWithStd.py WhatIsThis <oneOrMorePickles> " \
+           "[WhatIsThis <oneOrMorePickles>]"
     description = "Plot a Trace with std for multiple experiments"
 
     parser = ArgumentParser(description=description, prog=prog)
 
     # Options for specific benchmarks
     parser.add_argument("-o", "--optimum", type=float, dest="optimum",
-                        default=0, help="If not set, the optimum is supposed to be zero")
+                        default=0,
+                        help="If not set, the optimum is supposed to be zero")
 
     # Options which are available only for this plot
-    parser.add_argument("-a", "--autofill", action="store_true", dest="autofill",
-                        default=False, help="Fill trace automatically")
+    parser.add_argument("-a", "--autofill", action="store_true",
+                        dest="autofill", default=False,
+                        help="Fill trace automatically")
     parser.add_argument("-c", "--scale", type=float, dest="scale",
                         default=1, help="Multiply std to get a nicer plot")
+
     # General Options
     parser.add_argument("-l", "--log", action="store_true", dest="log",
                         default=False, help="Plot on log scale")
     parser.add_argument("--max", dest="max", type=float,
-                        default=0, help="Maximum of the plot")
+                        default=None, help="Maximum of the plot")
     parser.add_argument("--min", dest="min", type=float,
-                        default=0, help="Minimum of the plot")
+                        default=None, help="Minimum of the plot")
     parser.add_argument("-s", "--save", dest="save",
-                        default="", help="Where to save plot instead of showing it?")
+                        default="",
+                        help="Where to save plot instead of showing it?")
     parser.add_argument("-t", "--title", dest="title",
                         default="", help="Optional supertitle for plot")
+    parser.add_argument("--xlabel", dest="xlabel",
+                        default="#Function evaluations",
+                        help="x axis")
+    parser.add_argument("--ylabel", dest="ylabel",
+                        default="#Minfunction value", help="y label")
+    parser.add_argument("--printLength", dest="printlength", default=False,
+                        action="store_true",
+                        help="Print number of runs in brackets (legend)")
+    parser.add_argument("--aggregation", dest="aggregation", default="mean",
+                        choices=("mean", "median"),
+                        help="Print Median/Quantile or Mean/Std")
+
+    # Properties
+    # We need this to show defaults for -h
+    defaults = plot_util.get_defaults()
+    for key in defaults:
+        parser.add_argument("--%s" % key, dest=key, default=None,
+                            help="%s, default: %s" % (key, str(defaults[key])))
+
 
     args, unknown = parser.parse_known_args()
 
@@ -210,5 +240,15 @@ if __name__ == "__main__":
 
     pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
 
-    main(pkl_list=pkl_list_main, name_list=name_list_main, autofill=args.autofill, optimum=args.optimum,
-         save=args.save, title=args.title, log=args.log, y_min=args.min, y_max=args.max, scale_std=args.scale)
+    prop = {}
+    args_dict = vars(args)
+    for key in defaults:
+        prop[key] = args_dict[key]
+
+    main(pkl_list=pkl_list_main, name_list=name_list_main,
+         autofill=args.autofill, optimum=args.optimum, save=args.save,
+         title=args.title, log=args.log,
+         y_min=args.min, y_max=args.max, scale_std=args.scale,
+         aggregation=args.aggregation,
+         xlabel=args.xlabel, ylabel=args.ylabel, properties=prop,
+         print_lenght_trial_list=args.printlength)

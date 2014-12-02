@@ -5,10 +5,7 @@ import time
 
 import HPOlib.wrapping_util as wrapping_util
 
-logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
-                           'message)s', datefmt='%H:%M:%S')
-hpolib_logger = logging.getLogger("HPOlib")
-hpolib_logger.setLevel(logging.INFO)
+
 logger = logging.getLogger("HPOlib.dispatcher.python_file")
 
 

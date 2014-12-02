@@ -12,6 +12,7 @@ runsolver-3.3.4.tar.bz2
 
 # benchmark runs
 HPOlib/benchmarks/*/*_*/*
+runsolver-3.3.4.tar.bz2
 
 # Java plugins
 HPOlib/dispatcher/MySQLDBTAE

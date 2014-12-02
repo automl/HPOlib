@@ -14,6 +14,9 @@ Contents:
    install
    algorithms_and_datasets
    manual
+   plotting
+   structure
+   cite
 
 
 

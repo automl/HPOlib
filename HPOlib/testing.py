@@ -32,10 +32,7 @@ import HPOlib.dispatcher.python_file as python_file
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
-logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
-                           'message)s', datefmt='%H:%M:%S')
 hpolib_logger = logging.getLogger("HPOlib")
-hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.testing")
 
 
@@ -82,13 +79,28 @@ def use_arg_parser():
 
 def main():
     """Test the best algorithm of a previous HPOlib optimization run."""
+    formatter = logging.Formatter('[%(levelname)s] [%(asctime)s:%(name)s] %('
+                                  'message)s', datefmt='%H:%M:%S')
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    hpolib_logger.addHandler(handler)
+
     args, unknown_arguments = use_arg_parser()
 
     if args.working_dir:
-        os.chdir(args.working_dir)
+        experiment_dir = args.working_dir
+    else:
+        experiment_dir = os.getcwd()
 
-    experiment_dir = os.getcwd()
+    config = wrapping_util.get_configuration(experiment_dir,
+                                             None,
+                                             unknown_arguments)
+    log_level = config.getint("HPOLIB", "loglevel")
+    hpolib_logger.setLevel(log_level)
 
+    os.chdir(experiment_dir)
+
+    # TODO check if the testing directory exists
     # TODO check if the test function is there!
     check_before_start.check_first(experiment_dir)
 
@@ -96,9 +108,7 @@ def main():
     import numpy as np
     import HPOlib.Experiment as Experiment  # Wants numpy and scipy
 
-    config = wrapping_util.get_configuration(experiment_dir,
-                                             None,
-                                             unknown_arguments)
+
     if not config.has_option("HPOLIB", "is_not_original_config_file"):
         logger.critical("The directory you're in seems to be no directory in "
                         "which an HPOlib run was executed: %s" % experiment_dir)
@@ -107,8 +117,10 @@ def main():
         logger.critical("The directory you're in seems to be no directory in "
                         "which an HPOlib run was executed: %s" % experiment_dir)
 
-    optimizer = wrapping_util.get_optimizer()
     experiment_directory_prefix = config.get("HPOLIB", "experiment_directory_prefix")
+    optimizer = wrapping_util.get_optimizer()
+    # This is a really bad hack...
+    optimizer = optimizer.replace(experiment_directory_prefix, "")
     trials = Experiment.Experiment(expt_dir=".",
                                    expt_name=experiment_directory_prefix + optimizer)
 
@@ -127,7 +139,6 @@ def main():
                                                   runsolver_output)
 
     configurations_to_test = []
-
     # TODO this should not rerun configurations which were already run!
     # Find the configurations to test on!
     if args.all:
@@ -169,10 +180,11 @@ def main():
             dispatch_function = config.get("HPOLIB", "dispatcher")
             if dispatch_function == "runsolver_wrapper.py":
                 additional_data, result, status, wallclock_time = \
-                    runsolver_wrapper.dispatch(config, fold, configuration)
+                    runsolver_wrapper.dispatch(config, fold, configuration,
+                                               test=True)
             elif dispatch_function == "python_function.py":
                 additional_data, result, status, wallclock_time = \
-                    python_file.dispatch(config, fold, configuration)
+                    python_file.dispatch(config, fold, configuration, test=True)
             else:
                 additional_data = ""
                 result = float("NaN")
@@ -221,10 +233,10 @@ def main():
                                    expt_name=experiment_directory_prefix + optimizer)
     trials.endtime.append(time.time())
     trials._save_jobs()
-    total_time = 0
 
     del trials
     logger.info("Finished HPOlib-testbest.")
+    return 0
 
 
 if __name__ == "__main__":

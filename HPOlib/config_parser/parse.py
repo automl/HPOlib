@@ -41,7 +41,7 @@ def parse_config(config_files, allow_no_value=True, optimizer_version="",
     config.read(config_files)
     if cli_values is not None:
         config.readfp(cli_values)
-    return  config
+    return config
 
 
 def check_config(config):

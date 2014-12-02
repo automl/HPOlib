@@ -19,6 +19,7 @@
 from argparse import ArgumentParser
 from collections import OrderedDict
 import logging
+from logging.handlers import SocketHandler
 import os
 import sys
 import time
@@ -36,10 +37,7 @@ __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __license__ = "3-clause BSD License"
 __contact__ = "automl.org"
 
-logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
-                           'message)s', datefmt='%H:%M:%S')
 hpolib_logger = logging.getLogger("HPOlib")
-hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.optimization_interceptor")
 
 
@@ -112,7 +110,9 @@ def run_one_instance(arguments, parameters):
         instance = int(arguments.instance)
     else:
         instance = 0
-    logger.info("Starting instance evaluation for: %s" % str(instance))
+
+    # TODO get the configuration ID at this point!
+    logger.info("Starting instance evaluation for: %s" % (str(instance)))
     logger.info("Parameters: %s", str(parameters))
     cfg = load_experiment_config_file()
 
@@ -222,18 +222,26 @@ def main(arguments, parameters):
         # TODO: Hack for TPE and AUTOWeka
         params = args
     """
+    config = load_experiment_config_file()
+
+    loglevel = config.getint("HPOLIB", "loglevel")
+    hpolib_logger.setLevel(loglevel)
+    host = config.get("HPOLIB", "logging_host")
+    port = config.getint("HPOLIB", "logging_port")
+    socketh = SocketHandler(host, port)
+    hpolib_logger.addHandler(socketh)
+    if loglevel <= 10:
+        streamh = logging.StreamHandler()
+        hpolib_logger.addHandler(streamh)
 
     # Load the experiment to do time-keeping
     cv_starttime = time.time()
     experiment = load_experiment_file()
-    # experiment.next_iteration()
     experiment.start_cv(cv_starttime)
     experiment._save_jobs()
     del experiment
 
-    # cfg_filename = "config.cfg"
-    cfg = load_experiment_config_file()
-    folds = cfg.getint('HPOLIB', 'number_cv_folds')
+    folds = config.getint('HPOLIB', 'number_cv_folds')
 
     """
     params = flatten_parameter_dict(params)

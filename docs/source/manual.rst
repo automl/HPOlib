@@ -264,7 +264,7 @@ HPOLIB      runsolver_time_limit,                               Enforce resource
             memory_limit, cpu_limit
 HPOLIB      total_time_limit                                    Enforce a total time limit on the hyperparameter optimization.
 HPOLIB      leading_runsolver_info                              Important when using THEANO and CUDA, see :ref:`configure_theano`
-HPOLIB      use_own_time_measurement            :cfg:`True`     When set to True (the default), the runsolver time measurement is saved. Otherwise, the time measurement of the target algorithm is saved.
+HPOLIB      use_HPOlib_time_measurement         :cfg:`True`     When set to True (the default), the runsolver time measurement is saved. Otherwise, the time measured by the target algorithm is saved.
 HPOLIB      number_of_concurrent_jobs           :cfg:`1`        WARNING: this only works for spearmint and SMAC and is not tested!
 HPOLIB      function_setup                                      An executable which is called before the first target algorithm call. This can be for example check if everything is installed properly.
 HPOLIB      function_teardown                                   An executable which is called after the last target algorithm call. This can be for example delete temporary directories.
@@ -368,6 +368,8 @@ with the path to your CUDA installation.
 How to run your own optimizer
 =============================
 
+Before you integrate your own optimization algorithm, make sure that you know
+how the HPOlib is structured and read the section :ref:`structure`.
 The interface to include your own optimizer is straight-forward. Let's assume
 that you have written a hyperparameter optimization package called BayesOpt2.
 You tell the HPOlib to use your software with the command line argument
@@ -385,8 +387,14 @@ files (replace BayesOpt2 if your optimization package has a different name):
     optimization algorithm based on HPOlib defaults
 * BayesOpt2Default.cfg: default configuration for your optimization algorithm
 
-The rest of this section will explain interface these scripts must provide and
-the functionality which they must perform
+Moreover, your algorithm has to call a script of the HPOlib namely
+:bash:`cv.py`, which does bookkeeping and manages a potential cross validation.
+The rest of this section will explain how to call :bash:`cv.py` and the
+interface your scripts must provide and the functionality which they must
+perform.
+
+Calling :bash:`cv.py`
+---------------------
 
 BayesOpt2.py
 ------------
@@ -496,7 +504,14 @@ HPOlib-testbest will open the experiment pickle
 file which is used for HPOlib bookkeeping, extract the hyperparameters for
 the best configuration and call the test function specified in the
 configuration file. The result of the test function is then stored in the
-experiment pickle and can be further processed.
+experiment pickle and can be further processed. The first argument (either
+:bash:`--all`, :bash:`--best` or :bash:`--trajectory` determines for which
+configurations the HPOlib will call the test script.
+
+* :bash:`--all`: Will call the test-script for all configurations. This is
+  can be very expensive.
+* :bash:`--best`: Call the test-script only for the best configuration.
+* :bash:`--trajectory`: Not yet implemented!
 
 As an example, consider the usecase that we ran SMAC to optimize the
 :ref:`logistic regression <logreg>` and want to get the test performance for

@@ -19,13 +19,13 @@
 from argparse import ArgumentParser
 import imp
 import logging
+from logging.handlers import DEFAULT_TCP_LOGGING_PORT
 import psutil
 import os
 from Queue import Queue, Empty
 import signal
 import shlex
 import shutil
-import StringIO
 import subprocess
 import sys
 from threading import Thread
@@ -35,8 +35,10 @@ import warnings
 
 import HPOlib
 import HPOlib.check_before_start as check_before_start
-import HPOlib.wrapping_util as wrapping_util
 import HPOlib.dispatcher.runsolver_wrapper as runsolver_wrapper
+import HPOlib.LoggingWebMonitor as logging_server
+import HPOlib.wrapping_util as wrapping_util
+
 # Import experiment only after the check for numpy succeeded
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
@@ -52,10 +54,7 @@ INFODEVEL = """
 """
 IS_DEVELOPMENT = True
 
-logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
-                           'message)s', datefmt='%H:%M:%S')
 hpolib_logger = logging.getLogger("HPOlib")
-hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.wrapping")
 
 
@@ -203,12 +202,38 @@ def use_arg_parser():
 def main():
     """Start an optimization of the HPOlib. For documentation see the
     comments inside this function and the general HPOlib documentation."""
+    args, unknown_arguments = use_arg_parser()
+    if args.working_dir:
+        experiment_dir = args.working_dir
+    elif args.restore:
+        args.restore = os.path.abspath(args.restore) + "/"
+        experiment_dir = args.restore
+    else:
+        experiment_dir = os.getcwd()
+
+    # Call get_configuration here to get the log level!
+    config = wrapping_util.get_configuration(experiment_dir,
+                                             None,
+                                             unknown_arguments)
+
+    formatter = logging.Formatter('[%(levelname)s] [%(asctime)s:%(name)s] %('
+                                  'message)s', datefmt='%H:%M:%S')
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    hpolib_logger.addHandler(handler)
+
+    loglevel = config.getint("HPOLIB", "loglevel")
+    hpolib_logger.setLevel(loglevel)
+    if args.silent:
+        hpolib_logger.setLevel(60)
+    if args.verbose:
+        hpolib_logger.setLevel(10)
+
+    # DO NOT LOG UNTIL HERE UNLESS SOMETHING DRAMATIC HAS HAPPENED!!!
 
     # First of all print the infodevel
     if IS_DEVELOPMENT:
         logger.critical(INFODEVEL)
-
-    args, unknown_arguments = use_arg_parser()
 
     # Convert the path to the optimizer to be an absolute path, which is
     # necessary later when we change the working directory
@@ -219,12 +244,7 @@ def main():
         logger.info("Converting relative optimizer path %s to absolute "
                     "optimizer path %s.", relative_path, optimizer)
 
-    if args.working_dir:
-        os.chdir(args.working_dir)
-    elif args.restore:
-        args.restore = os.path.abspath(args.restore) + "/"
-        os.chdir(args.restore)
-
+    os.chdir(experiment_dir)
     experiment_dir = os.getcwd()
 
     check_before_start.check_first(experiment_dir)
@@ -266,6 +286,39 @@ def main():
                               experiment_dir=experiment_dir,
                               experiment_directory_prefix=experiment_directory_prefix)
     cmd = optimizer_call
+
+    # Start the server for logging from subprocesses here, because its port must
+    # be written to the config file.
+    logging_host = config.get("HPOLIB", "logging_host")
+    if not logging_host:
+        logging_host = 'localhost'
+    logging_receiver_thread = None
+    default_logging_port = DEFAULT_TCP_LOGGING_PORT
+
+    for logging_port in range(default_logging_port, 65535):
+        try:
+            logging_receiver = logging_server.LoggingReceiver(
+                host=logging_host, port=logging_port,
+                handler=logging_server.LogRecordStreamHandler)
+            logging_receiver_thread = Thread(target=logging_receiver.serve_forever)
+            logging_receiver_thread.daemon = True
+            logger.info('%s started at %s' % (
+                logging_receiver.__class__.__name__,
+                logging_receiver.server_address))
+            logging_receiver_thread.start()
+            break
+        # TODO I did not find any useful documentation about which Exceptions
+        #  I should catch here...
+        except Exception as e:
+            logger.debug(e)
+            logger.debug(e.message)
+
+    if logging_receiver_thread is None:
+        logger.critical("Could not create the logging server. Going to shut "
+                        "down.")
+        sys.exit(1)
+
+    config.set("HPOLIB", "logging_port", str(logging_port))
 
     with open(os.path.join(optimizer_dir_in_experiment, "config.cfg"), "w") as f:
         config.set("HPOLIB", "is_not_original_config_file", "True")
@@ -322,6 +375,16 @@ def main():
         logger.info(cmd)
         return 0
     else:
+        # Create a second formatter and handler to customize the optimizer
+        # output
+        optimization_formatter = logging.Formatter(
+            '[%(levelname)s] [%(asctime)s:%(optimizer)s] %(message)s',
+            datefmt='%H:%M:%S')
+        optimization_handler = logging.StreamHandler()
+        optimization_handler.setFormatter(optimization_formatter)
+        optimization_logger = logging.getLogger(optimizer)
+        optimization_logger.addHandler(optimization_handler)
+
         # Use a flag which is set to true as soon as all children are
         # supposed to be killed
         exit_ = wrapping_util.Exit()
@@ -455,10 +518,8 @@ def main():
                     line = stdout_queue.get_nowait()
                     fh.write(line)
 
-                    # Write to stdout only if verbose is on
-                    if args.verbose:
-                        sys.stdout.write(line)
-                        sys.stdout.flush()
+                    optimization_logger.info(line.replace("\n", ""),
+                                             extra={'optimizer': optimizer})
             except Empty:
                 pass
 
@@ -467,10 +528,8 @@ def main():
                     line = stderr_queue.get_nowait()
                     fh.write(line)
 
-                    # Write always, except silent is on
-                    if not args.silent:
-                        sys.stderr.write("[ERR]:" + line)
-                        sys.stderr.flush()
+                    optimization_logger.error(line.replace("\n", ""),
+                                              extra={'optimizer': optimizer})
             except Empty:
                 pass
 
@@ -576,18 +635,17 @@ def main():
         trials._save_jobs()
         # trials.finish_experiment()
         total_time = 0
-        logger.info("Best result")
-        logger.info(trials.get_best())
+        logger.info("Best result %f", trials.get_best())
         logger.info("Durations")
         try:
             for starttime, endtime in zip(trials.starttime, trials.endtime):
                 total_time += endtime - starttime
-            logger.info("Needed a total of %f seconds", total_time)
-            logger.info("The optimizer %s took %10.5f seconds",
+            logger.info("  Needed a total of %f seconds", total_time)
+            logger.info("  The optimizer %s took %10.5f seconds",
                   optimizer, float(calculate_optimizer_time(trials)))
-            logger.info("The overhead of HPOlib is %f seconds",
+            logger.info("  The overhead of HPOlib is %f seconds",
                   calculate_wrapping_overhead(trials))
-            logger.info("The benchmark itself took %f seconds" % \
+            logger.info("  The benchmark itself took %f seconds" % \
                   trials.total_wallclock_time)
         except Exception as e:
             logger.error(HPOlib.wrapping_util.format_traceback(sys.exc_info()))

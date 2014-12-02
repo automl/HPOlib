@@ -14,6 +14,8 @@ import unittests.test_runsolver_wrapper as test_runsolver_wrapper
 import unittests.test_wrapping as test_wrapping
 import unittests.test_wrapping_util as test_wrapping_util
 
+import workflowtests.test_optimizer as test_optimizer
+
 
 def suite():
     _suite = unittest.TestSuite()
@@ -31,6 +33,8 @@ def suite():
     _suite.addTest(unittest.makeSuite(test_runsolver_wrapper.RunsolverWrapperTest))
     _suite.addTest(unittest.makeSuite(test_wrapping.WrappingTest))
     _suite.addTest(unittest.makeSuite(test_wrapping_util.WrappingTestUtil))
+
+    _suite.addTest(unittest.makeSuite(test_optimizer.TestOptimizers))
     return _suite
 
 

@@ -9,10 +9,7 @@ from HPOlib.dispatcher import mysqldbtae
 import HPOlib.Experiment as Experiment
 
 
-logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
-                           'message)s', datefmt='%H:%M:%S')
 hpolib_logger = logging.getLogger("HPOlib")
-hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.dispatcher.dispatcher")
 
 
@@ -81,13 +78,12 @@ def main(arguments, parameters, fold):
     if dispatch_function == "runsolver_wrapper.py":
         additional_data, result, status, wallclock_time = \
             runsolver_wrapper.dispatch(cfg, fold, parameters)
-    elif dispatch_function == "python_function.py":
+    elif dispatch_function == "python_file.py":
         additional_data, result, status, wallclock_time = \
             python_file.dispatch(cfg, fold, parameters)
     elif dispatch_function == "mysqldbtae.py":
         additional_data, result, status, wallclock_time = \
             mysqldbtae.dispatch(cfg, fold, parameters)
-
     else:
         additional_data = ""
         result = float("NaN")
@@ -118,3 +114,6 @@ def main(arguments, parameters, fold):
         del experiment
 
     return status, wallclock_time, result, additional_data
+
+if __name__ == "__main__":
+    main()

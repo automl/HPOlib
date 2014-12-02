@@ -32,10 +32,9 @@ import numpy as np
 
 import hyperopt
 
-import HPOlib.optimization_interceptor
-from HPOlib.wrapping_util import flatten_parameter_dict
+from HPOlib.wrapping_util import flatten_parameter_dict, load_experiment_config_file
 
-logger = logging.getLogger("HPOlib.optimizers.tpe.tpecall")
+logger = logging.getLogger("tpecall")
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -58,9 +57,11 @@ def command_line_function(params, cli_target):
     proc = subprocess.Popen(call, shell=True, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
-    if proc.returncode != 0:
-        print stdout
-        print stderr
+    logger.info("STDOUT:")
+    logger.info(stdout)
+    if stderr:
+        logger.error("STDERR:")
+        logger.error(stderr)
 
     lines = stdout.split("\n")
 
@@ -102,6 +103,12 @@ def main():
     if args.cwd:
         os.chdir(args.cwd)
 
+    cfg = load_experiment_config_file()
+    log_level = cfg.getint("HPOLIB", "loglevel")
+    logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
+                               'message)s', datefmt='%H:%M:%S')
+    logger.setLevel(log_level)
+
     if not os.path.exists(args.spaceFile):
         logger.critical("Search space not found: %s" % args.spaceFile)
         sys.exit(1)
@@ -116,8 +123,7 @@ def main():
     module = import_module(space)
     search_space = module.space
 
-    cli_target = HPOlib.optimization_interceptor.__file__
-    cli_target = os.path.splitext(cli_target)[0]
+    cli_target = "HPOlib.optimization_interceptor"
     fn = partial(command_line_function, cli_target=cli_target)
     
     if args.random:
