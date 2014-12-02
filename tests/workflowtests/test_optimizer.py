@@ -17,6 +17,8 @@ class TestOptimizers(unittest.TestCase):
         self.hpolib_dir = os.path.join(os.path.dirname(__file__), "..", "..")
         self.optimizer_dir = os.path.join(self.hpolib_dir, "optimizers")
         self.benchmarks_dir = os.path.join(self.hpolib_dir, "benchmarks")
+        # Add new optimizers only in this kind of format and watch out that
+        # everything after the last '/' is treated as the optimizer name
         self.optimizers = ["smac/smac_2_06_01",
                            "smac/smac_2_08_00",
                            "spearmint/spearmint_april2013",
@@ -31,9 +33,9 @@ class TestOptimizers(unittest.TestCase):
         for run in runs:
             shutil.rmtree(run)
 
-    def test_run_smac(self):
+    def test_run_and_test(self):
         for optimizer in self.optimizers:
-            cmd = "HPOlib-run -o %s/%s -s 10 --cwd %s/branin " \
+            cmd = "HPOlib-run -o %s/%s -s 10 --cwd %s/logreg_on_grid " \
                   "--HPOLIB:number_of_jobs 5 " \
                   "--HPOLIB:experiment_directory_prefix %s" % \
                   (self.optimizer_dir, optimizer, self.benchmarks_dir,
@@ -43,6 +45,24 @@ class TestOptimizers(unittest.TestCase):
                                     stdin=subprocess.PIPE,
                                     env=os.environ.copy())
 
+            stdout, stderr = proc.communicate()
+            self.assertEqual(0, proc.returncode)
+
+            # And now test that stuff
+
+            testing_directory = os.path.join(self.benchmarks_dir,
+                                             "logreg_on_grid",
+                                             self.experiment_dir_prefix + "*" +
+                                             optimizer.split("/")[-1] + "*")
+            print testing_directory
+            test_dir_glob = glob.glob(testing_directory)
+            print test_dir_glob
+            print
+            testing_directory = test_dir_glob[0]
+
+            cmd = "HPOlib-testbest --all --cwd %s" % testing_directory
+            proc = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE,
+                                    stdin=subprocess.PIPE, env=os.environ.copy())
             stdout, stderr = proc.communicate()
             self.assertEqual(0, proc.returncode)
 

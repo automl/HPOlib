@@ -83,6 +83,7 @@ def main():
                                   'message)s', datefmt='%H:%M:%S')
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
+    hpolib_logger.addHandler(handler)
 
     args, unknown_arguments = use_arg_parser()
 
@@ -99,6 +100,7 @@ def main():
 
     os.chdir(experiment_dir)
 
+    # TODO check if the testing directory exists
     # TODO check if the test function is there!
     check_before_start.check_first(experiment_dir)
 
@@ -115,8 +117,10 @@ def main():
         logger.critical("The directory you're in seems to be no directory in "
                         "which an HPOlib run was executed: %s" % experiment_dir)
 
-    optimizer = wrapping_util.get_optimizer()
     experiment_directory_prefix = config.get("HPOLIB", "experiment_directory_prefix")
+    optimizer = wrapping_util.get_optimizer()
+    # This is a really bad hack...
+    optimizer = optimizer.replace(experiment_directory_prefix, "")
     trials = Experiment.Experiment(expt_dir=".",
                                    expt_name=experiment_directory_prefix + optimizer)
 
@@ -135,7 +139,6 @@ def main():
                                                   runsolver_output)
 
     configurations_to_test = []
-
     # TODO this should not rerun configurations which were already run!
     # Find the configurations to test on!
     if args.all:
@@ -232,6 +235,7 @@ def main():
 
     del trials
     logger.info("Finished HPOlib-testbest.")
+    return 0
 
 
 if __name__ == "__main__":
