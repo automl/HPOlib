@@ -180,10 +180,11 @@ def main():
             dispatch_function = config.get("HPOLIB", "dispatcher")
             if dispatch_function == "runsolver_wrapper.py":
                 additional_data, result, status, wallclock_time = \
-                    runsolver_wrapper.dispatch(config, fold, configuration)
+                    runsolver_wrapper.dispatch(config, fold, configuration,
+                                               test=True)
             elif dispatch_function == "python_function.py":
                 additional_data, result, status, wallclock_time = \
-                    python_file.dispatch(config, fold, configuration)
+                    python_file.dispatch(config, fold, configuration, test=True)
             else:
                 additional_data = ""
                 result = float("NaN")
