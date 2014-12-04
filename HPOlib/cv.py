@@ -69,15 +69,16 @@ def do_cv(params, folds=10):
             # "<seed> <param> <param> <param>"
             # Cutofftime, cutofflength and seed can be safely ignored since they
             # are read in runsolver_wrapper
-            runsolver_wrapper_script = "python " + \
+            dispatcher_script = "python " + \
                 os.path.join(os.path.dirname(os.path.realpath(__file__)),
                              "dispatcher/dispatcher.py")
             cmd = "%s %d %s %d %d %d %s" % \
-                (runsolver_wrapper_script, fold, optimizer, 0, 0, 0, param_string)
+                (dispatcher_script, fold, optimizer, 0, 0, 0, param_string)
             logger.info("Calling command:\n%s", cmd)
 
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE, shell=True, executable="/bin/bash")
+                                       stderr=subprocess.PIPE, shell=True,
+                                       executable="/bin/bash")
             logger.info("-------------- DISPATCHING JOB --------------")
             stdoutdata, stderrdata = process.communicate()
             if stdoutdata:
@@ -97,15 +98,18 @@ def do_cv(params, folds=10):
                     break
 
             if result_string is None:
-                raise NotImplementedError("No result string available or result string doesn't contain SAT")
+                raise NotImplementedError("No result string available or result"
+                                          " string doesn't contain SAT")
 
-            # If a specified number of runs crashed, quit the whole cross validation
+            # If a specified number of runs crashed, quit the whole
+            # cross validation
             # in order to save time.
             worst_possible = cfg.getfloat("HPOLIB", "result_on_terminate")
             # So far, this was a nansum, but there must be no NaNs at this
             # point of the program flow!
             assert np.isfinite(results).all()
-            crashed_runs = np.sum([0 if res != worst_possible else 1 for res in results])
+            crashed_runs = np.sum([0 if res != worst_possible else 1 for res
+                                   in results])
             if crashed_runs >= cfg.getint("HPOLIB", "max_crash_per_cv"):
                 logger.warning("Aborting CV because the number of crashes "
                                "exceeds the configured max_crash_per_cv value")
@@ -164,7 +168,8 @@ def flatten_parameter_dict(params):
                 params_to_check.append(sub_param)
 
         elif isinstance(param, dict):
-            params_to_check.extend([Parameter(tmp_param) for tmp_param in zip(param.keys(), param.values())])
+            params_to_check.extend([Parameter(tmp_param) for tmp_param in
+                                    zip(param.keys(), param.values())])
 
         elif isinstance(param, Parameter):
             key = param.pparam[0]
@@ -172,7 +177,8 @@ def flatten_parameter_dict(params):
             if type(value) == dict:
                 params_to_check.append(value)
             elif type(value) in (list, tuple, np.ndarray) and \
-                    all([type(v) not in (list, tuple, np.ndarray) for v in value]):
+                    all([type(v) not in (list, tuple, np.ndarray) for v
+                         in value]):
                 # Spearmint special case, keep only the first element
                 # Adding: variable_id = val
                 if len(value) == 1:
@@ -188,7 +194,8 @@ def flatten_parameter_dict(params):
                 new_dict[key] = value
 
         else:
-            raise Exception("Invalid params, cannot be flattened: \n%s." % params)
+            raise Exception("Invalid params, cannot be flattened: \n%s." %
+                            params)
     params = new_dict
     return params
 
