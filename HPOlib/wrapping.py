@@ -101,57 +101,6 @@ def calculate_optimizer_time(trials):
         return np.nansum(optimizer_time)
 
 
-def output_experiment_pickle(console_output_delay,
-                             printed_start_configuration,
-                             printed_end_configuration,
-                             optimizer_dir_in_experiment,
-                             optimizer, experiment_directory_prefix, lock,
-                             Experiment, np, exit):
-    current_best = -1
-    while True:
-        try:
-            trials = Experiment.Experiment(optimizer_dir_in_experiment,
-                                       experiment_directory_prefix + optimizer)
-        except Exception as e:
-            logger.error(e)
-            time.sleep(console_output_delay)
-            continue
-
-        with lock:
-            for i in range(len(printed_end_configuration), len(trials.instance_order)):
-                configuration = trials.instance_order[i][0]
-                fold = trials.instance_order[i][1]
-                if i + 1 > len(printed_start_configuration):
-                    logger.info("Starting configuration %5d, fold %2d",
-                                configuration, fold)
-                    printed_start_configuration.append(i)
-
-                if np.isfinite(trials.trials[configuration]
-                               ["instance_results"][fold]):
-                    last_result = trials.trials[configuration] \
-                        ["instance_results"][fold]
-                    tmp_current_best = trials.get_arg_best()
-                    if tmp_current_best <= i:
-                        current_best = tmp_current_best
-                    # Calculate current best
-                    # Check if last result is finite, if not calc nanmean over all instances
-                    dct_helper = trials.trials[current_best]
-                    res = dct_helper["result"] if \
-                        np.isfinite(dct_helper["result"]) \
-                        else wrapping_util.nan_mean(dct_helper["instance_results"])
-                        #np.nanmean(trials.trials[current_best]["instance_results"])
-                        # nanmean does not work for all numpy version
-                    logger.info("Result %10f, current best %10f",
-                                last_result, res)
-                    printed_end_configuration.append(i)
-
-            del trials
-        if exit:
-            break
-        else:
-            time.sleep(console_output_delay)
-
-
 def use_arg_parser():
     """Parse all options which can be handled by the wrapping script.
     Unknown arguments are ignored and returned as a list. It is useful to
@@ -494,14 +443,6 @@ def main():
         stderr_thread.start()
         stdout_thread.start()
         if not (args.verbose or args.silent):
-            lock = thread.allocate_lock()
-            thread.start_new_thread(output_experiment_pickle,
-                                    (console_output_delay,
-                                     printed_start_configuration,
-                                     printed_end_configuration,
-                                     optimizer_dir_in_experiment,
-                                     optimizer, experiment_directory_prefix,
-                                     lock, Experiment, np, False))
             logger.info('Optimizer runs with PID: %d', proc.pid)
             logger.info('We start in directory %s', os.getcwd())
         while True:
@@ -511,12 +452,13 @@ def main():
                 exit_.true()
 
             # necessary, otherwise HPOlib-run takes 100% of one processor
-            time.sleep(0.2)
+            time.sleep(0.25)
 
             try:
                 while True:
                     line = stdout_queue.get_nowait()
                     fh.write(line)
+                    fh.flush()
 
                     optimization_logger.info(line.replace("\n", ""),
                                              extra={'optimizer': optimizer})
@@ -527,6 +469,7 @@ def main():
                 while True:
                     line = stderr_queue.get_nowait()
                     fh.write(line)
+                    fh.flush()
 
                     optimization_logger.error(line.replace("\n", ""),
                                               extra={'optimizer': optimizer})
@@ -562,14 +505,6 @@ def main():
                 sent_SIGKILL_time = time.time()
                 sent_SIGKILL = True
 
-        if not (args.verbose or args.silent):
-            output_experiment_pickle(console_output_delay,
-                                     printed_start_configuration,
-                                     printed_end_configuration,
-                                     optimizer_dir_in_experiment,
-                                     optimizer, experiment_directory_prefix,
-                                     lock, Experiment, np, True)
-
         logger.info("-----------------------END--------------------------------------")
         ret = proc.returncode
         logger.info("Finished with return code: %d", ret)
@@ -577,8 +512,6 @@ def main():
 
 
         fh.close()
-        # TODO: here should be a synchronization point for the two different
-        # threads, so no deadlocks can happen!
 
         # Change back into to directory
         os.chdir(dir_before_exp)

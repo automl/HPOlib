@@ -73,3 +73,24 @@ class TestOptimizers(unittest.TestCase):
             stdout, stderr = proc.communicate()
             self.assertEqual(0, proc.returncode)
 
+    def test_crossvalidation(self):
+        # This is only a dummy crossvalidation!
+        cmd = "HPOlib-run -o %s/%s -s 10 --cwd %s/logreg_on_grid " \
+              "--HPOLIB:number_of_jobs 5 " \
+              "--HPOLIB:experiment_directory_prefix %s " \
+              "--HPOLIB:number_cv_folds 2" % \
+              (self.optimizer_dir, self.optimizers[4], self.benchmarks_dir,
+               self.experiment_dir_prefix)
+
+        print
+        print "#######################################"
+        print cmd
+        print
+
+        proc = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE,
+                                stdin=subprocess.PIPE,
+                                env=os.environ.copy())
+
+        stdout, stderr = proc.communicate()
+        self.assertEqual(0, proc.returncode)
+
