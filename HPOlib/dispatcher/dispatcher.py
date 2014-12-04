@@ -1,11 +1,10 @@
+import importlib
 import logging
 import numpy as np
+import re
 import time
 
 import HPOlib.wrapping_util as wrapping_util
-import HPOlib.dispatcher.runsolver_wrapper as runsolver_wrapper
-import HPOlib.dispatcher.python_file as python_file
-from HPOlib.dispatcher import mysqldbtae
 import HPOlib.Experiment as Experiment
 
 
@@ -74,23 +73,21 @@ def main(arguments, parameters, fold):
     experiment._save_jobs()
     del experiment  # release Experiment lock
 
-    dispatch_function = cfg.get("HPOLIB", "dispatcher")
-    if dispatch_function == "runsolver_wrapper.py":
+    dispatch_function_name = cfg.get("HPOLIB", "dispatcher")
+    dispatch_function_name = re.sub("(\.py)$", "", dispatch_function_name)
+    try:
+        dispatch_function = importlib.import_module("HPOlib.dispatcher.%s" %
+                                                    dispatch_function_name)
+
         additional_data, result, status, wallclock_time = \
-            runsolver_wrapper.dispatch(cfg, fold, parameters)
-    elif dispatch_function == "python_file.py":
-        additional_data, result, status, wallclock_time = \
-            python_file.dispatch(cfg, fold, parameters)
-    elif dispatch_function == "mysqldbtae.py":
-        additional_data, result, status, wallclock_time = \
-            mysqldbtae.dispatch(cfg, fold, parameters)
-    else:
+            dispatch_function.dispatch(cfg, fold, parameters)
+    except ImportError:
         additional_data = ""
         result = float("NaN")
         status = "CRASHED"
         wallclock_time = 0.
         logger.error("Invalid value %s for HPOLIB:dispatcher" %
-                     dispatch_function)
+                     dispatch_function_name)
 
     experiment = Experiment.load_experiment_file()
     if status == "SAT":

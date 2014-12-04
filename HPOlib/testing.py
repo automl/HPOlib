@@ -17,16 +17,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from argparse import ArgumentParser
+import importlib
 import logging
 import os
-import sys
+import re
 import time
 
 import HPOlib
 import HPOlib.check_before_start as check_before_start
 import HPOlib.wrapping_util as wrapping_util
 import HPOlib.dispatcher.runsolver_wrapper as runsolver_wrapper
-import HPOlib.dispatcher.python_file as python_file
 # Import experiment only after the check for numpy succeeded
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
@@ -177,21 +177,22 @@ def main():
             trials._save_jobs()
             del trials
 
-            dispatch_function = config.get("HPOLIB", "dispatcher")
-            if dispatch_function == "runsolver_wrapper.py":
+            dispatch_function_name = config.get("HPOLIB", "dispatcher")
+            dispatch_function_name = re.sub("(\.py)$", "", dispatch_function_name)
+            try:
+                dispatch_function = importlib.import_module("HPOlib.dispatcher.%s" %
+                                                            dispatch_function_name)
+
                 additional_data, result, status, wallclock_time = \
-                    runsolver_wrapper.dispatch(config, fold, configuration,
+                    dispatch_function.dispatch(config, fold, configuration,
                                                test=True)
-            elif dispatch_function == "python_function.py":
-                additional_data, result, status, wallclock_time = \
-                    python_file.dispatch(config, fold, configuration, test=True)
-            else:
+            except ImportError:
                 additional_data = ""
                 result = float("NaN")
                 status = "CRASHED"
                 wallclock_time = 0.
-                logger.error(
-                    "Invalid value %s for HPOLIB:dispatcher" % dispatch_function)
+                logger.error("Invalid value %s for HPOLIB:dispatcher" %
+                             dispatch_function_name)
 
             trials = Experiment.Experiment(expt_dir=".",
                                            expt_name=experiment_directory_prefix + optimizer)
