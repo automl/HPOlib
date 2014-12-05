@@ -171,7 +171,7 @@ def main():
     handler.setFormatter(formatter)
     hpolib_logger.addHandler(handler)
 
-    loglevel = config.getint("HPOLIB", "loglevel")
+    loglevel = config.getint("HPOLIB", "HPOlib_loglevel")
     hpolib_logger.setLevel(loglevel)
     if args.silent:
         hpolib_logger.setLevel(60)
@@ -239,7 +239,6 @@ def main():
     # Start the server for logging from subprocesses here, because its port must
     # be written to the config file.
     logging_host = config.get("HPOLIB", "logging_host")
-    logger.critical("Logging host %s", logging_host)
     if logging_host:
         logging_receiver_thread = None
         default_logging_port = DEFAULT_TCP_LOGGING_PORT
@@ -329,10 +328,12 @@ def main():
         optimization_formatter = logging.Formatter(
             '[%(levelname)s] [%(asctime)s:%(optimizer)s] %(message)s',
             datefmt='%H:%M:%S')
-        optimization_handler = logging.StreamHandler()
+        optimization_handler = logging.StreamHandler(sys.stdout)
         optimization_handler.setFormatter(optimization_formatter)
         optimization_logger = logging.getLogger(optimizer)
         optimization_logger.addHandler(optimization_handler)
+        optimizer_loglevel = config.getint("HPOLIB", "optimizer_loglevel")
+        optimization_logger.setLevel(optimizer_loglevel)
 
         # Use a flag which is set to true as soon as all children are
         # supposed to be killed
@@ -418,10 +419,6 @@ def main():
         else:
             optimizer_end_time = sys.float_info.max
 
-        console_output_delay = config.getfloat("HPOLIB", "console_output_delay")
-
-        printed_start_configuration = list()
-        printed_end_configuration = list()
         sent_SIGINT = False
         sent_SIGINT_time = np.inf
         sent_SIGTERM = False

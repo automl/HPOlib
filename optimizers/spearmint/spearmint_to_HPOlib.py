@@ -29,7 +29,6 @@ def command_line_function(params, cli_target):
     proc = subprocess.Popen(call, shell=True, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
-    logger.info("STDOUT:")
     logger.info(stdout)
     if stderr:
         logger.error("STDERR:")
@@ -53,7 +52,7 @@ def command_line_function(params, cli_target):
 def main(job_id, params):
     """Implement the Spearmint interface and then call HPOlib"""
     cfg = load_experiment_config_file()
-    log_level = cfg.getint("HPOLIB", "loglevel")
+    log_level = cfg.getint("HPOLIB", "HPOlib_loglevel")
     logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
                                'message)s', datefmt='%H:%M:%S')
     logger.setLevel(log_level)

@@ -31,7 +31,6 @@ def command_line_function(params, fold, cli_target):
     proc = subprocess.Popen(call, shell=True, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
-    logger.info("STDOUT:")
     logger.info(stdout)
     if stderr:
         logger.error("STDERR:")
@@ -45,11 +44,13 @@ def command_line_function(params, fold, cli_target):
         if pos != -1:
             result_string = line[pos:]
             result_array = result_string.split()
+            print result_array
             result = float(result_array[1].strip(","))
+            runtime = float(result_array[3].strip(","))
             break
 
     # Parse the CLI
-    return result
+    return result, runtime
 
 
 def parse_command_line():
@@ -81,7 +82,7 @@ def format_return_string(status, runtime, runlength, quality, seed,
 def main():
     """Implement the SMAC interface and then call HPOlib"""
     cfg = load_experiment_config_file()
-    log_level = cfg.getint("HPOLIB", "loglevel")
+    log_level = cfg.getint("HPOLIB", "HPOlib_loglevel")
     logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
                                'message)s', datefmt='%H:%M:%S')
     logger.setLevel(log_level)
@@ -91,10 +92,8 @@ def main():
     fold, seed = parse_command_line()
     params = get_parameters()
 
-    starttime = time.time()
-    result = command_line_function(params, fold, cli_target)
-    endtime = time.time()
-    print format_return_string("SAT", endtime - starttime, 1, result, seed, "")
+    result, runtime = command_line_function(params, fold, cli_target)
+    print format_return_string("SAT", runtime, 1, result, seed, "")
     return result
 
 

@@ -110,6 +110,7 @@ class Experiment:
             # in new versions, there might be new fields which have to be
             # pickled and loaded and so on...
             self.version = VERSION
+            # Determine whether the experiment is open for reading and writing
 
             # Save this out.
             # self._save_jobs()
@@ -117,6 +118,8 @@ class Experiment:
         else:
             # Load in from the pickle.
             self._load_jobs()
+
+        self._is_closed = False
 
     def _create_trial(self):
         trial = dict()
@@ -148,13 +151,19 @@ class Experiment:
         trial['test_additional_data'] = defaultdict(str)
         return trial
 
-    def __del__(self):
-        # self._save_jobs()
-        if self.locker.unlock(self.jobs_pkl):
+    def close(self):
+        if self.is_closed():
             pass
-            #    sys.stderr.write("Released lock on job grid.\n")
+        elif self.locker.unlock(self.jobs_pkl):
+            self._is_closed = True
         else:
             raise Exception("Could not release lock on job grid.\n")
+
+    def is_closed(self):
+        return self._is_closed
+
+    def __del__(self):
+        self.close()
 
     def result_array(self):
         result = np.array([trial['result'] for trial in self.trials])

@@ -95,7 +95,7 @@ def main():
     config = wrapping_util.get_configuration(experiment_dir,
                                              None,
                                              unknown_arguments)
-    log_level = config.getint("HPOLIB", "loglevel")
+    log_level = config.getint("HPOLIB", "HPOlib_loglevel")
     hpolib_logger.setLevel(log_level)
 
     os.chdir(experiment_dir)

@@ -53,30 +53,23 @@ def load_experiment_file():
     return experiment
 
 
-def do_cv(arguments, parameters, folds=10):
+def do_cv(arguments, parameters, experiment, folds=10):
     logger.info("Starting Cross validation")
-    logger.info("Parameters: %s", str(parameters))
     sys.stdout.flush()
     cfg = load_experiment_config_file()
 
     # Store the results to hand them back to tpe and spearmint
     results = []
+    times = []
 
     try:
         for fold in range(folds):
-            logger.info("Starting fold %d" % fold)
-            status, wallclock_time, result, additional_data = \
-                dispatcher.main(arguments, parameters, fold)
+            arguments.instance = fold
+            result, wallclock_time = run_one_instance(arguments, parameters, experiment)
             results.append(result)
-            logger.info("Finished fold %d, result: %f, duration: %f" %
-                        (fold, result, wallclock_time))
+            times.append(wallclock_time)
 
-            # If a specified number of runs crashed, quit the whole cross validation
-            # in order to save time.
             worst_possible = cfg.getfloat("HPOLIB", "result_on_terminate")
-            # So far, this was a nansum, but there must be no NaNs at this
-            # point of the program flow!
-            assert np.isfinite(results).all()
             crashed_runs = np.sum([0 if res != worst_possible else 1 for res in results])
             if crashed_runs >= cfg.getint("HPOLIB", "max_crash_per_cv"):
                 logger.warning("Aborting CV because the number of crashes "
@@ -91,8 +84,6 @@ def do_cv(arguments, parameters, folds=10):
     except Exception as e:
         logger.error(format_traceback(sys.exc_info()))
         logger.error("CV failed %s %s", sys.exc_info()[0], e)
-        # status = "CRASHED"
-        # status = "SAT"
         mean = np.NaN
         
     # Do not return any kind of nan because this would break spearmint
@@ -101,18 +92,27 @@ def do_cv(arguments, parameters, folds=10):
             mean = float(cfg.get("HPOLIB", "result_on_terminate"))
 
     logger.info("Finished CV")
-    return mean
+    return mean, np.nansum(times)
 
 
-def run_one_instance(arguments, parameters):
+def run_one_instance(arguments, parameters, experiment):
     """Execute one instance."""
     if arguments.instance is not None:
         instance = int(arguments.instance)
     else:
         instance = 0
 
-    # TODO get the configuration ID at this point!
-    logger.info("Starting instance evaluation for: %s" % (str(instance)))
+    if experiment.is_closed():
+        experiment = load_experiment_file()
+
+    # Side-effect: adds a job if it is not yet in the experiments file
+    trial_index = get_trial_index(experiment, instance, parameters)
+    experiment.set_one_fold_running(trial_index, instance)
+    experiment._save_jobs()
+    experiment.close()  # release Experiment lock
+
+    logger.info("Starting instance evaluation for configuration: %s, "
+                "instance: %s" % (str(trial_index), str(instance)))
     logger.info("Parameters: %s", str(parameters))
     cfg = load_experiment_config_file()
 
@@ -130,14 +130,52 @@ def run_one_instance(arguments, parameters):
         wallclock_time = np.NaN
         additional_data = str(e)
 
-    # Do not return any kind of nan because this would break spearmint
-    with warnings.catch_warnings():
-        if not np.isfinite(result):
-            result = float(cfg.get("HPOLIB", "result_on_terminate"))
+    # Do bookkeeping!
+    if experiment.is_closed():
+        experiment = load_experiment_file()
 
-    logger.info("Finished instance Evaluation: %s; result: %f, duration: %f" %
-                (str(instance), result, wallclock_time))
-    return result
+    if status == "SAT":
+        experiment.set_one_fold_complete(trial_index, instance, result,
+                                         wallclock_time, additional_data)
+    elif status == "CRASHED" or status == "UNSAT":
+        result = cfg.getfloat("HPOLIB", "result_on_terminate")
+        experiment.set_one_fold_crashed(trial_index, instance, result,
+                                        wallclock_time, additional_data)
+        status = "SAT"
+    else:
+        # TODO: We need a global stopping mechanism
+        pass
+    experiment._save_jobs()
+    experiment.close()  # release lock
+
+    logger.info("Finished instance Evaluation for configuration: %s, "
+                "instance %s; result: %f, duration: %f" %
+                (str(trial_index), str(instance), result, wallclock_time))
+    return result, wallclock_time
+
+
+def get_trial_index(experiment, fold, params):
+    # Check whether we are in a new configuration; This has to check whether
+    # the params were already inserted but also whether the fold already run
+    # This is checked twice; the instance_result has to be not NaN and the
+    # entry in instance_order has to exist
+    new = True
+    trial_index = float("NaN")
+    for idx, trial in enumerate(experiment.trials):
+        exp = trial['params']
+        if exp == params and (idx, fold) not in experiment.instance_order and \
+                (experiment.get_trial_from_id(idx)['instance_results'][fold] ==
+                     np.NaN or
+                         experiment.get_trial_from_id(idx)['instance_results'][
+                             fold] !=
+                         experiment.get_trial_from_id(idx)['instance_results'][
+                             fold]):
+            new = False
+            trial_index = idx
+            break
+    if new:
+        trial_index = experiment.add_job(params)
+    return trial_index
 
 
 def parse_params(params_list):
@@ -205,26 +243,9 @@ def parse_cli():
 
 
 def main(arguments, parameters):
-    """
-    params = None
-
-    if 'params' in kwargs.keys():
-        params = kwargs['params']
-    else:
-        for arg in args:
-            if type(arg) == dict:
-                params = arg
-                break
-
-    if params is None:
-        logger.critical("No parameter dict found in cv.py.\n"
-                        "args: %s\n kwargs: %s", args, kwargs)
-        # TODO: Hack for TPE and AUTOWeka
-        params = args
-    """
     config = load_experiment_config_file()
 
-    loglevel = config.getint("HPOLIB", "loglevel")
+    loglevel = config.getint("HPOLIB", "HPOlib_loglevel")
     hpolib_logger.setLevel(loglevel)
     host = config.get("HPOLIB", "logging_host")
     if host:
@@ -235,32 +256,32 @@ def main(arguments, parameters):
         streamh = logging.StreamHandler(sys.stdout)
         hpolib_logger.addHandler(streamh)
 
-
     # Load the experiment to do time-keeping
     cv_starttime = time.time()
     experiment = load_experiment_file()
     experiment.start_cv(cv_starttime)
     experiment._save_jobs()
-    del experiment
+    experiment.close()
 
     folds = config.getint('HPOLIB', 'number_cv_folds')
 
-    """
-    params = flatten_parameter_dict(params)
-    """
-
     if arguments.instance is None and folds > 1:
-        result = do_cv(arguments, parameters, folds=folds)
+        result, wallclock_time = \
+            do_cv(arguments, parameters, experiment, folds=folds)
     else:
-        result = run_one_instance(arguments, parameters)
+        result, wallclock_time = \
+            run_one_instance(arguments, parameters, experiment)
 
     # Load the experiment to do time-keeping
-    experiment = load_experiment_file()
+    if experiment.is_closed():
+        experiment = load_experiment_file()
+
     experiment.end_cv(time.time())
     experiment._save_jobs()
-    del experiment
+    experiment.close()
 
-    sys.stdout.write("Result: %f" % float(result))
+    sys.stdout.write("Result: %f, Runtime: %f\n" %
+                     (float(result), float(wallclock_time)))
     sys.stdout.flush()
     return result
 
