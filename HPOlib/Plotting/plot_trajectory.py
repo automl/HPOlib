@@ -107,8 +107,8 @@ def plot_trajectories(trial_list, name_list, x_ticks,
             m = numpy.log10(m)
 
         if aggregation == "mean":
-            lower = m - numpy.std(performance) * scale_std
-            upper = m + numpy.std(performance) * scale_std
+            lower = m - numpy.std(performance, axis=0) * scale_std
+            upper = m + numpy.std(performance, axis=0) * scale_std
         else:
             lower = numpy.percentile(performance, axis=0, q=25)
             upper = numpy.percentile(performance, axis=0, q=75)
