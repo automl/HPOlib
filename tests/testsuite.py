@@ -2,7 +2,7 @@ import unittest
 
 import unittests.test_benchmark_util as test_benchmark_util
 import unittests.test_configuration_space as test_configuration_space
-import unittests.test_cv as test_cv
+import unittests.test_optimization_interceptor as test_optimization_interceptor
 import unittests.test_data_utils as test_data_utils
 import unittests.test_dispatcher as test_dispatcher
 import unittests.test_experiment as test_experiment
@@ -21,7 +21,7 @@ def suite():
     _suite = unittest.TestSuite()
     _suite.addTest(unittest.makeSuite(test_benchmark_util.BenchmarkUtilTest))
     _suite.addTest(unittest.makeSuite(test_configuration_space.TestConfigurationSpace))
-    _suite.addTest(unittest.makeSuite(test_cv.CVTest))
+    _suite.addTest(unittest.makeSuite(test_optimization_interceptor.OptimizationInterceptorTest))
     _suite.addTest(unittest.makeSuite(test_data_utils.DataUtilTest))
     _suite.addTest(unittest.makeSuite(test_dispatcher.DispatcherTest))
     _suite.addTest(unittest.makeSuite(test_experiment.ExperimentTest))

@@ -61,10 +61,10 @@ def download_source(download_url, md5, save_as):
     return True
 
 
-def extract_source(fn_name, extract_as):
-    if tarfile.is_tarfile(fn_name):
+def extract_source(filename, extract_as):
+    if tarfile.is_tarfile(filename):
         try:
-            tfile = tarfile.open(fn_name)
+            tfile = tarfile.open(filename)
             tfile.extractall(extract_as)
         except Exception, e:
             sys.stdout.write("Error occurred during extraction: %s\n" % e)
@@ -116,7 +116,10 @@ class AdditionalInstall(install):
                 if not os.path.isdir(os.path.join(os.getcwd(), 'runsolver/src/')):
                     os.mkdir(os.path.join(os.getcwd(), 'runsolver/src/'))
                 sys.stdout.write("Copy runsolver from %s to runsolver/src/runsolver\n" % p)
-                shutil.copy(p, os.path.join(os.getcwd(), 'runsolver/src/runsolver'))
+                target = os.path.join(os.getcwd(), 'runsolver/src/runsolver')
+                print os.path.abspath(p), os.path.abspath(target)
+                if not os.path.samefile(p, target):
+                    shutil.copy(p, target)
                 return p
         return False
 
@@ -178,7 +181,7 @@ class AdditionalInstall(install):
 
         if runsolver_needs_to_be_installed and downloaded:
             sys.stdout.write("Extracting runsolver to %s\n" % os.path.join(here_we_are, runsolver_name))
-            extracted = extract_source(fn_name=os.path.join(here_we_are, runsolver_tar_name), extract_as=here_we_are)
+            extracted = extract_source(filename=os.path.join(here_we_are, runsolver_tar_name), extract_as=here_we_are)
 
         if runsolver_needs_to_be_installed and extracted:
             sys.stdout.write("Building runsolver\n")

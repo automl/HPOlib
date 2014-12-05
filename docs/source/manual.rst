@@ -520,3 +520,17 @@ the best configuration.
 .. code:: bash
 
     HPOlib-testbest --best --cwd logreg/nocv/smac_2_08_00-master_2000_2014-11-7--16-49-28-166127/
+
+Dispatchers: Different ways to invoke the Target Algorithm
+==========================================================
+
+Runsolver Wrapper
+-----------------
+
+.. automodule:: HPOlib.dispatcher.runsolver_wrapper
+
+Python Function
+---------------
+
+.. automodule:: HPOlib.dispatcher.python_file
+

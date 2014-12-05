@@ -32,6 +32,7 @@ class TestOptimizers(unittest.TestCase):
         runs = glob.glob(glob_string)
         for run in runs:
             shutil.rmtree(run)
+            pass
 
     def test_run_and_test(self):
         for optimizer in self.optimizers:
@@ -40,6 +41,11 @@ class TestOptimizers(unittest.TestCase):
                   "--HPOLIB:experiment_directory_prefix %s" % \
                   (self.optimizer_dir, optimizer, self.benchmarks_dir,
                    self.experiment_dir_prefix)
+
+            print
+            print "#######################################"
+            print cmd
+            print
 
             proc = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE,
                                     stdin=subprocess.PIPE,
@@ -54,15 +60,37 @@ class TestOptimizers(unittest.TestCase):
                                              "logreg_on_grid",
                                              self.experiment_dir_prefix + "*" +
                                              optimizer.split("/")[-1] + "*")
-            print testing_directory
             test_dir_glob = glob.glob(testing_directory)
-            print test_dir_glob
-            print
             testing_directory = test_dir_glob[0]
 
             cmd = "HPOlib-testbest --all --cwd %s" % testing_directory
+            print
+            print "#######################################"
+            print cmd
+            print
             proc = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE,
                                     stdin=subprocess.PIPE, env=os.environ.copy())
             stdout, stderr = proc.communicate()
             self.assertEqual(0, proc.returncode)
+
+    def test_crossvalidation(self):
+        # This is only a dummy crossvalidation!
+        cmd = "HPOlib-run -o %s/%s -s 10 --cwd %s/logreg_on_grid " \
+              "--HPOLIB:number_of_jobs 5 " \
+              "--HPOLIB:experiment_directory_prefix %s " \
+              "--HPOLIB:number_cv_folds 2" % \
+              (self.optimizer_dir, self.optimizers[4], self.benchmarks_dir,
+               self.experiment_dir_prefix)
+
+        print
+        print "#######################################"
+        print cmd
+        print
+
+        proc = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE,
+                                stdin=subprocess.PIPE,
+                                env=os.environ.copy())
+
+        stdout, stderr = proc.communicate()
+        self.assertEqual(0, proc.returncode)
 

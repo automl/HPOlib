@@ -44,6 +44,10 @@ version_info = ["Algorithm Execution & Abstraction Toolkit ==> v2.08.00-master-7
 
 #optimizer_str = "smac_2_06_01-dev"
 
+def get_algo_exec():
+    return '"python ' + os.path.join(os.path.dirname(__file__),
+                                     'SMAC_to_HPOlib.py') + '"'
+
 
 def check_dependencies():
     process = subprocess.Popen("which java", stdout=subprocess.PIPE,
@@ -103,9 +107,7 @@ def build_smac_call(config, options, optimizer_dir):
                     '--intraInstanceObj', config.get('SMAC', 'intra_instance_obj'),
                     '--runObj', config.get('SMAC', 'run_obj'),
                     # '--testInstanceFile', config.get('SMAC', 'testInstanceFile'),
-                    '--algoExec',  '"python', os.path.join(algo_exec_dir,
-                        'dispatcher', 'dispatcher.py') + '"',
-                    #                config.get('SMAC', 'algo_exec')) + '"',
+                    '--algoExec',  get_algo_exec(),
                     '--numIterations', config.get('SMAC', 'num_iterations'),
                     '--totalNumRunsLimit', config.get('SMAC', 'total_num_runs_limit'),
                     '--outputDirectory', optimizer_dir,

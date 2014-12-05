@@ -117,6 +117,13 @@ def main(config, options, experiment_dir, experiment_directory_prefix,
                                      optimizer_str + "_" +
                                      str(options.seed) + "_" + time_string)
 
+    # Alter the python path
+    if not 'PYTHONPATH' in os.environ:
+        os.environ['PYTHONPATH'] = os.path.dirname(__file__)
+    else:
+        os.environ['PYTHONPATH'] = os.path.dirname(__file__) + os.pathsep + \
+                                   os.environ['PYTHONPATH']
+
     # Build call
     cmd = build_spearmint_call(config, options, optimizer_dir)
 

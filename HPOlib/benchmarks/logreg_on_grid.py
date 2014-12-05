@@ -12,16 +12,10 @@ def save_logreg_on_grid(params, ret_type='validation', **kwargs):
     batchsize = params["batchsize"]
     n_epochs = params["n_epochs"]
 
-    if hasattr(lrate, "__len__"):
-        lrate = lrate[0]
-        l2_reg = l2_reg[0]
-        batchsize = batchsize[0]
-        n_epochs = n_epochs[0]
-
     lrate = int(float(lrate))
     l2_reg = int(float(l2_reg))
     batchsize = int(float(batchsize))
-    n_epochs = int(float(params["n_epochs"]))
+    n_epochs = int(float(n_epochs))
     return logreg_on_grid(lrate, l2_reg, batchsize, n_epochs, ret_type=ret_type)
 
 

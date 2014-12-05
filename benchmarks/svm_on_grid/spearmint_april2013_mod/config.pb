@@ -1,5 +1,5 @@
 language: PYTHON
-name:     "HPOlib.cv"
+name:     "spearmint_to_HPOlib"
 
 variable {
  name: "C"

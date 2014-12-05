@@ -52,10 +52,7 @@ INFODEVEL = """
 """
 IS_DEVELOPMENT = True
 
-logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
-                           'message)s', datefmt='%H:%M:%S')
 hpolib_logger = logging.getLogger("HPOlib")
-hpolib_logger.setLevel(logging.INFO)
 logger = logging.getLogger("HPOlib.wrapping")
 
 
@@ -100,61 +97,6 @@ def calculate_optimizer_time(trials):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         return np.nansum(optimizer_time)
-
-
-def output_experiment_pickle(console_output_delay,
-                             printed_start_configuration,
-                             printed_end_configuration,
-                             optimizer_dir_in_experiment,
-                             optimizer, experiment_directory_prefix, lock,
-                             Experiment, np, exit):
-    current_best = -1
-    while True:
-        try:
-            trials = Experiment.Experiment(optimizer_dir_in_experiment,
-                                       experiment_directory_prefix + optimizer)
-        except Exception as e:
-            logger.error(e)
-            time.sleep(console_output_delay)
-            continue
-
-        with lock:
-            for i in range(len(printed_end_configuration), len(trials.instance_order)):
-                configuration = trials.instance_order[i][0]
-                fold = trials.instance_order[i][1]
-                if i + 1 > len(printed_start_configuration):
-                    logger.info("Starting configuration %5d, fold %2d",
-                                configuration, fold)
-                    printed_start_configuration.append(i)
-
-                if np.isfinite(trials.trials[configuration]
-                               ["instance_results"][fold]):
-                    last_result = trials.trials[configuration] \
-                        ["instance_results"][fold]
-                    try:
-                        tmp_current_best = trials.get_arg_best()
-                    except ValueError:
-                        tmp_current_best = np.inf
-                    if tmp_current_best <= i:
-                        current_best = tmp_current_best
-                    # Calculate current best
-                    # Check if last result is finite, if not calc nanmean over all instances
-                    dct_helper = trials.trials[current_best]
-                    res = dct_helper["result"] if \
-                        np.isfinite(dct_helper["result"]) \
-                        else wrapping_util.nan_mean(dct_helper["instance_results"])
-                        #np.nanmean(trials.trials[current_best]["instance_results"])
-                        # nanmean does not work for all numpy version
-                    logger.info("Result %10f, current best %10f",
-                                last_result, res)
-                    printed_end_configuration.append(i)
-
-            del trials
-        if exit:
-            break
-        else:
-            time.sleep(console_output_delay)
-
 
 def use_arg_parser():
     """Parse all options which can be handled by the wrapping script.
@@ -207,6 +149,34 @@ def main():
     """Start an optimization of the HPOlib. For documentation see the
     comments inside this function and the general HPOlib documentation."""
 
+    args, unknown_arguments = use_arg_parser()
+    if args.working_dir:
+        experiment_dir = args.working_dir
+    elif args.restore:
+        args.restore = os.path.abspath(args.restore) + "/"
+        experiment_dir = args.restore
+    else:
+        experiment_dir = os.getcwd()
+
+    # Call get_configuration here to get the log level!
+    config = wrapping_util.get_configuration(experiment_dir,
+                                             None,
+                                             unknown_arguments)
+
+    formatter = logging.Formatter('[%(levelname)s] [%(asctime)s:%(name)s] %('
+                                  'message)s', datefmt='%H:%M:%S')
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(formatter)
+    hpolib_logger.addHandler(handler)
+
+    loglevel = config.getint("HPOLIB", "HPOlib_loglevel")
+    hpolib_logger.setLevel(loglevel)
+    if args.silent:
+        hpolib_logger.setLevel(60)
+    if args.verbose:
+        hpolib_logger.setLevel(10)
+
+    # DO NOT LOG UNTIL HERE UNLESS SOMETHING DRAMATIC HAS HAPPENED!!!
     # First of all print the infodevel
     if IS_DEVELOPMENT:
         logger.critical(INFODEVEL)
@@ -270,6 +240,38 @@ def main():
                               experiment_directory_prefix=experiment_directory_prefix)
     cmd = optimizer_call
 
+    # Start the server for logging from subprocesses here, because its port must
+    # be written to the config file.
+    logging_host = config.get("HPOLIB", "logging_host")
+    if logging_host:
+        logging_receiver_thread = None
+        default_logging_port = DEFAULT_TCP_LOGGING_PORT
+
+        for logging_port in range(default_logging_port, 65535):
+            try:
+                logging_receiver = logging_server.LoggingReceiver(
+                    host=logging_host, port=logging_port,
+                    handler=logging_server.LogRecordStreamHandler)
+                logging_receiver_thread = Thread(target=logging_receiver.serve_forever)
+                logging_receiver_thread.daemon = True
+                logger.info('%s started at %s' % (
+                    logging_receiver.__class__.__name__,
+                    logging_receiver.server_address))
+                logging_receiver_thread.start()
+                break
+            # TODO I did not find any useful documentation about which Exceptions
+            #  I should catch here...
+            except Exception as e:
+                logger.debug(e)
+                logger.debug(e.message)
+
+        if logging_receiver_thread is None:
+            logger.critical("Could not create the logging server. Going to shut "
+                            "down.")
+            sys.exit(1)
+
+        config.set("HPOLIB", "logging_port", str(logging_port))
+
     with open(os.path.join(optimizer_dir_in_experiment, "config.cfg"), "w") as f:
         config.set("HPOLIB", "is_not_original_config_file", "True")
         wrapping_util.save_config_to_file(f, config, write_nones=True)
@@ -325,6 +327,18 @@ def main():
         logger.info(cmd)
         return 0
     else:
+        # Create a second formatter and handler to customize the optimizer
+        # output
+        optimization_formatter = logging.Formatter(
+            '[%(levelname)s] [%(asctime)s:%(optimizer)s] %(message)s',
+            datefmt='%H:%M:%S')
+        optimization_handler = logging.StreamHandler(sys.stdout)
+        optimization_handler.setFormatter(optimization_formatter)
+        optimization_logger = logging.getLogger(optimizer)
+        optimization_logger.addHandler(optimization_handler)
+        optimizer_loglevel = config.getint("HPOLIB", "optimizer_loglevel")
+        optimization_logger.setLevel(optimizer_loglevel)
+
         # Use a flag which is set to true as soon as all children are
         # supposed to be killed
         exit_ = wrapping_util.Exit()
@@ -409,10 +423,6 @@ def main():
         else:
             optimizer_end_time = sys.float_info.max
 
-        console_output_delay = config.getfloat("HPOLIB", "console_output_delay")
-
-        printed_start_configuration = list()
-        printed_end_configuration = list()
         sent_SIGINT = False
         sent_SIGINT_time = np.inf
         sent_SIGTERM = False
@@ -434,14 +444,6 @@ def main():
         stderr_thread.start()
         stdout_thread.start()
         if not (args.verbose or args.silent):
-            lock = thread.allocate_lock()
-            thread.start_new_thread(output_experiment_pickle,
-                                    (console_output_delay,
-                                     printed_start_configuration,
-                                     printed_end_configuration,
-                                     optimizer_dir_in_experiment,
-                                     optimizer, experiment_directory_prefix,
-                                     lock, Experiment, np, False))
             logger.info('Optimizer runs with PID: %d', proc.pid)
             logger.info('We start in directory %s', os.getcwd())
         while True:
@@ -451,12 +453,13 @@ def main():
                 exit_.true()
 
             # necessary, otherwise HPOlib-run takes 100% of one processor
-            time.sleep(0.2)
+            time.sleep(0.25)
 
             try:
                 while True:
                     line = stdout_queue.get_nowait()
                     fh.write(line)
+                    fh.flush()
 
                     # Write to stdout only if verbose is on
                     if args.verbose:
@@ -469,6 +472,7 @@ def main():
                 while True:
                     line = stderr_queue.get_nowait()
                     fh.write(line)
+                    fh.flush()
 
                     # Write always, except silent is on
                     if not args.silent:
@@ -506,14 +510,6 @@ def main():
                 sent_SIGKILL_time = time.time()
                 sent_SIGKILL = True
 
-        if not (args.verbose or args.silent):
-            output_experiment_pickle(console_output_delay,
-                                     printed_start_configuration,
-                                     printed_end_configuration,
-                                     optimizer_dir_in_experiment,
-                                     optimizer, experiment_directory_prefix,
-                                     lock, Experiment, np, True)
-
         logger.info("-----------------------END--------------------------------------")
         ret = proc.returncode
         logger.info("Finished with return code: %d", ret)
@@ -521,8 +517,6 @@ def main():
 
 
         fh.close()
-        # TODO: here should be a synchronization point for the two different
-        # threads, so no deadlocks can happen!
 
         # Change back into to directory
         os.chdir(dir_before_exp)
@@ -585,12 +579,12 @@ def main():
         try:
             for starttime, endtime in zip(trials.starttime, trials.endtime):
                 total_time += endtime - starttime
-            logger.info("Needed a total of %f seconds", total_time)
-            logger.info("The optimizer %s took %10.5f seconds",
+            logger.info("  Needed a total of %f seconds", total_time)
+            logger.info("  The optimizer %s took %10.5f seconds",
                   optimizer, float(calculate_optimizer_time(trials)))
-            logger.info("The overhead of HPOlib is %f seconds",
+            logger.info("  The overhead of HPOlib is %f seconds",
                   calculate_wrapping_overhead(trials))
-            logger.info("The benchmark itself took %f seconds" % \
+            logger.info("  The benchmark itself took %f seconds" % \
                   trials.total_wallclock_time)
         except Exception as e:
             logger.error(HPOlib.wrapping_util.format_traceback(sys.exc_info()))
