@@ -227,12 +227,14 @@ def main(arguments, parameters):
     loglevel = config.getint("HPOLIB", "loglevel")
     hpolib_logger.setLevel(loglevel)
     host = config.get("HPOLIB", "logging_host")
-    port = config.getint("HPOLIB", "logging_port")
-    socketh = SocketHandler(host, port)
-    hpolib_logger.addHandler(socketh)
-    if loglevel <= 10:
-        streamh = logging.StreamHandler()
+    if host:
+        port = config.getint("HPOLIB", "logging_port")
+        socketh = SocketHandler(host, port)
+        hpolib_logger.addHandler(socketh)
+    else:
+        streamh = logging.StreamHandler(sys.stdout)
         hpolib_logger.addHandler(streamh)
+
 
     # Load the experiment to do time-keeping
     cv_starttime = time.time()

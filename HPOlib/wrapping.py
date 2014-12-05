@@ -167,7 +167,7 @@ def main():
 
     formatter = logging.Formatter('[%(levelname)s] [%(asctime)s:%(name)s] %('
                                   'message)s', datefmt='%H:%M:%S')
-    handler = logging.StreamHandler()
+    handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(formatter)
     hpolib_logger.addHandler(handler)
 
@@ -239,35 +239,35 @@ def main():
     # Start the server for logging from subprocesses here, because its port must
     # be written to the config file.
     logging_host = config.get("HPOLIB", "logging_host")
-    if not logging_host:
-        logging_host = 'localhost'
-    logging_receiver_thread = None
-    default_logging_port = DEFAULT_TCP_LOGGING_PORT
+    logger.critical("Logging host %s", logging_host)
+    if logging_host:
+        logging_receiver_thread = None
+        default_logging_port = DEFAULT_TCP_LOGGING_PORT
 
-    for logging_port in range(default_logging_port, 65535):
-        try:
-            logging_receiver = logging_server.LoggingReceiver(
-                host=logging_host, port=logging_port,
-                handler=logging_server.LogRecordStreamHandler)
-            logging_receiver_thread = Thread(target=logging_receiver.serve_forever)
-            logging_receiver_thread.daemon = True
-            logger.info('%s started at %s' % (
-                logging_receiver.__class__.__name__,
-                logging_receiver.server_address))
-            logging_receiver_thread.start()
-            break
-        # TODO I did not find any useful documentation about which Exceptions
-        #  I should catch here...
-        except Exception as e:
-            logger.debug(e)
-            logger.debug(e.message)
+        for logging_port in range(default_logging_port, 65535):
+            try:
+                logging_receiver = logging_server.LoggingReceiver(
+                    host=logging_host, port=logging_port,
+                    handler=logging_server.LogRecordStreamHandler)
+                logging_receiver_thread = Thread(target=logging_receiver.serve_forever)
+                logging_receiver_thread.daemon = True
+                logger.info('%s started at %s' % (
+                    logging_receiver.__class__.__name__,
+                    logging_receiver.server_address))
+                logging_receiver_thread.start()
+                break
+            # TODO I did not find any useful documentation about which Exceptions
+            #  I should catch here...
+            except Exception as e:
+                logger.debug(e)
+                logger.debug(e.message)
 
-    if logging_receiver_thread is None:
-        logger.critical("Could not create the logging server. Going to shut "
-                        "down.")
-        sys.exit(1)
+        if logging_receiver_thread is None:
+            logger.critical("Could not create the logging server. Going to shut "
+                            "down.")
+            sys.exit(1)
 
-    config.set("HPOLIB", "logging_port", str(logging_port))
+        config.set("HPOLIB", "logging_port", str(logging_port))
 
     with open(os.path.join(optimizer_dir_in_experiment, "config.cfg"), "w") as f:
         config.set("HPOLIB", "is_not_original_config_file", "True")
