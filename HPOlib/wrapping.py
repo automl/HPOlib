@@ -192,12 +192,7 @@ def main():
         logger.info("Converting relative optimizer path %s to absolute "
                     "optimizer path %s.", relative_path, optimizer)
 
-    if args.working_dir:
-        os.chdir(args.working_dir)
-    elif args.restore:
-        args.restore = os.path.abspath(args.restore) + "/"
-        os.chdir(args.restore)
-
+    os.chdir(experiment_dir)
     experiment_dir = os.getcwd()
 
     check_before_start.check_first(experiment_dir)
@@ -461,10 +456,8 @@ def main():
                     fh.write(line)
                     fh.flush()
 
-                    # Write to stdout only if verbose is on
-                    if args.verbose:
-                        sys.stdout.write(line)
-                        sys.stdout.flush()
+                    optimization_logger.info(line.replace("\n", ""),
+                                             extra={'optimizer': optimizer})
             except Empty:
                 pass
 
@@ -474,10 +467,8 @@ def main():
                     fh.write(line)
                     fh.flush()
 
-                    # Write always, except silent is on
-                    if not args.silent:
-                        sys.stderr.write("[ERR]:" + line)
-                        sys.stderr.flush()
+                    optimization_logger.error(line.replace("\n", ""),
+                                              extra={'optimizer': optimizer})
             except Empty:
                 pass
 
@@ -573,8 +564,7 @@ def main():
         trials._save_jobs()
         # trials.finish_experiment()
         total_time = 0
-        logger.info("Best result")
-        logger.info(trials.get_best())
+        logger.info("Best result %f", trials.get_best())
         logger.info("Durations")
         try:
             for starttime, endtime in zip(trials.starttime, trials.endtime):

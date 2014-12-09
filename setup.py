@@ -117,7 +117,6 @@ class AdditionalInstall(install):
                     os.mkdir(os.path.join(os.getcwd(), 'runsolver/src/'))
                 sys.stdout.write("Copy runsolver from %s to runsolver/src/runsolver\n" % p)
                 target = os.path.join(os.getcwd(), 'runsolver/src/runsolver')
-                print os.path.abspath(p), os.path.abspath(target)
                 if not os.path.samefile(p, target):
                     shutil.copy(p, target)
                 return p
