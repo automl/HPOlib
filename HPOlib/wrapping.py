@@ -378,7 +378,7 @@ def main():
             #                    "together.")
             #    sys.exit(1)
 
-            fn_setup_output = os.path.join(os.getcwd(),
+            fn_setup_output = os.path.join(optimizer_dir_in_experiment,
                                            "function_setup.out")
             runsolver_cmd = runsolver_wrapper._make_runsolver_command(
                 config, fn_setup_output)
@@ -521,7 +521,7 @@ def main():
             #                    "together.")
             #    sys.exit(1)
 
-            fn_teardown_output = os.path.join(os.getcwd(),
+            fn_teardown_output = os.path.join(optimizer_dir_in_experiment,
                                               "function_teardown.out")
             runsolver_cmd = runsolver_wrapper._make_runsolver_command(
                 config, fn_teardown_output)
