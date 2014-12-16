@@ -295,28 +295,29 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
             time.sleep(1)
             ct += 1
             # So far we have not not found anything
-            all_found = True
+            all_found = None
             if not os.path.isdir(optimizer_dir):
-                all_found = False
+                all_found = optimizer_dir
                 continue
 
             if not os.path.exists(os.path.join(optimizer_dir, os.path.basename(space))) and \
                     not os.path.exists(parent_space):
-                all_found = False
+                all_found = parent_space
                 continue
 
             if not os.path.exists(os.path.join(optimizer_dir, 'train.txt')):
-                all_found = False
+                all_found = os.path.join(optimizer_dir, 'train.txt')
                 continue
             if not os.path.exists(os.path.join(optimizer_dir, 'test.txt')):
-                all_found = False
+                all_found = os.path.join(optimizer_dir, 'test.txt')
                 continue
             if not os.path.exists(os.path.join(optimizer_dir, "scenario.txt")):
-                all_found = False
+                all_found = os.path.join(optimizer_dir, "scenario.txt")
                 continue
-        if not all_found:
+        if all_found is not None:
             logger.critical("Could not find all necessary files..abort. " +
-                            "Experiment directory is somehow created, but not complete")
+                            "Experiment directory %s is somehow created, but not complete\n" % optimizer_dir +
+                            "Missing: %s" % all_found)
             sys.exit(1)
 
 
