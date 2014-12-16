@@ -77,5 +77,5 @@ if __name__ == "__main__":
         ct += 1
     print "Found %d different results" % len(result_dict)
     for k in topK:
-        print "%10f" % k[0]['result'], ", ".join(["%s = %3s" % (key.strip('-'), k[0]['params'][key])
+        print "Result = %10f, Time = %10f, " % (k[0]['result'], k[0]['duration']), ", ".join(["%s = %3s" % (key.strip('-'), k[0]['params'][key])
                                         for key in k[0]['params']])
