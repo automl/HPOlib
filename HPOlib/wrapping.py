@@ -410,6 +410,7 @@ def main():
 
         global child_process_pid
         child_process_pid = proc.pid
+        process = psutil.Process(os.getpid())
 
         logger.info("-----------------------RUNNING----------------------------------")
         # http://stackoverflow.com/questions/375427/non-blocking-read-on-a-subprocess-pipe-in-python
@@ -474,11 +475,11 @@ def main():
                 pass
 
             ret = proc.poll()
-            # This does not include wrapping.py
-            process = psutil.Process(os.getpid())
-            children = process.children()
-            if ret is not None and len(children) == 0:
-                break
+            if ret is not None:
+                # This does not include wrapping.py
+                children = process.children()
+                if len(children) == 0:
+                    break
             # TODO: what happens if we have a ret but something is still
             # running?
 
