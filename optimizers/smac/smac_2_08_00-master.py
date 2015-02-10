@@ -119,7 +119,8 @@ def build_smac_call(config, options, optimizer_dir):
                     '--intensification-percentage',
                     config.get('SMAC', 'intensification_percentage'),
                     '--rf-split-min', config.get('SMAC', 'rf_split_min'),
-                    '--validation', config.get('SMAC', 'validation')])
+                    '--validation', config.get('SMAC', 'validation'),
+                    '--runtime-limit', config.get('SMAC', 'runtime_limit')])
 
     if config.getboolean('SMAC', 'save_runs_every_iteration'):
         call = " ".join([call, '--save-runs-every-iteration true'])
