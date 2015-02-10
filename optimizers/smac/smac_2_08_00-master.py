@@ -71,9 +71,7 @@ def check_dependencies():
 
 
 def _get_state_run(optimizer_dir):
-    rungroups = glob.glob(optimizer_dir + "/" + "scenario-SMAC*")
-    if len(rungroups) == 0:
-        raise Exception("Could not find a rungroup in %s" % optimizer_dir)
+    rungroups = glob.glob(optimizer_dir + "scenario-SMAC*")
     if len(rungroups) == 1:
         rungroup = rungroups[0]
     else:
