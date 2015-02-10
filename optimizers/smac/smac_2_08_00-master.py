@@ -123,8 +123,12 @@ def build_smac_call(config, options, optimizer_dir):
                     '--initial-incumbent', config.get('SMAC', 'initial_incumbent'),
                     '--rf-split-min', config.get('SMAC', 'rf_split_min'),
                     '--validation', config.get('SMAC', 'validation'),
+<<<<<<< HEAD
                     '--runtime-limit', config.get('SMAC', 'runtime_limit'),
                     '--exec-mode', config.get('SMAC', 'exec_mode')])
+=======
+                    '--runtime-limit', config.get('SMAC', 'runtime_limit')])
+>>>>>>> Add runtime limit to SMAC 2.08
 
     if config.getboolean('SMAC', 'save_runs_every_iteration'):
         call = " ".join([call, '--save-runs-every-iteration true'])
