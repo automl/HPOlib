@@ -173,7 +173,7 @@ def dispatch(cfg, fold, params, test=False):
     if database:
         cmd += ["--mysqldbtae-database", database]
     logger.debug("Calling %s", " ".join(cmd))
-    logger.info("Algo-exec is %", algo_exec)
+    logger.info("Algo-exec is %s", algo_exec)
     logger.debug("Calling with this json: %s", json_str)
 
     # --mysqlTaeDefaultsFile
