@@ -39,6 +39,8 @@ if __name__ == "__main__":
                         default=10, help="How many outputs?")
     parser.add_argument("-i", dest="invers", action="store_true",
                         default=False, help="Plot worst k configs")
+    parser.add_argument("-a", dest="additional", action="store_true",
+                        default=False, help="Show additional info")
 
     args, unknown = parser.parse_known_args()
 
@@ -77,5 +79,9 @@ if __name__ == "__main__":
         ct += 1
     print "Found %d different results" % len(result_dict)
     for k in topK:
-        print "Result = %10f, Time = %10f, " % (k[0]['result'], k[0]['duration']), ", ".join(["%s = %3s" % (key.strip('-'), k[0]['params'][key])
-                                        for key in k[0]['params']])
+        print "Result = %10f, Time = %10f, " % (k[0]['result'], k[0]['duration']),\
+            ", ".join(["%s = %3s" % (key.strip('-'), k[0]['params'][key]) for key in k[0]['params']]),
+        if args.additional:
+            print ", additional_info = %s" % str(k[0]['additional_data'])
+        else:
+            print
