@@ -22,6 +22,7 @@ from argparse import ArgumentParser
 
 import cPickle
 import re
+import os
 import sys
 
 from matplotlib.pyplot import tight_layout, figure, subplots_adjust, subplot, savefig, show
@@ -64,7 +65,8 @@ def translate_para(key, value):
     return new_name, value
 
 
-def plot_params(value_list, result_list, name, save="", title="", jitter=0):
+def plot_params(value_list, result_list, name, min_=0.0, max_=0.0, save="",
+                title="", jitter=0):
     color = 'k'
     marker = 'o'
     size = 1
@@ -78,11 +80,17 @@ def plot_params(value_list, result_list, name, save="", title="", jitter=0):
     ax.grid(True, linestyle='-', which='major', color='lightgrey', alpha=0.5)
 
     # Define xlims
-    min_y = min(result_list)
-    max_y = max(result_list)
-    y_offset = np.abs(max_y - min_y) * 0.1
-    min_y -= y_offset
-    max_y += y_offset
+    if min_ == max_:
+        min_y = min(result_list)
+        max_y = max(result_list)
+        y_offset = np.abs(max_y - min_y) * 0.1
+        min_y -= y_offset
+        max_y += y_offset
+    else:
+        min_y = min_
+        max_y = max_
+        result_list = np.array(result_list)
+        result_list[result_list > max_y] = max_y
 
     min_x = min(value_list)
     max_x = max(value_list)
@@ -129,49 +137,74 @@ def plot_params(value_list, result_list, name, save="", title="", jitter=0):
         show()
 
 
-def main(pkl_list, name_list, param, save="", title="", jitter=0):
+def main(pkl_list, name_list, param, min_=0.0, max_=0.0,
+         save="", title="", jitter=0):
     if len(name_list) > 1:
         raise NotImplementedError("No support for more than one experiment")
 
-    mod_param = param
+    if not param:
+        params = set()
 
-    string_to_value_map = dict()
+        for pkl in pkl_list[0]:
+            fh = open(pkl, "r")
+            trials = cPickle.load(fh)
+            fh.close()
+            for t in trials["trials"]:
+                for k in t["params"]:
+                    k = re.sub('^-', '', k)
+                    params.add(k)
 
-    value_list = list()
-    result_list = list()
-    param_set = set()
-    for pkl in pkl_list[0]:
-        fh = open(pkl, "r")
-        trials = cPickle.load(fh)
-        fh.close()
-        for t in trials["trials"]:
-            if mod_param in t["params"]:
-                k, value = translate_para(param, t["params"][mod_param])
-                k = re.sub('^-', '', k)
-                print k, value
-                value = value.strip()
-                try:
-                    value = float(value)
-                except:
-                    if value in string_to_value_map:
-                        value = string_to_value_map[value]
-                    else:
-                        key = len(string_to_value_map.keys()) + 1
-                        string_to_value_map[value] = key
-                        value = key
-                value_list.append(value)
-                result_list.append(t["result"])
-                param_set.add(k)
-
-    if len(value_list) == 0:
-        print("No values found for param '%s', Available params:\n%s" %
-              (param, "\n".join([p for p in param_set])))
-        sys.exit(1)
     else:
-        print "Found %s values for %s" % (str(len(value_list)), param)
+        params = [param]
 
-    plot_params(value_list=value_list, result_list=result_list, name=param,
-                save=save, title=title, jitter=jitter)
+    for param in params:
+        if len(params) > 1:
+            try:
+                os.mkdir("params")
+            except:
+                pass
+
+            save = "params/%s.png" % param
+
+        mod_param = param
+
+        string_to_value_map = dict()
+
+        value_list = list()
+        result_list = list()
+        param_set = set()
+        for pkl in pkl_list[0]:
+            fh = open(pkl, "r")
+            trials = cPickle.load(fh)
+            fh.close()
+            for t in trials["trials"]:
+                if mod_param in t["params"]:
+                    k, value = translate_para(param, t["params"][mod_param])
+                    k = re.sub('^-', '', k)
+                    print k, value
+                    value = value.strip()
+                    try:
+                        value = float(value)
+                    except:
+                        if value in string_to_value_map:
+                            value = string_to_value_map[value]
+                        else:
+                            key = len(string_to_value_map.keys()) + 1
+                            string_to_value_map[value] = key
+                            value = key
+                    value_list.append(value)
+                    result_list.append(t["result"])
+                    param_set.add(k)
+
+        if len(value_list) == 0:
+            print("No values found for param '%s', Available params:\n%s" %
+                  (param, "\n".join([p for p in param_set])))
+            sys.exit(1)
+        else:
+            print "Found %s values for %s" % (str(len(value_list)), param)
+
+        plot_params(value_list=value_list, result_list=result_list, name=param,
+                    min_=min_, max_=max_, save=save, title=title, jitter=jitter)
 
 if __name__ == "__main__":
     prog = "python plot_param.py WhatIsThis <pathTo.pkl>* "
@@ -180,6 +213,10 @@ if __name__ == "__main__":
     parser = ArgumentParser(description=description, prog=prog)
     parser.add_argument("-s", "--save", dest="save", default="",
                         help="Where to save plot instead of showing it?")
+    parser.add_argument("--max", dest="max", type=float,
+                        default=0, help="Maximum value of the y axis.")
+    parser.add_argument("--min", dest="min", type=float,
+                        default=0, help="Minimum value of the y axis.")
     parser.add_argument("-p", "--parameter", dest="param", default="",
                         help="Which parameter to plot")
     parser.add_argument("-j", "--jitter", dest="jitter", default=0, type=float,
@@ -192,4 +229,5 @@ if __name__ == "__main__":
     sys.stdout.write("\nFound " + str(len(unknown)) + " argument[s]...\n")
     pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
     main(pkl_list=pkl_list_main, name_list=name_list_main, param=args.param,
-         save=args.save, title=args.title, jitter=args.jitter)
+         min_=args.min, max_=args.max, save=args.save, title=args.title,
+         jitter=args.jitter)
