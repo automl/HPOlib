@@ -1,15 +1,18 @@
 language: python
 python:
   - "2.7"
-# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
+
+virtualenv:
+  system_site_packages: true
 
 before_install:
   - sudo apt-get install -q libatlas3gf-base libatlas-dev liblapack-dev gfortran
+  - sudo apt-get install -q python-numpy python-scipy
 
 install:
   - easy_install -U distribute
-  - pip install numpy
-  - pip install scipy==0.13.2
+  #- pip install numpy
+  #- pip install scipy==0.13.2
   - pip install matplotlib
   - python setup.py install
 # command to run tests, e.g. python setup.py test
