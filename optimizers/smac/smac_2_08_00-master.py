@@ -118,6 +118,7 @@ def build_smac_call(config, options, optimizer_dir):
                     config.get('SMAC', 'retry_target_algorithm_run_count'),
                     '--intensification-percentage',
                     config.get('SMAC', 'intensification_percentage'),
+                    '--initial-incumbent', config.get('SMAC', 'initial_incumbent'),
                     '--rf-split-min', config.get('SMAC', 'rf_split_min'),
                     '--validation', config.get('SMAC', 'validation'),
                     '--runtime-limit', config.get('SMAC', 'runtime_limit')])

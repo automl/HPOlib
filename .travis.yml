@@ -1,16 +1,26 @@
 language: python
 python:
   - "2.7"
-# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 
 before_install:
   - sudo apt-get install -q libatlas3gf-base libatlas-dev liblapack-dev gfortran
 
 install:
+  # Install conda
+  - sudo pip install conda
+  # install deps
+  - sudo conda init
+  - sudo conda update conda --yes
+  - deps='pip numpy scipy==0.13.2 matplotlib'
+  - conda create -p $HOME/py --yes $deps "python=$TRAVIS_PYTHON_VERSION"
+  - export PATH=$HOME/py/bin:$PATH
+  # install your own package into the environment
+  - python setup.py install
+
   - easy_install -U distribute
-  - pip install numpy
-  - pip install scipy==0.13.2
-  - pip install matplotlib
+  #- pip install numpy
+  #- pip install scipy==0.13.2
+  #- pip install matplotlib
   - python setup.py install
 # command to run tests, e.g. python setup.py test
 script:  python setup.py test

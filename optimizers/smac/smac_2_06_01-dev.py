@@ -97,6 +97,7 @@ def build_smac_call(config, options, optimizer_dir):
                     '--algoExec', get_algo_exec(),
                     '--execDir', optimizer_dir,
                     '-p', os.path.join(optimizer_dir, os.path.basename(config.get('SMAC', 'p'))),
+                    '--initial-incumbent', config.get('SMAC', 'initial_incumbent'),
                     # The experiment dir MUST not be specified when restarting, it is set
                     # further down in the code
                     # '--experimentDir', optimizer_dir,
