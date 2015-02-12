@@ -76,6 +76,9 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
                                                      test=False)
             trial_list[-1].append(np.array(trace))
 
+    if not plot_test_performance:
+        test_list = None
+
     for i in range(len(trial_list)):
         max_len = max([len(ls) for ls in trial_list[i]])
         for t in range(len(trial_list[i])):

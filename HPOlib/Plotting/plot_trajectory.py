@@ -136,7 +136,6 @@ def plot_trajectories(trial_list, name_list, x_ticks,
                  marker=marker, markersize=properties["markersize"],
                  label=label)
         if test_trials is not None:
-            print i, test_trials[i][:][0], test_trials[i][:][1]
             ax1.scatter(x=test_trials[i][:][0], y=test_trials[i][:][1],
                         color=color, marker='o', s=20)
 
