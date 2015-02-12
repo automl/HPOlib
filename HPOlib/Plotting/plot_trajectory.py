@@ -38,7 +38,7 @@ logger = logging.getLogger("HPOlib.plot_trajectory")
 
 
 def plot_trajectories(trial_list, name_list, x_ticks,
-                      optimum=0,
+                      test_trials=None, optimum=0,
                       aggregation="mean", scale_std=1,
                       log=False, properties=None,
                       y_max=None, y_min=None,
@@ -135,10 +135,17 @@ def plot_trajectories(trial_list, name_list, x_ticks,
                  linestyle=linestyle, color=color,
                  marker=marker, markersize=properties["markersize"],
                  label=label)
+        if test_trials is not None:
+            print i, test_trials[i][:][0], test_trials[i][:][1]
+            ax1.scatter(x=test_trials[i][:][0], y=test_trials[i][:][1],
+                        color=color, marker='o', s=20)
 
         min_val = numpy.min([numpy.min(lower), min_val])
         max_val = numpy.max([numpy.max(upper), max_val])
         max_trials = numpy.max([x[-1], max_trials])
+        if test_trials is not None:
+            min_val = numpy.min([numpy.min(test_trials[i][1]), min_val])
+            max_val = numpy.max([numpy.max(test_trials[i][1]), max_val])
 
     # Set y, x label
     if log:
