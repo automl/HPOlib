@@ -37,12 +37,17 @@ __contact__ = "automl.org"
 def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
          y_min=None, y_max=None, scale_std=1, aggregation="mean",
          cut=sys.maxint, xlabel="#Function evaluations", ylabel="Loss",
-         properties=None, print_lenght_trial_list=False):
+         properties=None, print_lenght_trial_list=False,
+         plot_test_performance=False):
 
     trial_list = list()
+    test_list = list()
+
     x_ticks = list()
     for i in range(len(pkl_list)):
         trial_list.append(list())
+        test_list.append(list())
+
         for pkl in pkl_list[i]:
             if pkl in plot_util.cache:
                 trials = plot_util.cache[pkl]
@@ -52,8 +57,27 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
                 fh.close()
                 plot_util.cache[pkl] = trials
 
-            trace = plot_util.extract_trajectory(trials, cut=cut)
+            if plot_test_performance:
+                trace, test = plot_util.extract_trajectory(trials, cut=cut,
+                                                           test=True)
+                # TODO: We can only plot one test result
+                if len(test) > 1:
+                    raise NotImplementedError("Cannot yet plot more than one testresult")
+                else:
+                    test = test[0]
+                print test_list
+                if len(test_list) == 0 or len(test_list[-1]) == 0:
+                    test_list[-1].extend([[test[0], ], [test[1], ]])
+                else:
+                    test_list[-1][0].append(test[0])
+                    test_list[-1][1].append(test[1])
+            else:
+                trace = plot_util.extract_trajectory(trials, cut=cut,
+                                                     test=False)
             trial_list[-1].append(np.array(trace))
+
+    if not plot_test_performance:
+        test_list = None
 
     for i in range(len(trial_list)):
         max_len = max([len(ls) for ls in trial_list[i]])
@@ -79,6 +103,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
                                       aggregation=aggregation,
                                       properties=properties,
                                       scale_std=scale_std,
+                                      test_trials=test_list,
                                       print_lenght_trial_list=
                                       print_lenght_trial_list)
     return
@@ -125,6 +150,8 @@ if __name__ == "__main__":
     parser.add_argument("--aggregation", dest="aggregation", default="mean",
                         choices=("mean", "median"),
                         help="Print Median/Quantile or Mean/Std")
+    parser.add_argument("--test", dest="test", default=False, action="store_true",
+                        help="Print test performances?")
 
     # Properties
     # We need this to show defaults for -h
@@ -151,4 +178,4 @@ if __name__ == "__main__":
          y_min=args.min, y_max=args.max, scale_std=args.scale,
          aggregation=args.aggregation,
          xlabel=args.xlabel, ylabel=args.ylabel, properties=prop,
-         print_lenght_trial_list=args.printlength)
+         print_lenght_trial_list=args.printlength, plot_test_performance=args.test)

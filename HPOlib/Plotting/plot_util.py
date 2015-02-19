@@ -135,7 +135,7 @@ def get_best_dict(name_list, pickles, cut=sys.maxint):
     return best_dict, idx_dict, keys
 
 
-def extract_trajectory(experiment, cut=sys.maxint):
+def extract_trajectory(experiment, cut=sys.maxint, test=False):
     """Extract a list where the value at position i is the current best after i configurations."""
     if not isinstance(cut, int):
         raise ValueError("Argument cut must be an Integer value but is %s" %
@@ -144,18 +144,26 @@ def extract_trajectory(experiment, cut=sys.maxint):
         raise ValueError("Argument cut cannot be zero or negative.")
 
     trace = list()
+    test_results = None
+    if test:
+        test_results = list()
 
     currentbest = experiment['trials'][0]["result"]
     if not np.isfinite(currentbest):
         currentbest = sys.maxint
 
-    for result in [trial["result"] for trial in experiment['trials'][:cut]]:
-        if not np.isfinite(result):
+    for result in [trial for trial in experiment['trials'][:cut]]:
+        if not np.isfinite(result["result"]):
             continue
-        if result < currentbest:
-            currentbest = result
+        if result["result"] < currentbest:
+            currentbest = result["result"]
         trace.append(currentbest)
-    return trace 
+        if test and np.isfinite(result["test_result"]):
+            test_results.append([len(trace) - 1, result["test_result"]])
+    if test:
+        return trace, test_results
+    else:
+        return trace
 
 #def extract_trajectory(trials, cut=sys.maxint):
 #    trace = list()
