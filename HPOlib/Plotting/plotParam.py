@@ -25,7 +25,8 @@ import re
 import os
 import sys
 
-from matplotlib.pyplot import tight_layout, figure, subplots_adjust, subplot, savefig, show
+from matplotlib.pyplot import tight_layout, figure, subplots_adjust, subplot,\
+    savefig, show, xticks
 from matplotlib.gridspec import GridSpec
 
 import numpy as np
@@ -65,8 +66,43 @@ def translate_para(key, value):
     return new_name, value
 
 
-def plot_params(value_list, result_list, name, min_=0.0, max_=0.0, save="",
-                title="", jitter=0):
+def plot_params(value_list, result_list, name, min_=0.0, max_=0.0, save=None,
+                title="", jitter=0, xticks_=None, rotation=0):
+    """
+    Parameters
+    ----------
+    value_list : list
+        List of the parameter values. Will be plotted on the x axis.
+
+    result_list : list
+        List of the accompanying results. Will be plotted on the y axis.
+
+    name : str
+        Name of the hyperparameter.
+
+    min : float, optional
+        Minimum value on the y axis. If min_ == max_, the minumum and maximum
+        of result_list are used.
+
+    max : float, optional
+        Maximum value on the y axis.
+
+    save : str or None
+        Save the plot to disc. Use save as filename.
+
+    title : str, optional
+        Optional suptitle.
+
+    jitter : float, optional
+        Jitter the data to make it easier to display.
+
+    xticks_ : list, optional
+        List of hyperparameter values in sorted order. This should only be
+        used for categorical hyperparameters.
+
+    rotation : int, optional
+        Rotate the xticks by this many degrees.
+    """
     color = 'k'
     marker = 'o'
     size = 1
@@ -126,6 +162,9 @@ def plot_params(value_list, result_list, name, min_=0.0, max_=0.0, save="",
     ax.set_xlim([min_x, max_x])
     ax.set_ylim([min_y, max_y])
 
+    if xticks_:
+        xticks(range(1, 1 + len(xticks_)), xticks_, rotation=rotation)
+
     # Save Plot
     tight_layout()
     subplots_adjust(top=0.85)
@@ -137,8 +176,44 @@ def plot_params(value_list, result_list, name, min_=0.0, max_=0.0, save="",
         show()
 
 
-def main(pkl_list, name_list, param, min_=0.0, max_=0.0,
-         save="", title="", jitter=0):
+def main(pkl_list, name_list, param=None, min_=0.0, max_=0.0,
+         save=None, title="", jitter=0, rotation=0):
+    """
+    Parameters
+    ----------
+    pkl_list : list of lists
+        The first list contains a list for each optimization algorithm. Each
+        of these lists lists HPOlib experiment pickles. plotParam will read the
+        configuration/result pairs from these pickles. Currently, the first
+        list is only allowed to have one entry.
+
+    name_list : list
+        Names of the optimizers in pkl_list. Currently, only one optimizer is
+        supported.
+
+    param : str or None
+        If this is a string, plot a single hyperparameter. Otherwise,
+        plot all hyperparameters.
+
+    min : float
+        See documentation of :meth:`HPOlib.Plotting.plotParam.plot_params`
+
+    max : float
+        See documentation of :meth:`HPOlib.Plotting.plotParam.plot_params`
+
+    save : str or None
+        If param is None, save should either be pdf or png. Otherwise,
+        see documentation of :meth:`HPOlib.Plotting.plotParam.plot_params`
+
+    title : str
+        See documentation of :meth:`HPOlib.Plotting.plotParam.plot_params`
+
+    jitter : float
+        See documentation of :meth:`HPOlib.Plotting.plotParam.plot_params`
+
+    rotation : int, optional
+        See documentation of :meth:`HPOlib.Plotting.plotParam.plot_params`
+    """
     if len(name_list) > 1:
         raise NotImplementedError("No support for more than one experiment")
 
@@ -164,7 +239,10 @@ def main(pkl_list, name_list, param, min_=0.0, max_=0.0,
             except:
                 pass
 
-            save = "params/%s.png" % param
+            if save is None or save.lower() not in ["png", "pdf"]:
+                save = ".png"
+
+            save = "params/%s.%s" % (param, save)
 
         mod_param = param
 
@@ -186,6 +264,7 @@ def main(pkl_list, name_list, param, min_=0.0, max_=0.0,
                     try:
                         value = float(value)
                     except:
+                        pass
                         if value in string_to_value_map:
                             value = string_to_value_map[value]
                         else:
@@ -204,14 +283,19 @@ def main(pkl_list, name_list, param, min_=0.0, max_=0.0,
             print "Found %s values for %s" % (str(len(value_list)), param)
 
         plot_params(value_list=value_list, result_list=result_list, name=param,
-                    min_=min_, max_=max_, save=save, title=title, jitter=jitter)
+                    min_=min_, max_=max_, save=save, title=title,
+                    jitter=jitter,
+                    xticks_=[key for key, value in
+                             sorted(string_to_value_map.items(), key=lambda
+                                 t: t[1])],
+                    rotation=rotation)
 
 if __name__ == "__main__":
     prog = "python plot_param.py WhatIsThis <pathTo.pkl>* "
     description = "Plot one param wrt to minfunction value"
 
     parser = ArgumentParser(description=description, prog=prog)
-    parser.add_argument("-s", "--save", dest="save", default="",
+    parser.add_argument("-s", "--save", dest="save", default=None,
                         help="Where to save plot instead of showing it?")
     parser.add_argument("--max", dest="max", type=float,
                         default=0, help="Maximum value of the y axis.")
@@ -223,6 +307,7 @@ if __name__ == "__main__":
                         help="Jitter data?")
     parser.add_argument("-t", "--title", dest="title", default="",
                         help="Choose a supertitle for the plot")
+    parser.add_argument("-r", "--rotation", default=0, type=int)
 
     args, unknown = parser.parse_known_args()
 
@@ -230,4 +315,4 @@ if __name__ == "__main__":
     pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
     main(pkl_list=pkl_list_main, name_list=name_list_main, param=args.param,
          min_=args.min, max_=args.max, save=args.save, title=args.title,
-         jitter=args.jitter)
+         jitter=args.jitter, rotation=args.rotation)
