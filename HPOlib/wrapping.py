@@ -158,25 +158,13 @@ def main():
     else:
         experiment_dir = os.getcwd()
 
-    # Call get_configuration here to get the log level!
-    config = wrapping_util.get_configuration(experiment_dir,
-                                             None,
-                                             unknown_arguments)
-
     formatter = logging.Formatter('[%(levelname)s] [%(asctime)s:%(name)s] %('
                                   'message)s', datefmt='%H:%M:%S')
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(formatter)
     hpolib_logger.addHandler(handler)
+    hpolib_logger.setLevel(1)
 
-    loglevel = config.getint("HPOLIB", "HPOlib_loglevel")
-    hpolib_logger.setLevel(loglevel)
-    if args.silent:
-        hpolib_logger.setLevel(60)
-    if args.verbose:
-        hpolib_logger.setLevel(10)
-
-    # DO NOT LOG UNTIL HERE UNLESS SOMETHING DRAMATIC HAS HAPPENED!!!
     # First of all print the infodevel
     if IS_DEVELOPMENT:
         logger.critical(INFODEVEL)
@@ -211,6 +199,14 @@ def main():
 
     config = wrapping_util.get_configuration(experiment_dir,
                                              optimizer_version, unknown_arguments)
+
+    # DO NOT LOG UNTIL HERE UNLESS SOMETHING DRAMATIC HAS HAPPENED!!!
+    loglevel = config.getint("HPOLIB", "HPOlib_loglevel")
+    hpolib_logger.setLevel(loglevel)
+    if args.silent:
+        hpolib_logger.setLevel(60)
+    if args.verbose:
+        hpolib_logger.setLevel(10)
 
     # Saving the config file is down further at the bottom, as soon as we get
     # hold of the new optimizer directory
@@ -425,6 +421,7 @@ def main():
         sent_SIGTERM_time = np.inf
         sent_SIGKILL = False
         sent_SIGKILL_time = np.inf
+        children_to_kill = list()
 
         def enqueue_output(out, queue):
             for line in iter(out.readline, b''):
@@ -484,21 +481,21 @@ def main():
 
             if exit_.get_exit() == True and not sent_SIGINT:
                 logger.critical("Shutdown procedure: Sending SIGINT")
-                wrapping_util.kill_children(signal.SIGINT)
+                wrapping_util.kill_processes(signal.SIGINT)
                 sent_SIGINT_time = time.time()
                 sent_SIGINT = True
 
             if exit_.get_exit() == True and not sent_SIGTERM and time.time() \
                     > sent_SIGINT_time + 5:
                 logger.critical("Shutdown procedure: Sending SIGTERM")
-                wrapping_util.kill_children(signal.SIGTERM)
+                wrapping_util.kill_processes(signal.SIGTERM)
                 sent_SIGTERM_time = time.time()
                 sent_SIGTERM = True
 
             if exit_.get_exit() == True and not sent_SIGKILL and time.time() \
                     > sent_SIGTERM_time + 5:
                 logger.critical("Shutdown procedure: Sending SIGKILL")
-                wrapping_util.kill_children(signal.SIGKILL)
+                wrapping_util.kill_processes(signal.SIGKILL)
                 sent_SIGKILL_time = time.time()
                 sent_SIGKILL = True
 
