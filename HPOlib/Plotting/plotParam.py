@@ -136,8 +136,8 @@ def plot_params(value_list, result_list, name, min_=0.0, max_=0.0, save=None,
 
     # Maybe jitter data
     # But before save best values
-    best_value = value_list[np.argmin(result_list)]
-    best_result = min(result_list)
+    best_value = value_list[np.nanargmin(result_list)]
+    best_result = np.nanmin(result_list)
 
     for idx in range(len(result_list)):
         # noinspection PyArgumentList
@@ -232,7 +232,7 @@ def main(pkl_list, name_list, param=None, min_=0.0, max_=0.0,
     else:
         params = [param]
 
-    for param in params:
+    for param in sorted(params):
         if len(params) > 1:
             try:
                 os.mkdir("params")
@@ -259,12 +259,11 @@ def main(pkl_list, name_list, param=None, min_=0.0, max_=0.0,
                 if mod_param in t["params"]:
                     k, value = translate_para(param, t["params"][mod_param])
                     k = re.sub('^-', '', k)
-                    print k, value
+                    # print k, value
                     value = value.strip()
                     try:
                         value = float(value)
                     except:
-                        pass
                         if value in string_to_value_map:
                             value = string_to_value_map[value]
                         else:
