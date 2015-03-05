@@ -239,7 +239,7 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
     time_string = wrapping_util.get_time_string()
 
     optimizer_str = os.path.splitext(os.path.basename(__file__))[0]
-
+    logger.debug("Optimizer_str: %s" % optimizer_str)
     # Find experiment directory
     if options.restore:
         if not os.path.exists(options.restore):

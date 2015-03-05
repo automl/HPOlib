@@ -32,7 +32,7 @@ def manipulate_config(config):
     '''
 
     logger.debug("Running in ROAR mode")
-    config = smac_2_08_00-master_parser.manipulate_config(config=config)
+    config = smac_2_08_00_master_parser.manipulate_config(config=config)
     config.set('SMAC', 'exec_mode', 'ROAR')
 
     return config
