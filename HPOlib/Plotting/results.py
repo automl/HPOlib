@@ -85,7 +85,7 @@ def collect_results(directory):
                     cfg = ConfigParser.ConfigParser()
                     cfg.read(os.path.join(subdir, "config.cfg"))
 
-                    optimizer = pkl["optimizer"]
+                    optimizer = pkl["experiment_name"]
                     optimizer = optimizer.split("/")[-1]
 
                     configurations = len(pkl["trials"])
