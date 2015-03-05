@@ -71,7 +71,9 @@ def check_dependencies():
 
 
 def _get_state_run(optimizer_dir):
-    rungroups = glob.glob(optimizer_dir + "scenario-SMAC*")
+    rungroups = glob.glob(optimizer_dir + "/" + "scenario-SMAC*")
+    if len(rungroups) == 0:
+        raise Exception("Could not find a rungroup in %s" % optimizer_dir)
     if len(rungroups) == 1:
         rungroup = rungroups[0]
     else:
@@ -121,7 +123,8 @@ def build_smac_call(config, options, optimizer_dir):
                     '--initial-incumbent', config.get('SMAC', 'initial_incumbent'),
                     '--rf-split-min', config.get('SMAC', 'rf_split_min'),
                     '--validation', config.get('SMAC', 'validation'),
-                    '--runtime-limit', config.get('SMAC', 'runtime_limit')])
+                    '--runtime-limit', config.get('SMAC', 'runtime_limit'),
+                    '--exec-mode', config.get('SMAC', 'exec_mode')])
 
     if config.getboolean('SMAC', 'save_runs_every_iteration'):
         call = " ".join([call, '--save-runs-every-iteration true'])
