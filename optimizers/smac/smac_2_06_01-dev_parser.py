@@ -20,8 +20,6 @@ import logging
 import os
 import sys
 
-import ConfigParser
-
 logger = logging.getLogger("HPOlib.optimizers.smac.smac_2_06_01-dev_parser")
 
 
@@ -50,6 +48,8 @@ def manipulate_config(config):
     if not config.has_option('SMAC', 'num_concurrent_algo_execs'):
         config.set('SMAC', 'num_concurrent_algo_execs',
                    config.get('HPOLIB', 'number_of_concurrent_jobs'))
+
+    config.set('SMAC', 'exec_mode', 'SMAC')
 
     path_to_optimizer = config.get('SMAC', 'path_to_optimizer')
     if not os.path.isabs(path_to_optimizer):
