@@ -1473,8 +1473,6 @@ def svm_on_grid(c, alpha, epsilon, ret_time=False):
 
     print c, alpha, epsilon
     if ret_time:
-        return config_tree[c_values[c]][alpha_values[alpha]]
-        [epsilon_values[epsilon]][1]
+        return config_tree[c_values[c]][alpha_values[alpha]][epsilon_values[epsilon]][1]
     else:
-        return config_tree[c_values[c]][alpha_values[alpha]]
-        [epsilon_values[epsilon]][0]
+        return config_tree[c_values[c]][alpha_values[alpha]][epsilon_values[epsilon]][0]
