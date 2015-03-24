@@ -123,6 +123,7 @@ def read_run_instance_output(run_instance_output_string):
 def make_command(cfg, fold, param_string, run_instance_output, test=False):
     if test:
         fn = cfg.get("HPOLIB", "test_function")
+        fn += " --fold 0 --folds 1"
         # TODO: test if test_function exists! probably in the startup script!
     else:
         fn = cfg.get("HPOLIB", "function")

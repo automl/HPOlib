@@ -45,7 +45,7 @@ def dispatch(cfg, fold, params, test=False):
             else:
                 fixed_params[param] = params[param]
         if test:
-            retval = fn(fixed_params)
+            retval = fn(fixed_params, fold=0, folds=1)
         else:
             retval = fn(fixed_params, fold=fold, folds=folds)
         status = "SAT"
