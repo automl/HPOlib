@@ -16,26 +16,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+import os
+import sys
 
-import HPOlib.benchmarks.lda_on_grid
-import HPOlib.benchmarks.benchmark_util as benchmark_util
+sys.path.append(os.path.dirname(__file__))
+smac_2_06_01_dev_parser = __import__('smac_2_06_01-dev_parser')
 
-
-__authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
-__contact__ = "automl.org"
-__credits__ = ["Jasper Snoek", "Ryan P. Adams", "Hugo Larochelle"]
-
-
-def main(params, ret_time=False, **kwargs):
-    print 'Params: ', params
-    y = HPOlib.benchmarks.lda_on_grid.save_lda_on_grid(params, ret_time=ret_time, **kwargs)
-    print 'Result: ', y
-    return y
+logger = logging.getLogger("HPOlib.optimizers.smac.ROAR_smac_2_06_01-dev_parser")
 
 
-if __name__ == "__main__":
-    args, params = benchmark_util.parse_cli()
-    result = main(params, ret_time=False, **args)
-    duration = main(params, ret_time=True)
-    print "Result for ParamILS: %s, %f, 1, %f, %d, %s" % \
-        ("SAT", abs(duration), result, -1, str(__file__))
+def manipulate_config(config):
+    '''
+    This method wraps the smac config parser in order to run ROAR
+    '''
+
+    logger.debug("Running in ROAR mode")
+    config = smac_2_06_01_dev_parser.manipulate_config(config=config)
+    config.set('SMAC', 'exec_mode', 'ROAR')
+
+    return config
+
+

@@ -270,6 +270,8 @@ def main(pkl_list, name_list, param=None, min_=0.0, max_=0.0,
                             key = len(string_to_value_map.keys()) + 1
                             string_to_value_map[value] = key
                             value = key
+                    if np.isnan(t["result"]):
+                        continue
                     value_list.append(value)
                     result_list.append(t["result"])
                     param_set.add(k)

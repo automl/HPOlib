@@ -60,16 +60,6 @@ def _check_modules():
     except:
         raise ImportError("Scipy cannot be imported. Are you sure that it's installed?")
 
-    try:
-        import theano
-        logger.debug("\tTheano: %s" % str(theano.__version__))
-    except ImportError:
-        logger.warning("Theano not found. You might need this to run some "
-                       "more complex benchmarks!")
-
-    if 'cuda' not in os.environ['PATH']:
-        logger.warning("CUDA not in $PATH")
-
 
 def _check_config(experiment_dir):
     # check whether config file exists

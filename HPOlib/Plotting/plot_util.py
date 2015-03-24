@@ -224,7 +224,10 @@ def get_best_value_and_index(trials, cut=sys.maxint):
     """Return the best value found and its index in experiment.
 
     If `cut` is given, look at the first `cut` results. Raise ValueError if cut
-    is equal or less than zero. Important: The index is zero-based!"""
+    is equal or less than zero. Important: The index is zero-based!
+
+    if test is given, look for the best trial and report testperformance
+    """
     if not isinstance(cut, int):
         raise ValueError("Argument cut must be an Integer value but is %s" %
             type(cut))
