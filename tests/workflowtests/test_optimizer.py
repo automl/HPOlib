@@ -53,6 +53,9 @@ class TestOptimizers(unittest.TestCase):
                                     stdin=subprocess.PIPE)
 
             stdout, stderr = proc.communicate()
+            if proc.returncode != 0:
+                print stderr
+                print stdout
             self.assertEqual(0, proc.returncode, stderr)
 
             # And now test that stuff
@@ -94,5 +97,8 @@ class TestOptimizers(unittest.TestCase):
                                 env=os.environ.copy())
 
         stdout, stderr = proc.communicate()
+        if proc.returncode != 0:
+            print stderr
+            print stdout
         self.assertEqual(0, proc.returncode)
 
