@@ -68,7 +68,7 @@ def write(searchspace):
     exp = Experiment()
     # Assumption: Algo is written in Python called cv.py, only works for HPOlib
     exp.language = PYTHON
-    exp.name = "HPOlib.cv"
+    exp.name = "spearmint_to_HPOlib"
 
     tmp_para_list = list()
     for parakey in searchspace:
