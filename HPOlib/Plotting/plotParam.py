@@ -240,7 +240,7 @@ def main(pkl_list, name_list, param=None, min_=0.0, max_=0.0,
                 pass
 
             if save is None or save.lower() not in ["png", "pdf"]:
-                save = ".png"
+                save = "png"
 
             save = "params/%s.%s" % (param, save)
 
