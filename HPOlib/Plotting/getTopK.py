@@ -20,6 +20,7 @@ __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 from argparse import ArgumentParser
+import collections
 import cPickle
 import os
 import sys
@@ -49,7 +50,7 @@ if __name__ == "__main__":
     sys.stdout.write("\nFound " + str(len(unknown)) + " arguments\n")
 
     pkl_list = list()
-    result_dict = dict()
+    result_dict = collections.OrderedDict()
     if not args.csv:
         print unknown
     for pkl in unknown:
@@ -84,18 +85,24 @@ if __name__ == "__main__":
         print "Found %d different results" % len(result_dict)
 
     header = False
+    # Get a list with all params
+    param_set = set()
+    for row in topK:
+        [param_set.add(ey) for ey in row[0]['params'].keys()]
+    param_set = sorted(list(param_set))
+
     for k in topK:
         if args.csv:
             if not header:
                 header = True
                 print ",".join(["Result", "Time"]),
-                print "," + ",".join([key.strip('-') for key in k[0]['params']]),
+                print "," + ",".join(param_set),
                 if args.additional:
                     print ",additional_info"
                 else:
                     print
             print ",".join(["%10.5f" % k[0]['result'], "%10.5f" % k[0]['duration']]),
-            print "," + ",".join([k[0]['params'][key] for key in k[0]['params']]),
+            print "," + ",".join([k[0]['params'][p] if p in k[0]['params'] else "-" for p in param_set]),
             if args.additional:
                 print ", additional_info = %s" % str(k[0]['additional_data'])
             else:
@@ -103,7 +110,7 @@ if __name__ == "__main__":
 
         else:
             print "Result = %10f, Time = %10f, " % (k[0]['result'], k[0]['duration']),\
-                ", ".join(["%s = %3s" % (key.strip('-'), k[0]['params'][key]) for key in k[0]['params']]),
+                ", ".join(["%s = %3s" % (p, k[0]['params'][p]) for p in param_set]),
             if args.additional:
                 print ", additional_info = %s" % str(k[0]['additional_data'])
             else:
