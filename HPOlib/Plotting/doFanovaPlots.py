@@ -47,6 +47,18 @@ def main():
                         default="", help="Where to save plots? (directory)")
     parser.add_argument("--pcsFile", dest="pcsfile", required=True,
                         default="", help="Path to a .pcs file")
+    parser.add_argument("--numTrees", dest="num_trees", default=30, type=int,
+                        help="Number of trees to create the Random Forest")
+    parser.add_argument("--improvementOver", dest="improvement_over",
+                        default="NOTHING", choices=("NOTHING", "DEFAULT"),
+                        help="Compute improvements with respect to this")
+    parser.add_argument("--heapSize", dest="heap_size",
+                        default=1024, type=int, help="Heap size in MB for Java")
+    parser.add_argument("--splitMin", dest="split_min", default=5,
+                        type=int, help="Minimum number of points to create a "
+                                       "new split in the Random Forest")
+    parser.add_argument("--seed", dest="seed", default=42,
+                        type=int, help="Seed given to pyfanova")
     args, unknown = parser.parse_known_args()
 
     # First check whether we can import pyfanova
@@ -70,7 +82,14 @@ def main():
 
     logger.info("Starting pyfanova .. this might take a bit")
 
-    f = FanovaFromHPOLib(args.pcsfile, unknown)
+    fanova_params={'num_trees': args.num_trees,
+                   'improvement_over': args.improvement_over,
+                   'heap_size': args.heap_size,
+                   'split_min': args.split_min,
+                   'seed': args.seed
+                   }
+    logger.info("Using params: %s" % str(fanova_params))
+    f = FanovaFromHPOLib(param_file=args.pcsfile, pkls=unknown, **fanova_params)
     vis = Visualizer(f)
     vis.create_all_plots(save_dir)
 
