@@ -227,6 +227,25 @@ class AdditionalInstall(install):
                                                           url="http://www.automl.org/smac_2_08_00-master_src.tar.gz",
                                                           md5='2be626a5437b56da2eba1b67b7a94367')
 
+
+        downloaded_aeatk, extracted_aeatk = (False, False)
+        # Download the AEATK/MySQLTAE-bundle
+        aeatk_bundle_base_url = "http://automl.org/"
+        aeatk_bundle_filename = "aeatk-v2.08.01-development-4.tar.gz"
+        aeatk_url = aeatk_bundle_base_url + aeatk_bundle_filename
+        sys.stdout.write("[INFO] downloading MySQLDBTAE from %s\n" % aeatk_url)
+        downloaded_aeatk = download_source(aeatk_url,
+                                           "59b6947d3e76b9ec0d60f0702570f710",
+            save_as=os.path.join(here_we_are, "MySQLDBTAE.tar.gz"))
+        if downloaded_aeatk:
+            extracted_aeatk = extract_source(
+                os.path.join(here_we_are, "MySQLDBTAE.tar.gz"),
+                extract_as=os.path.join(here_we_are, 'HPOlib', 'dispatcher'))
+        if not (downloaded_aeatk and extracted_aeatk):
+            sys.stderr.write("[ERROR] MySQLDBTAE could not be installed "
+                             "properly. You will not be able to use the "
+                             "MySQLDBTAE dispatcher.")
+
         # TODO: Normally one wants to call run(self), but this runs distutils and ignores install_requirements for unknown reasons
         # if anyone knows a better way, feel free to change
         install.do_egg_install(self)
@@ -249,6 +268,9 @@ class AdditionalInstall(install):
                              "tar -xf spearmint_april2013_mod_src.tar.gz \n" +
                              "mv spearmint_april2013_mod_src spearmint/ \n\n" +
                              "Thank You!\n")
+        if not extracted_aeatk:
+            sys.stdout.write("[ERROR] MySQLDBTAE for the dispatcher "
+                             "use_workers could not be installed.\n")
         if runsolver_needs_to_be_installed and not built:
             sys.stdout.write("[ERROR] Please install runsolver on your own! You can download it from:\n%s%s\n" % \
                   ('http://www.cril.univ-artois.fr/~roussel/runsolver/%s', runsolver_tar_name))
