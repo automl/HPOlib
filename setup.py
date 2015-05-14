@@ -27,7 +27,10 @@ package_dir = {'HPOlib': 'HPOlib',
                'HPOlib.benchmarks': 'HPOlib/benchmarks'}
 package_data = {'HPOlib.config_parser': ['*.cfg']}
 
-data_files = []
+data_files = [] + \
+             [(d, [os.path.join(d, f) for f in files])
+              for d, folders, files in os.walk("HPOlib/dispatcher/MySQLDBTAE")]
+
 scripts = ['scripts/HPOlib-run', 'scripts/HPOlib-plot',
            'runsolver/src/runsolver', 'scripts/HPOlib-convert',
            'scripts/remove_minus.py', 'scripts/HPOlib-testbest',
