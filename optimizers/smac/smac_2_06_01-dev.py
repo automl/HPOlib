@@ -40,6 +40,7 @@ version_info = ["Automatic Configurator Library ==> v2.06.01-development-643 (a1
 
 #optimizer_str = "smac_2_06_01-dev"
 
+
 def get_algo_exec():
     return '"python ' + os.path.join(os.path.dirname(__file__),
                                      'SMAC_to_HPOlib.py') + '"'
@@ -65,7 +66,7 @@ def _get_state_run(optimizer_dir):
     if len(rungroups) == 1:
         rungroup = rungroups[0]
     else:
-        logger.warning("Found multiple rugroups, take the newest one.")
+        logger.warning("Found multiple rungroups, take the newest one.")
         creation_times = []
         for i, filename in enumerate(rungroups):
             creation_times.append(float(os.path.getctime(filename)))
@@ -110,8 +111,11 @@ def build_smac_call(config, options, optimizer_dir):
                     config.get('SMAC', 'retry_target_algorithm_run_count'),
                     '--intensification-percentage',
                     config.get('SMAC', 'intensification_percentage'),
+                    '--initial-incumbent', config.get('SMAC', 'initial_incumbent'),
                     '--rf-split-min', config.get('SMAC', 'rf_split_min'),
-                    '--validation', config.get('SMAC', 'validation')])
+                    '--validation', config.get('SMAC', 'validation'),
+                    '--runtime-limit', config.get('SMAC', 'runtime_limit'),
+                    '--exec-mode', config.get('SMAC', 'exec_mode')])
 
     if config.getboolean('SMAC', 'save_runs_every_iteration'):
         call = " ".join([call, '--save-runs-every-iteration true'])

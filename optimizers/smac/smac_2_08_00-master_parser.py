@@ -53,6 +53,7 @@ def manipulate_config(config):
         sys.exit(1)
 
     config.set('SMAC', 'path_to_optimizer', path_to_optimizer)
+    config.set('SMAC', 'exec_mode', 'SMAC')
 
     shared_model = config.get('SMAC', 'shared_model')
     wait_time = config.getint('SMAC', 'wait_for_shared_model')

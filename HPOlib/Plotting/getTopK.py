@@ -39,6 +39,10 @@ if __name__ == "__main__":
                         default=10, help="How many outputs?")
     parser.add_argument("-i", dest="invers", action="store_true",
                         default=False, help="Plot worst k configs")
+    parser.add_argument("-a", dest="additional", action="store_true",
+                        default=False, help="Show additional info")
+    parser.add_argument("--csv", dest="csv", action="store_true",
+                        default=False, help="Print info as csv")
 
     args, unknown = parser.parse_known_args()
 
@@ -46,7 +50,8 @@ if __name__ == "__main__":
 
     pkl_list = list()
     result_dict = dict()
-    print unknown
+    if not args.csv:
+        print unknown
     for pkl in unknown:
         if not os.path.exists(pkl):
             print "%s does not exist" % pkl
@@ -75,7 +80,31 @@ if __name__ == "__main__":
     while len(topK) < args.k:
         topK.append(result_dict[results[ct]])
         ct += 1
-    print "Found %d different results" % len(result_dict)
+    if not args.csv:
+        print "Found %d different results" % len(result_dict)
+
+    header = False
     for k in topK:
-        print "%10f" % k[0]['result'], ", ".join(["%s = %3s" % (key.strip('-'), k[0]['params'][key])
-                                        for key in k[0]['params']])
+        if args.csv:
+            if not header:
+                header = True
+                print ",".join(["Result", "Time"]),
+                print "," + ",".join([key.strip('-') for key in k[0]['params']]),
+                if args.additional:
+                    print ",additional_info"
+                else:
+                    print
+            print ",".join(["%10.5f" % k[0]['result'], "%10.5f" % k[0]['duration']]),
+            print "," + ",".join([k[0]['params'][key] for key in k[0]['params']]),
+            if args.additional:
+                print ", additional_info = %s" % str(k[0]['additional_data'])
+            else:
+                print
+
+        else:
+            print "Result = %10f, Time = %10f, " % (k[0]['result'], k[0]['duration']),\
+                ", ".join(["%s = %3s" % (key.strip('-'), k[0]['params'][key]) for key in k[0]['params']]),
+            if args.additional:
+                print ", additional_info = %s" % str(k[0]['additional_data'])
+            else:
+                print

@@ -534,7 +534,3 @@ Python Function
 
 .. automodule:: HPOlib.dispatcher.python_file
 
-MySQL-Database Target Algorithm Evaluator
------------------------------------------
-
-.. automodule::  HPOlib.dispatcher.mysqldbtae

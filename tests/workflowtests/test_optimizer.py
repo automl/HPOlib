@@ -4,7 +4,6 @@ import os
 import shlex
 import subprocess
 import shutil
-import sys
 import unittest
 
 import HPOlib.wrapping_util as wrapping_util
@@ -17,7 +16,7 @@ class TestOptimizers(unittest.TestCase):
         self.hpolib_dir = os.path.join(os.path.dirname(__file__), "..", "..")
         self.optimizer_dir = os.path.join(self.hpolib_dir, "optimizers")
         self.benchmarks_dir = os.path.join(self.hpolib_dir, "benchmarks")
-        # Add new optimizers only in this kind of format and watch out that
+        # Add new optimizers only in this kind of format and keep in mind that
         # everything after the last '/' is treated as the optimizer name
         self.optimizers = ["smac/smac_2_06_01",
                            "smac/smac_2_08_00",
@@ -25,6 +24,8 @@ class TestOptimizers(unittest.TestCase):
                            "tpe/hyperopt",
                            "tpe/random"]
         self.experiment_dir_prefix = wrapping_util.get_time_string()
+        os.environ["PATH"] = os.environ["PATH"] + os.pathsep + \
+            os.path.join(self.hpolib_dir, "runsolver/src")
 
     def tearDown(self):
         glob_string = os.path.join(self.benchmarks_dir, "*",
@@ -36,7 +37,8 @@ class TestOptimizers(unittest.TestCase):
 
     def test_run_and_test(self):
         for optimizer in self.optimizers:
-            cmd = "HPOlib-run -o %s/%s -s 10 --cwd %s/logreg_on_grid " \
+            cmd = "python -m HPOlib.wrapping " \
+                  "-o %s/%s -s 10 --cwd %s/logreg_on_grid " \
                   "--HPOLIB:number_of_jobs 5 " \
                   "--HPOLIB:experiment_directory_prefix %s" % \
                   (self.optimizer_dir, optimizer, self.benchmarks_dir,
@@ -48,11 +50,13 @@ class TestOptimizers(unittest.TestCase):
             print
 
             proc = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE,
-                                    stdin=subprocess.PIPE,
-                                    env=os.environ.copy())
+                                    stdin=subprocess.PIPE)
 
             stdout, stderr = proc.communicate()
-            self.assertEqual(0, proc.returncode)
+            if proc.returncode != 0:
+                print stderr
+                print stdout
+            self.assertEqual(0, proc.returncode, stderr)
 
             # And now test that stuff
 
@@ -69,13 +73,14 @@ class TestOptimizers(unittest.TestCase):
             print cmd
             print
             proc = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE,
-                                    stdin=subprocess.PIPE, env=os.environ.copy())
+                                    stdin=subprocess.PIPE)
             stdout, stderr = proc.communicate()
             self.assertEqual(0, proc.returncode)
 
     def test_crossvalidation(self):
         # This is only a dummy crossvalidation!
-        cmd = "HPOlib-run -o %s/%s -s 10 --cwd %s/logreg_on_grid " \
+        cmd = "python -m HPOlib.wrapping" \
+              " -o %s/%s -s 10 --cwd %s/logreg_on_grid " \
               "--HPOLIB:number_of_jobs 5 " \
               "--HPOLIB:experiment_directory_prefix %s " \
               "--HPOLIB:number_cv_folds 2" % \
@@ -92,5 +97,8 @@ class TestOptimizers(unittest.TestCase):
                                 env=os.environ.copy())
 
         stdout, stderr = proc.communicate()
+        if proc.returncode != 0:
+            print stderr
+            print stdout
         self.assertEqual(0, proc.returncode)
 

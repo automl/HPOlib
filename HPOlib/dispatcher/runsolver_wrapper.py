@@ -123,14 +123,14 @@ def read_run_instance_output(run_instance_output_string):
 def make_command(cfg, fold, param_string, run_instance_output, test=False):
     if test:
         fn = cfg.get("HPOLIB", "test_function")
+        fn += " --fold 0 --folds 1"
         # TODO: test if test_function exists! probably in the startup script!
     else:
         fn = cfg.get("HPOLIB", "function")
+        fn += " --fold %d --folds %d" % (
+            fold, cfg.getint("HPOLIB", "number_cv_folds"))
 
-
-    python_cmd = fn + " --fold %d --folds %d --params %s" % \
-                      (fold, cfg.getint("HPOLIB", "number_cv_folds"),
-                       param_string)
+    python_cmd = fn + " --params %s" % param_string
     # Do not write the actual task in quotes because runsolver will not work
     # then; also we need use-pty and timestamp so that the "solver" output
     # is flushed to the output directory

@@ -19,13 +19,13 @@
 from argparse import ArgumentParser
 import imp
 import logging
-from logging.handlers import DEFAULT_TCP_LOGGING_PORT
 import psutil
 import os
 from Queue import Queue, Empty
 import signal
 import shlex
 import shutil
+import StringIO
 import subprocess
 import sys
 from threading import Thread
@@ -35,10 +35,8 @@ import warnings
 
 import HPOlib
 import HPOlib.check_before_start as check_before_start
-import HPOlib.dispatcher.runsolver_wrapper as runsolver_wrapper
-import HPOlib.LoggingWebMonitor as logging_server
 import HPOlib.wrapping_util as wrapping_util
-
+import HPOlib.dispatcher.runsolver_wrapper as runsolver_wrapper
 # Import experiment only after the check for numpy succeeded
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
@@ -100,7 +98,6 @@ def calculate_optimizer_time(trials):
         warnings.simplefilter("ignore")
         return np.nansum(optimizer_time)
 
-
 def use_arg_parser():
     """Parse all options which can be handled by the wrapping script.
     Unknown arguments are ignored and returned as a list. It is useful to
@@ -151,6 +148,7 @@ def use_arg_parser():
 def main():
     """Start an optimization of the HPOlib. For documentation see the
     comments inside this function and the general HPOlib documentation."""
+
     args, unknown_arguments = use_arg_parser()
     if args.working_dir:
         experiment_dir = args.working_dir
@@ -160,29 +158,18 @@ def main():
     else:
         experiment_dir = os.getcwd()
 
-    # Call get_configuration here to get the log level!
-    config = wrapping_util.get_configuration(experiment_dir,
-                                             None,
-                                             unknown_arguments)
-
     formatter = logging.Formatter('[%(levelname)s] [%(asctime)s:%(name)s] %('
                                   'message)s', datefmt='%H:%M:%S')
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(formatter)
     hpolib_logger.addHandler(handler)
-
-    loglevel = config.getint("HPOLIB", "HPOlib_loglevel")
-    hpolib_logger.setLevel(loglevel)
-    if args.silent:
-        hpolib_logger.setLevel(60)
-    if args.verbose:
-        hpolib_logger.setLevel(10)
-
-    # DO NOT LOG UNTIL HERE UNLESS SOMETHING DRAMATIC HAS HAPPENED!!!
+    hpolib_logger.setLevel(1)
 
     # First of all print the infodevel
     if IS_DEVELOPMENT:
         logger.critical(INFODEVEL)
+
+    args, unknown_arguments = use_arg_parser()
 
     # Convert the path to the optimizer to be an absolute path, which is
     # necessary later when we change the working directory
@@ -212,6 +199,14 @@ def main():
 
     config = wrapping_util.get_configuration(experiment_dir,
                                              optimizer_version, unknown_arguments)
+
+    # DO NOT LOG UNTIL HERE UNLESS SOMETHING DRAMATIC HAS HAPPENED!!!
+    loglevel = config.getint("HPOLIB", "HPOlib_loglevel")
+    hpolib_logger.setLevel(loglevel)
+    if args.silent:
+        hpolib_logger.setLevel(60)
+    if args.verbose:
+        hpolib_logger.setLevel(10)
 
     # Saving the config file is down further at the bottom, as soon as we get
     # hold of the new optimizer directory
@@ -379,7 +374,7 @@ def main():
             #                    "together.")
             #    sys.exit(1)
 
-            fn_setup_output = os.path.join(os.getcwd(),
+            fn_setup_output = os.path.join(optimizer_dir_in_experiment,
                                            "function_setup.out")
             runsolver_cmd = runsolver_wrapper._make_runsolver_command(
                 config, fn_setup_output)
@@ -426,6 +421,7 @@ def main():
         sent_SIGTERM_time = np.inf
         sent_SIGKILL = False
         sent_SIGKILL_time = np.inf
+        children_to_kill = list()
 
         def enqueue_output(out, queue):
             for line in iter(out.readline, b''):
@@ -485,21 +481,21 @@ def main():
 
             if exit_.get_exit() == True and not sent_SIGINT:
                 logger.critical("Shutdown procedure: Sending SIGINT")
-                wrapping_util.kill_children(signal.SIGINT)
+                wrapping_util.kill_processes(signal.SIGINT)
                 sent_SIGINT_time = time.time()
                 sent_SIGINT = True
 
             if exit_.get_exit() == True and not sent_SIGTERM and time.time() \
                     > sent_SIGINT_time + 5:
                 logger.critical("Shutdown procedure: Sending SIGTERM")
-                wrapping_util.kill_children(signal.SIGTERM)
+                wrapping_util.kill_processes(signal.SIGTERM)
                 sent_SIGTERM_time = time.time()
                 sent_SIGTERM = True
 
             if exit_.get_exit() == True and not sent_SIGKILL and time.time() \
                     > sent_SIGTERM_time + 5:
                 logger.critical("Shutdown procedure: Sending SIGKILL")
-                wrapping_util.kill_children(signal.SIGKILL)
+                wrapping_util.kill_processes(signal.SIGKILL)
                 sent_SIGKILL_time = time.time()
                 sent_SIGKILL = True
 
@@ -523,7 +519,7 @@ def main():
             #                    "together.")
             #    sys.exit(1)
 
-            fn_teardown_output = os.path.join(os.getcwd(),
+            fn_teardown_output = os.path.join(optimizer_dir_in_experiment,
                                               "function_teardown.out")
             runsolver_cmd = runsolver_wrapper._make_runsolver_command(
                 config, fn_teardown_output)

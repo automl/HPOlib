@@ -71,7 +71,9 @@ def check_dependencies():
 
 
 def _get_state_run(optimizer_dir):
-    rungroups = glob.glob(optimizer_dir + "scenario-SMAC*")
+    rungroups = glob.glob(optimizer_dir + "/" + "scenario-SMAC*")
+    if len(rungroups) == 0:
+        raise Exception("Could not find a rungroup in %s" % optimizer_dir)
     if len(rungroups) == 1:
         rungroup = rungroups[0]
     else:
@@ -118,9 +120,11 @@ def build_smac_call(config, options, optimizer_dir):
                     config.get('SMAC', 'retry_target_algorithm_run_count'),
                     '--intensification-percentage',
                     config.get('SMAC', 'intensification_percentage'),
+                    '--initial-incumbent', config.get('SMAC', 'initial_incumbent'),
                     '--rf-split-min', config.get('SMAC', 'rf_split_min'),
                     '--validation', config.get('SMAC', 'validation'),
-                    '--runtime-limit', config.get('SMAC', 'runtime_limit')])
+                    '--runtime-limit', config.get('SMAC', 'runtime_limit'),
+                    '--exec-mode', config.get('SMAC', 'exec_mode')])
 
     if config.getboolean('SMAC', 'save_runs_every_iteration'):
         call = " ".join([call, '--save-runs-every-iteration true'])
@@ -235,7 +239,7 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
     time_string = wrapping_util.get_time_string()
 
     optimizer_str = os.path.splitext(os.path.basename(__file__))[0]
-
+    logger.debug("Optimizer_str: %s" % optimizer_str)
     # Find experiment directory
     if options.restore:
         if not os.path.exists(options.restore):
@@ -296,28 +300,29 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
             time.sleep(1)
             ct += 1
             # So far we have not not found anything
-            all_found = True
+            all_found = None
             if not os.path.isdir(optimizer_dir):
-                all_found = False
+                all_found = optimizer_dir
                 continue
 
             if not os.path.exists(os.path.join(optimizer_dir, os.path.basename(space))) and \
                     not os.path.exists(parent_space):
-                all_found = False
+                all_found = parent_space
                 continue
 
             if not os.path.exists(os.path.join(optimizer_dir, 'train.txt')):
-                all_found = False
+                all_found = os.path.join(optimizer_dir, 'train.txt')
                 continue
             if not os.path.exists(os.path.join(optimizer_dir, 'test.txt')):
-                all_found = False
+                all_found = os.path.join(optimizer_dir, 'test.txt')
                 continue
             if not os.path.exists(os.path.join(optimizer_dir, "scenario.txt")):
-                all_found = False
+                all_found = os.path.join(optimizer_dir, "scenario.txt")
                 continue
-        if not all_found:
+        if all_found is not None:
             logger.critical("Could not find all necessary files..abort. " +
-                            "Experiment directory is somehow created, but not complete")
+                            "Experiment directory %s is somehow created, but not complete\n" % optimizer_dir +
+                            "Missing: %s" % all_found)
             sys.exit(1)
 
 

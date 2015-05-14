@@ -139,7 +139,8 @@ def load_experiment_config_file():
         sys.exit(1)
 
 
-def get_configuration(experiment_dir, optimizer_version, unknown_arguments):
+def get_configuration(experiment_dir, optimizer_version, unknown_arguments,
+                      strict=True):
     """How the configuration is parsed:
     1. The command line is already parsed, we have a list of unknown arguments
     2. Assemble list of all config files related to this experiment, these are
@@ -206,9 +207,11 @@ def get_configuration(experiment_dir, optimizer_version, unknown_arguments):
         fh.seek(0)
     else:
         fh = None
+
     config = parse.parse_config(config_files, allow_no_value=True,
                                 optimizer_version=optimizer_version,
                                 cli_values=fh)
+
     if fh is not None:
         fh.close()
     if optimizer_version != "" and optimizer_version is not None:
@@ -271,24 +274,30 @@ def save_config_to_file(file_handle, config, write_nones=True):
                     file_handle.write("%s = %s\n" % (key, config.get(section, key)))
 
 
-def kill_children(sig):
+def kill_processes(sig, processes):
+    """Kill a number of processes with a specified signal.
+
+    Parameters
+    ----------
+    sig : int
+        Send this signal to the processes
+
+    processes : list of psutil.Process
+    """
     # TODO: somehow wait, until the Experiment pickle is written to disk
-    process = psutil.Process(os.getpid())
-    # Ubuntu 14.04 and older versions ship with a deprecated version of
-    # psutil. Use the old interface only if the old version is installed:
-    if psutil.version_info[0] >= 2:
-        children = process.children()
-    else:
-        children = process.get_children()
+
 
     pids_with_commands = []
-    for child in children:
-        pids_with_commands.append((child.pid, child.cmdline()))
-
-    logger.debug("Running %s" % str(pids_with_commands))
-    for child in children:
+    for process in processes:
         try:
-            os.kill(child.pid, sig)
+            pids_with_commands.append((process.pid, process.cmdline()))
+        except:
+            pass
+
+    logger.debug("Running: %s" % "\n".join(pids_with_commands))
+    for process in processes:
+        try:
+            os.kill(process.pid, sig)
         except Exception as e:
             logger.error(type(e))
             logger.error(e)

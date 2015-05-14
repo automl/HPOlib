@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 ##
 # wrapping: A program making it easy to use hyperparameter
 # optimization software.
@@ -18,9 +16,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
-__contact__ = "automl.org"
+import logging
+import os
+import sys
 
-from HPOlib.Plotting import doFanovaPlots
+sys.path.append(os.path.dirname(__file__))
+smac_2_08_00_master_parser = __import__('smac_2_08_00-master_parser')
 
-doFanovaPlots.main()
+logger = logging.getLogger("HPOlib.optimizers.smac.ROAR_smac_2_08_00-master_parser")
+
+
+def manipulate_config(config):
+    '''
+    This method wraps the smac config parser in order to run ROAR
+    '''
+
+    logger.debug("Running in ROAR mode")
+    config = smac_2_08_00_master_parser.manipulate_config(config=config)
+    config.set('SMAC', 'exec_mode', 'ROAR')
+
+    return config
