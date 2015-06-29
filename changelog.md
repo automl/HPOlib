@@ -7,6 +7,7 @@
 
 * HPOlib/Plotting/results.py: New result print script which can be used while the experiment is still running
 * HPOlib/Plotting/doFanovaPlots.py;HPOlib/scripts/HPOlib-pyFanova: New plotting script that calls pyfanova and saves plots
+* HPOlib/benchmarks: added a matlab examples running the branin textfunctions, contains an argumentparser
 
 === Other ===
 
