@@ -127,74 +127,6 @@ Installing inside an virtualenv
 
         HPOlib-plot BRANIN smac_2_10_00-dev_23_*/smac_*.pkl hyperopt_august2013_mod_23_*/hyp*.pkl spearmint_april2013_mod_23_*/spear*.pkl -s `pwd`/Plots/
 
-Usage without installation
-==========================
-
-If you decide to not install HPOlib, you need to download the optimizer code by yourself
-
-.. code:: bash
-
-    cd optimizers
-    wget http://www.automl.org/hyperopt_august2013_mod_src.tar.gz
-    wget http://www.automl.org/smac_2_10_00-dev_src.tar.gz
-    wget http://www.automl.org/spearmint_april2013_mod_src.tar.gz
-
-    tar -xf hyperopt_august2013_mod_src.tar.gz
-    mv hyperopt_august2013_mod_src tpe/
-
-    tar -xf smac_2_10_00-dev_src.tar.gz
-    mv smac_2_10_00-dev_src.tar.gz smac/
-
-    tar -xf spearmint_april2013_mod_src.tar.gz
-    mv spearmint_april2013_mod_src spearmint/
-
-    cd ../
-
-And you need to install all requirements:
-
-* numpy
-* matplotlib
-* networkx
-* protobuf
-* scipy
-* pymongo
-
-e.g. with
-
-.. code:: bash
-
-    sudo apt-get install python-numpy python-scipy mongodb python-networkx python-protobuf
-
-Also you need the runsolver
-
-.. code:: bash
-
-    wget http://www.cril.univ-artois.fr/~roussel/runsolver/runsolver-3.3.2.tar.bz2
-    tar -xf runsolver-3.3.2.tar.bz2
-    cd runsolver/src
-    make
-
-as this might not work, you can change the makefile via
-
-.. code:: bash
-
-    sed -i 's/\/usr\/include\/asm\/unistd/\/usr\/include\/unistd/g' ./Makefile
-    make
-
-then you need to add runsolver (and HPOlib) to your PATH (PYTHONPATH):
-
-.. code:: bash
-
-    cd ../../
-    export PATH=$PATH:/path/to/runsolver/src/
-    export PYTHONPATH=$PYTHONPATH:`pwd`
-
-then you can run a benchmark like in step 5.) from installing with setup.py with replacing
-:bash:`HPOlib-run` with :bash:`../../scripts/HPOlib-run` and
-:bash:`HPOlib-plot` with :bash:`../../scripts/HPOlib-plot`.
-
-**FOR FURTHER DETAILS VISIT:** `<http://www.automl.org/hpolib>`_
-
 
 **Problems during installation**
 
@@ -210,7 +142,6 @@ and try again or install :bash:`pymongo` manually.
 .. raw:: html
 
     <a href="https://github.com/automl/HPOlib"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/652c5b9acfaddf3a9c326fa6bde407b87f7be0f4/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6f72616e67655f6666373630302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png"></a>
-
 
 
 **Updating optimizers**
