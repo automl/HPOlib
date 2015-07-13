@@ -54,6 +54,16 @@ Whether it makes sense to do so is indicated in the column CV.
             <td aligh="center">no</td>
         </tr>
         <tr>
+            <td align="center"><a href="algorithms_and_datasets.html#braninhar6camel">RKHS</a></td>
+            <td align="center">1(-)</td>
+            <td align="center">1/-</td>
+            <td align="center">-</td>
+            <td align="center">-</td>
+            <td align="center">&lt; 1s</td>
+            <td align="center">Python</td>
+            <td aligh="center">no</td>
+        </tr>
+        <tr>
             <td align="center"><a href="algorithms_and_datasets.html#braninhar6camel">Camelback function</a></td>
             <td align="center">2(-)</td>
             <td align="center">2/-</td>
@@ -143,7 +153,7 @@ Description
 
 .. _braninhar6camel:
 
-Branin, Hartmann 6d and Camelback Function
+Branin, RKHS, Hartmann 6d and Camelback Function
 ------------------------------------------
 
 This benchmark already comes with the basic *HPOlib* bundle.
@@ -151,11 +161,13 @@ This benchmark already comes with the basic *HPOlib* bundle.
 **Dependencies:** None |br|
 **Recommended:** None
 
-Branin, Camelback and the Hartmann 6d function are three simple test functions,
+Branin, RKHS, Camelback and the Hartmann 6d function are three simple test functions,
 which are easy and cheap to evaluate. More test functions can be found
-`here <http://www-optima.amp.i.kyoto-u.ac.jp/member/student/hedar/Hedar_files/TestGO_files/Page364.htm>`_
+`here <http://www-optima.amp.i.kyoto-u.ac.jp/member/student/hedar/Hedar_files/TestGO_files/Page364.htm>`_.
 |br|
 Branin has three global minima at (-pi, 12.275), (pi, 2.275), (9.42478, 2.475) where f(x)=0.397887.
+|br|
+RKHS has single global minima at x=0.89235 where f(x)=5.73839.
 |br|
 Camelback has two global minima at (0.0898, -0.7126) and (-0.0898, 0.7126) where f(x) = -1.0316
 |br|

@@ -25,45 +25,75 @@ benchmarks or create your own. Each benchmarks comes with an algorithm and
 (if necessary) a wrapper and data. If you want to use one of the benchmarks
 listed here, follow these steps:
 
-Let's say you want to run the logistic regression:
+Let's say you want to run the Reproducing Kernel Hilbert space (`RKHS <https://github.com/iassael/function-rkhs>`_) function:
 
-1.  Read the description for :ref:`logistic regression <logreg>`
-    and install the dependencies (which are `THEANO <http://deeplearning.net/software/theano/>`_
-    and `scikit-data <http://jaberg.github.io/skdata/>`_) and maybe recommended
-    software.
-2.  Download the benchmark:
+1.  RKHS is located with other benchmarks inside :bash:`HPOlib/benchmarks` folder. To run the benchmark first go inside that folder.
+    
+    .. code:: bash 
+        
+        cd HPOlib/benchmarks/rkhs
 
-        :bash:`wget www.automl.org/logistic.tar.gz`
+2.  Inside this folder you can run one the optimizers (smac, tpe or spearmint) on RKHS function using HPOlib :
 
-3.  Unpack:
+    .. code:: bash
 
-        :bash:`tar -xf logistic.tar.gz`
+        HPOlib-run -o ../../optimizers/smac/smac_2_10_00-dev -s 23
+        HPOlib-run -o ../../optimizers/tpe/h -s 23
+        HPOlib-run -o ../../optimizers/spearmint/spearmint_april2013 -s 23
 
-4.  Inside the root directory you will find a script :bash:`wrappingLogistic.py`,
-    three directories with the name of the optimizers (plus one directory for
-    random search), two other directories, named :bash:`cv` and :bash:`nocv`
-    and a script :bash:`theano_teardown.py`. Now choose if you want to run the experiment with
-    crossvalidation or without. Change into the :bash:`cv` directory if you
-    want to use crossvalidation, if not, change into the :bash:`nocv`
-    directory. There you will find a :bash:`config.cfg` and which contains
-    information about how long to run the experiment, how many cross validation
-    folds to use etc.
-5.  Be sure you are connected to the internet, because logistic regression uses
-    `scikit-data <http://jaberg.github.io/skdata/>`_) to download data, when
-    called for the first time. Then run:
+    Or more generally
 
-        :bash:`HPOlib-run /path/to/optimizers/<tpe/hyperopt|smac|spearmint|tpe/random> [-s seed] [-t title]`
+    .. code:: bash
 
-    from inside the :bash:`cv` or :bash:`nocv` folder to run one optimizer for
-    as many evaluations as stated in :bash:`config.cfg`,
-    (100 times in this example).
-6.  More information about the :bash:`config.cfg` can be found :ref:`here
-    <adjust_settings>`.
+        HPOlib-run /path/to/optimizers/<tpe/hyperopt|smac|spearmint|tpe/random> [-s seed] [-t title]
 
-**NOTE:** Since calculations are done with the THEANO library, you can also run
-this benchmark on a NVIDIA GPU. This is switched off by default, but you can
-change this with the THEANO flags. You find them in :bash:`config.cfg` and
-information on how to set the THEANO flags :ref:`here <configure_theano>`.
+
+    By default optimizers will run 200 evaluations on the function. For smac and tpe this will take about 2 mins but for spearmint it will be longer than 45 mins, so change :bash:`number_of_jobs` parameter in :bash:`config.cfg` file in same folder to 50 or less.
+
+    .. code:: cfg
+
+        [SMAC]
+        p = params.pcs
+
+        [TPE]
+        space = space.py
+
+        [SPEARMINT]
+        config = config.pb
+
+        [HPOLIB]
+        console_output_delay = 2.0
+        function = python ../rkhs.py
+        number_of_jobs = 200 #Change this to 50.
+        result_on_terminate = 1000
+
+3.  Now you can plot results for the experiment in different ways:
+
+    Plot the results of only one optimizer:
+
+    .. code:: bash
+
+        HPOlib-plot FIRSTRUN smac_2_10_00-dev_23_*/smac_*.pkl -s `pwd`/Plots/
+
+    The Plots can be found inside folder named :bash:`Plots` in current working directory (:bash:`HPOlib/benchmarks/rkhs`) 
+
+    .. image:: MeanTrace_fr.png
+
+    and if you have run all optimizers and want to compare their results:
+
+    .. code:: bash
+
+        HPOlib-plot SMAC smac_2_10_00-dev_23_*/smac_*.pkl TPE hyperopt_august2013_mod_23_*/hyp*.pkl SPEARMINT spearmint_april2013_mod_23_*/spear*.pkl -s `pwd`/Plots/
+
+    .. image:: MeanTrace_all.png
+
+    and to check the general performance on this super complex benchmark:
+
+    .. code:: bash
+
+        HPOlib-plot RKHS smac_2_10_00-dev_23_*/smac_*.pkl hyperopt_august2013_mod_23_*/hyp*.pkl spearmint_april2013_mod_23_*/spear*.pkl -s `pwd`/Plots/
+
+    .. image:: MeanTrace_comparison.png
 
 .. <!-- ########################################################################
    HOWTO RUN YOUR OWN BENCHMARKS
@@ -84,7 +114,7 @@ what files you need:
 * One **directory** having the name of the optimizer for each optimizer you want to use.
   Currently, these are :bash:`hyperopt_august2013_mod`,
   :bash:`random_hyperopt2013_mod`,
-  :bash:`smac_2_06_01-dev` and :bash:`spearmint_april2013_mod`.
+  :bash:`smac_2_10_00-dev` and :bash:`spearmint_april2013_mod`.
 * One **search space** for each optimizer. This must be placed in the directory with the name of the optimizer.
   You can convert your searchspace to other formats with
   :ref:`HPOlib_convert <hpolib_convert>` from and to all three different
