@@ -18,45 +18,47 @@
 
 __authors__ = ["Mohsin Ali"]
 __contact__ = ["automl.org"]
-__credits__ = ["Sonja Surjanovic", "Derek Bingham",]
+__credits__ = ["Sonja Surjanovic", "Derek Bingham"]
 __function__= ["MICHALEWICZ FUNCTION"]
 
 import time
 
 import HPOlib.benchmarks.benchmark_util as benchmark_util
 
-def michal(xx,m):
-	import math
 
-	d=len(xx);
-	sum=0;
-	for ii in range(d):
-		xi=xx[ii];
-		i=ii+1;
-		new=math.sin(xi) * math.pow((math.sin(i*math.pow(xi,2)/math.pi)),(2*m));
-		sum=sum+new;	
+def michal(xx, m):
+    import math
 
-	return -sum;
+    d = len(xx)
+    sum_ = 0
+    for ii in range(d):
+        xi = xx[ii]
+        i = ii+1
+        new = math.sin(xi) * \
+            math.pow((math.sin(i * math.pow(xi, 2) / math.pi)), (2*m))
+        sum_ += new
 
+    return -sum_
 
 
 def main(params, **kwargs):
-	print 'Params: ', params;
-	print 'kwargs: ', kwargs;
+    print 'Params: ', params
+    print 'kwargs: ', kwargs
 
-	xx=[float(params["x1"]),float(params["x2"]),
-		float(params["x3"]),float(params["x4"]),
-		float(params["x5"]),float(params["x6"]),
-		float(params["x7"]),float(params["x8"]),
-		float(params["x9"]),float(params["x10"]),];
+    xx = [float(params["x1"]), float(params["x2"]),
+          float(params["x3"]), float(params["x4"]),
+          float(params["x5"]), float(params["x6"]),
+          float(params["x7"]), float(params["x8"]),
+          float(params["x9"]), float(params["x10"])]
 
-	y = michal(xx,10);
-	return y;
+    y = michal(xx, 10)
+    return y
+
 
 if __name__ == "__main__":
-	starttime = time.time()
-	args, params = benchmark_util.parse_cli()
-	result = main(params, **args)
-	duration = time.time() - starttime
-	print "Result for ParamILS: %s, %f, 1, %f, %d, %s" % \
-		("SAT", abs(duration), result, -1, str(__file__))
+    starttime = time.time()
+    args, params = benchmark_util.parse_cli()
+    result = main(params, **args)
+    duration = time.time() - starttime
+    print "Result for ParamILS: %s, %f, 1, %f, %d, %s" % \
+        ("SAT", abs(duration), result, -1, str(__file__))
