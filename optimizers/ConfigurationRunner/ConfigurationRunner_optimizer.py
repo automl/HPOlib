@@ -61,7 +61,7 @@ class ConfigurationRunner(object):
             self.logger.info(configuration)
 
     def run(self):
-        pool = Pool(processes=4)
+        pool = Pool(processes=self.n_jobs)
         pool.map(command_line_function, self.configurations)
         pool.close()
         pool.join()

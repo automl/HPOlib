@@ -1,3 +1,7 @@
 include *.md
 exclude runsolver/src/runsolver
 include runsolver/src/dummy.txt
+include HPOlib/dispatcher/MySQLDBTAE/*.jar
+include HPOlib/dispatcher/MySQLDBTAE/lib/*.jar
+include HPOlib/dispatcher/MySQLDBTAE/lib/mysql-worker
+include HPOlib/dispatcher/MySQLDBTAE/util/json-executor
