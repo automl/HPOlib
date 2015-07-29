@@ -27,7 +27,6 @@ package_dir = {'HPOlib': 'HPOlib',
                'HPOlib.benchmarks': 'HPOlib/benchmarks'}
 package_data = {'HPOlib.config_parser': ['*.cfg']}
 
-<<<<<<< HEAD
 data_files = [('HPOlib/dispatcher/MySQLDBTAE',
                ['HPOlib/dispatcher/MySQLDBTAE/aeatk.jar',
                 'HPOlib/dispatcher/MySQLDBTAE/aeatk-src.jar',
@@ -66,11 +65,6 @@ data_files = [('HPOlib/dispatcher/MySQLDBTAE',
              ('HPOlib/dispatcher/MySQLDBTAE/util',
               ['HPOlib/dispatcher/MySQLDBTAE/util/json-executor'])]
 
-=======
-data_files = [] + \
-             [(d, [os.path.join(d, f) for f in files])
-              for d, folders, files in os.walk("HPOlib/dispatcher/MySQLDBTAE")]
->>>>>>> Fix: setup.py: copy aeatk and mysqldbtae to the installation directory
 
 scripts = ['scripts/HPOlib-run', 'scripts/HPOlib-plot',
            'runsolver/src/runsolver', 'scripts/HPOlib-convert',
