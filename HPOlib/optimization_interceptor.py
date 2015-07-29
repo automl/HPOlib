@@ -44,11 +44,16 @@ logger = logging.getLogger("HPOlib.optimization_interceptor")
 # TODO: This should be in a util function sometime in the future
 #       Is duplicated in runsolver_wrapper.py
 def get_optimizer():
-    return "_".join(os.getcwd().split("/")[-1].split("_")[0:-2])
+    optimizer_dir = os.getcwd().split("/")[-1]
+    if optimizer_dir.count("_") == 1:
+        return optimizer_dir.split("_")[0]
+    else:
+        return optimizer_dir.split("_")[0:-2]
 
 
 def load_experiment_file():
     optimizer = get_optimizer()
+    print os.getcwd().split("/")[-1]
     experiment = Experiment(".", optimizer)
     return experiment
 

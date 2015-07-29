@@ -14,6 +14,7 @@ Contents:
    install
    algorithms_and_datasets
    manual
+   optimizers
    plotting
    structure
    cite
