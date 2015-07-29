@@ -27,9 +27,44 @@ package_dir = {'HPOlib': 'HPOlib',
                'HPOlib.benchmarks': 'HPOlib/benchmarks'}
 package_data = {'HPOlib.config_parser': ['*.cfg']}
 
-data_files = [] + \
-             [(d, [os.path.join(d, f) for f in files])
-              for d, folders, files in os.walk("HPOlib/dispatcher/MySQLDBTAE")]
+data_files = [('HPOlib/dispatcher/MySQLDBTAE',
+               ['HPOlib/dispatcher/MySQLDBTAE/aeatk.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/aeatk-src.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/commons-collections-3.2.1.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/commons-io-2.1.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/commons-math-2.2.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/commons-math3-3.3.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/DomainInter.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/exp4j-0.3.10.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/fastrf.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/fastrf-src.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/guava-14.0.1.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/jackson-annotations-2.3.1.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/jackson-core-2.3.1.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/jackson-databind-2.3.1.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/Jama-1.0.2.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/jcip-annotations.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/jcip-annotations-src.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/jcommander.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/logback-access-1.1.2.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/logback-classic-1.1.2.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/logback-core-1.1.2.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/numerics4j-1.3.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/opencsv-2.3.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/slf4j-api-1.7.5.jar',
+                'HPOlib/dispatcher/MySQLDBTAE/spi-0.2.4.jar']),
+             ('HPOlib/dispatcher/MySQLDBTAE/lib',
+              ['HPOlib/dispatcher/MySQLDBTAE/lib/c3p0-0.9.5-pre8.jar',
+               'HPOlib/dispatcher/MySQLDBTAE/lib/c3p0-oracle-thin-extras-0.9.5-pre8.jar',
+               'HPOlib/dispatcher/MySQLDBTAE/lib/commons-codec-1.7.jar',
+               'HPOlib/dispatcher/MySQLDBTAE/lib/mchange-commons-java-0.2.7.jar',
+               'HPOlib/dispatcher/MySQLDBTAE/lib/mysql-connector-java-5.1.33-bin.jar',
+               'HPOlib/dispatcher/MySQLDBTAE/lib/mysqldbtae.jar',
+               'HPOlib/dispatcher/MySQLDBTAE/lib/mysqldbtae-src.jar',
+               'HPOlib/dispatcher/MySQLDBTAE/lib/mysql-worker']),
+             ('HPOlib/dispatcher/MySQLDBTAE/util',
+              ['HPOlib/dispatcher/MySQLDBTAE/util/json-executor'])]
+
 
 scripts = ['scripts/HPOlib-run', 'scripts/HPOlib-plot',
            'runsolver/src/runsolver', 'scripts/HPOlib-convert',
