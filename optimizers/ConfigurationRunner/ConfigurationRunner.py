@@ -84,6 +84,9 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
         os.mkdir(optimizer_dir)
 
     space = config.get('ConfigurationRunner', "configurations")
+    print "ConfigurationRunner", space, config.sections()
+    import sys
+    sys.stdout.flush()
     abs_space = os.path.abspath(space)
     parent_space = os.path.join(experiment_dir, optimizer_str, space)
     if os.path.exists(abs_space):
