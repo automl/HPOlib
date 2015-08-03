@@ -139,19 +139,29 @@ def make_command(cfg, fold, param_string, run_instance_output, test=False):
     return cmd
 
 
-def _make_runsolver_command(cfg, output_filename):
-    cmd = cfg.get("HPOLIB", "leading_runsolver_info")
-    cmd += " runsolver -o \"%s\" --timestamp --use-pty" % output_filename
+def _make_runsolver_command(cfg, output_filename=None):
+    cmd = []
+    cmd.append(cfg.get("HPOLIB", "leading_runsolver_info"))
+    cmd.append("runsolver")
+    if output_filename is not None:
+        cmd.extend(["-o",  "\"%s\"" % output_filename])
+        cmd.extend(["--timestamp", "--use-pty"])
+    else:
+        cmd.extend(["-w", "/dev/null/"])
     if cfg.get('HPOLIB', 'runsolver_time_limit'):
-        cmd += " -W %d" % cfg.getint('HPOLIB', 'runsolver_time_limit')
+        cmd.append("-W")
+        cmd.append("%d" % cfg.getint('HPOLIB', 'runsolver_time_limit'))
     if cfg.get('HPOLIB', 'cpu_limit'):
-        cmd += " -C %d" % cfg.getint('HPOLIB', 'cpu_limit')
+        cmd.append("-C")
+        cmd.append("%d" % cfg.getint('HPOLIB', 'cpu_limit'))
     if cfg.get('HPOLIB', 'memory_limit'):
-        cmd += " -M %d" % cfg.getint('HPOLIB', 'memory_limit')
+        cmd.append("-M")
+        cmd.append("%d" % cfg.getint('HPOLIB', 'memory_limit'))
     delay = 0
     if delay is not None:
-        cmd += " -d %d" % int(delay)
-    return cmd
+        cmd.append("-d")
+        cmd.append("%d" % int(delay))
+    return " ".join(cmd)
 
 
 def parse_output(cfg, run_instance_content, runsolver_output_content,
