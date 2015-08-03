@@ -48,6 +48,8 @@ def build_call(config, options, optimizer_dir):
     call.append(os.path.join(optimizer_dir,
                 os.path.basename(config.get("ConfigurationRunner",
                                             "configurations"))))
+    call.append("--n-jobs")
+    call.append(str(config.get("ConfigurationRunner", "n_jobs")))
     return " ".join(call)
 
 
