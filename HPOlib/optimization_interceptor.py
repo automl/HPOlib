@@ -48,7 +48,7 @@ def get_optimizer():
     if optimizer_dir.count("_") == 1:
         return optimizer_dir.split("_")[0]
     else:
-        return optimizer_dir.split("_")[0:-2]
+        return "_".join(optimizer_dir.split("_")[0:-2])
 
 
 def load_experiment_file():
