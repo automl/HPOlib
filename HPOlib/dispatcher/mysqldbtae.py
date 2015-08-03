@@ -18,11 +18,12 @@
 
 import logging
 import os
-import re
 import subprocess
-import StringIO
 import time
 import json
+
+import HPOlib.dispatcher.runsolver_wrapper
+
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -114,7 +115,9 @@ def make_command(cfg, fold, test=False):
     # Do not write the actual task in quotes because runsolver will not work
     # then; also we need use-pty and timestamp so that the "solver" output
     # is flushed to the output directory
-    cmd = "runsolver -w /dev/null " + fn + " --fold %d --folds %d" % \
+    runsolver_cmd = HPOlib.dispatcher.runsolver_wrapper._make_runsolver_command(
+        cfg)
+    cmd = runsolver_cmd + " " + fn + " --fold %d --folds %d" % \
         (fold, cfg.getint("HPOLIB", "number_cv_folds"))
     return cmd
 
