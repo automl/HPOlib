@@ -28,6 +28,10 @@ def main():
                         type=int, help="seed step value")
     parser.add_argument("-stop-seed", "--stop_seed", default=10000,
                         type=int, help="seed stop value")
+    parser.add_argument("--ignore-missing-optimizers", action="store_true",
+                        help="Ignore missing optimizers. If not present, "
+                             "this script will stop if an installed optimizer is"
+                             "not found in the benchmark directory.")
 
     args, unknown = parser.parse_known_args()
 
@@ -81,7 +85,8 @@ def main():
                     outputfile.write("HPOlib-run --cwd " + benchmark_dir + " -o " + path + " -s " + str(seed) + "\n")
                 else:
                     print "Optimizer " + optVersion + " doesn't exist in directory \"" + benchmark_dir + "\""
-                    sys.exit(1)
+                    if not args.ignore_missing_optimizers:
+                        sys.exit(1)
 
     print "******************HPOlib-run Commands********************"
     print "Using Benchmark function directory: " + benchmark_dir
