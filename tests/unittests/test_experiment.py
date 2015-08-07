@@ -180,6 +180,28 @@ class ExperimentTest(unittest.TestCase):
     # works, as this is implicitly tested in test_set_one_fold_crashed and
     # test_set_one_fold_complete
 
+    def test_clean_test_outputs(self):
+        experiment = Experiment.Experiment(".", "test_exp", folds=2)
+        for i in range(2):
+            _id = experiment.add_job({"x": i})
+            experiment.set_one_fold_running(_id, 0)
+            experiment.set_one_fold_running(_id, 1)
+            experiment.set_one_fold_complete(_id, 0, 1, 1, "")
+            experiment.set_one_fold_complete(_id, 1, 2, 2, "")
+            experiment.set_one_test_fold_running(_id, 0)
+            experiment.set_one_test_fold_complete(_id, 0, 1, 5, "")
+        self.assertEqual(experiment.total_wallclock_time, 16)
+        experiment.clean_test_outputs(0)
+        trial = experiment.get_trial_from_id(0)
+        self.assertEqual(experiment.total_wallclock_time, 11)
+        self.assertFalse(np.isfinite(trial['test_duration']))
+        self.assertFalse(np.isfinite(trial['test_result']))
+        self.assertFalse(np.isfinite(trial['test_std']))
+        self.assertEqual(trial['test_status'], 0)
+        self.assertFalse(all(np.isfinite(trial['test_instance_durations'])))
+        self.assertFalse(all(np.isfinite(trial['test_instance_results'])))
+        self.assertEqual(np.sum(trial['test_instance_status']), 0)
+
     def test_set_one_fold_complete(self):
         experiment = Experiment.Experiment(".", "test_exp", folds=1)
         experiment.add_job({"x": 0})

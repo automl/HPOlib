@@ -543,13 +543,19 @@ configurations the HPOlib will call the test script.
 * :bash:`--best`: Call the test-script only for the best configuration.
 * :bash:`--trajectory`: Not yet implemented!
 
-As an example, consider the usecase that we ran SMAC to optimize the
-:ref:`logistic regression <logreg>` and want to get the test performance for
-the best configuration.
+The second argument :bash:`--cwd` tells HPOlib in which experiment directory
+it should run test the configurations. As an example, consider the usecase that
+we ran SMAC to optimize the :ref:`logistic regression <logreg>` and want to get
+the test performance for the best configuration.
 
 .. code:: bash
 
     HPOlib-testbest --best --cwd logreg/nocv/smac_2_08_00-master_2000_2014-11-7--16-49-28-166127/
+
+Further options are:
+
+* :bash:`--redo-runs`: If argument is given, previous runs will be executed
+  again and the previous results will be overwritten.
 
 Dispatchers: Different ways to invoke the Target Algorithm
 ==========================================================

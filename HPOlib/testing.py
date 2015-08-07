@@ -65,6 +65,10 @@ def use_arg_parser():
     parser.add_argument("--cwd", action="store", type=str, dest="working_dir",
                         default=None, help="Change the working directory to "
                                            "<working_directory> prior to running the experiment")
+    parser.add_argument("--redo-runs", action="store_true",
+                        help="If argument is given, previous runs will be "
+                             "executed again and the previous results will be "
+                             "overwritten.")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-q", "--silent", action="store_true",
                        dest="silent", default=False,
@@ -101,21 +105,29 @@ def main():
     os.chdir(experiment_dir)
 
     # TODO check if the testing directory exists
-    # TODO check if the test function is there!
     check_before_start.check_first(experiment_dir)
 
     # Now we can safely import non standard things
     import numpy as np
+    global np
     import HPOlib.Experiment as Experiment  # Wants numpy and scipy
+    global Experiment
 
 
     if not config.has_option("HPOLIB", "is_not_original_config_file"):
-        logger.critical("The directory you're in seems to be no directory in "
+        logger.error("The directory you're in seems to be no directory in "
                         "which an HPOlib run was executed: %s" % experiment_dir)
+        exit(1)
     is_not_original_config_file = config.get("HPOLIB", "is_not_original_config_file")
     if not is_not_original_config_file:
-        logger.critical("The directory you're in seems to be no directory in "
+        logger.error("The directory you're in seems to be no directory in "
                         "which an HPOlib run was executed: %s" % experiment_dir)
+        exit(1)
+
+    if not config.has_option("HPOLIB", "test_function"):
+        logger.error("The configuration file does not define a test "
+                        "function.")
+        exit(1)
 
     experiment_directory_prefix = config.get("HPOLIB", "experiment_directory_prefix")
     optimizer = wrapping_util.get_optimizer()
@@ -139,14 +151,16 @@ def main():
                                                   runsolver_output)
 
     configurations_to_test = []
-    # TODO this should not rerun configurations which were already run!
     # Find the configurations to test on!
     if args.all:
         for idx in range(len(trials.trials)):
             configurations_to_test.append(idx)
+            if args.redo_runs:
+                trials.clean_test_outputs(idx)
     elif args.best:
         id_ = trials.get_arg_best(consider_incomplete=False)
         configurations_to_test.append(id_)
+        trials.clean_test_outputs(id_)
     elif args.trajectory:
         raise NotImplementedError("Evaluating the runs along a trajectory is "
                                   "not implemented yet!")

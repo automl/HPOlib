@@ -316,6 +316,35 @@ class Experiment:
         self._sanity_check()
         return len(self.trials) - 1
 
+    def clean_test_outputs(self, _id):
+        """Revert all information for the run with `_id` to the default so
+        the evaluation can be carried out again.
+
+        Parameters
+        ----------
+        _id : int
+            The ID of the trial dictionary
+
+        Returns
+        -------
+        """
+        trial = self.get_trial_from_id(_id)
+
+        trial['test_status'] = CANDIDATE_STATE
+        trial['test_result'] = np.NaN
+        trial['test_std'] = np.NaN
+        trial['test_duration'] = np.NaN
+
+        duration = np.nansum(trial['test_instance_durations'])
+        self.total_wallclock_time -= duration
+
+        for fold in range(len(trial['test_instance_status'])):
+            trial['test_instance_status'][fold] = CANDIDATE_STATE
+            trial['test_instance_durations'][fold] = np.NaN
+            trial['test_instance_results'][fold] = np.NaN
+            trial['test_additional_data'][fold] = ""
+
+
     def set_one_fold_running(self, _id, fold):
         """Change the status of one fold to running.
 
