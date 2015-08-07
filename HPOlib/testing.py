@@ -19,6 +19,7 @@
 from argparse import ArgumentParser
 import importlib
 import logging
+import multiprocessing
 import os
 import re
 import time
@@ -62,6 +63,8 @@ def use_arg_parser():
                        help="Call the test function for the trajectory of best "
                             "hyperparameter configurations of an experiment.")
 
+    parser.add_argument("--n-jobs", default=1, type=int,
+                        help="Number of parallel function evaluations.")
     parser.add_argument("--cwd", action="store", type=str, dest="working_dir",
                         default=None, help="Change the working directory to "
                                            "<working_directory> prior to running the experiment")
@@ -79,6 +82,62 @@ def use_arg_parser():
 
     args, unknown = parser.parse_known_args()
     return args, unknown
+
+
+def run_test(config, experiment_directory_prefix, fold, id_, optimizer):
+    trials = Experiment.Experiment(expt_dir=".",
+                                   expt_name=experiment_directory_prefix + optimizer)
+    # Check if this configuration was already run
+    trial = trials.get_trial_from_id(id_)
+    if np.isfinite(trial['test_instance_results'][fold]):
+        logger.info("Trial #%d, fold %d already evaluated, continuing "
+                    "with next." % (id_, fold))
+        del trials
+        return 0
+    logger.info("Evaluating trial #%d, fold %d." % (id_, fold))
+    configuration = trial["params"]
+    trials.set_one_test_fold_running(id_, fold)
+    trials._save_jobs()
+    del trials
+    dispatch_function_name = config.get("HPOLIB", "dispatcher")
+    dispatch_function_name = re.sub("(\.py)$", "", dispatch_function_name)
+    try:
+        dispatch_function = importlib.import_module("HPOlib.dispatcher.%s" %
+                                                    dispatch_function_name)
+
+        additional_data, result, status, wallclock_time = \
+            dispatch_function.dispatch(config, fold, configuration,
+                                       test=True)
+    except ImportError:
+        additional_data = ""
+        result = float("NaN")
+        status = "CRASHED"
+        wallclock_time = 0.
+        logger.error("Invalid value %s for HPOLIB:dispatcher" %
+                     dispatch_function_name)
+        return -1
+
+    trials = Experiment.Experiment(expt_dir=".",
+                                   expt_name=experiment_directory_prefix + optimizer)
+    if status == "SAT":
+        trials.set_one_test_fold_complete(id_, fold, result,
+                                          wallclock_time, additional_data)
+    elif status == "CRASHED" or status == "UNSAT":
+        result = config.getfloat("HPOLIB", "result_on_terminate")
+        trials.set_one_test_fold_crashed(id_, fold, result,
+                                         wallclock_time, additional_data)
+        status = "SAT"
+    else:
+        # TODO: We need a global stopping mechanism
+        pass
+    trials._save_jobs()
+    del trials  # release lock
+    logger.info("Finished: Result: %s, Runtime: %s, Status: %s",
+                str(result),
+                str(wallclock_time),
+                str(status))
+
+    return 1
 
 
 def main():
@@ -170,66 +229,32 @@ def main():
     trials._save_jobs()
     del trials
 
+    pool = multiprocessing.Pool(processes=args.n_jobs)
+    outputs = []
+
     for id_ in configurations_to_test:
-        for fold in range(1): # number of test folds, currently this is only one!
-            trials = Experiment.Experiment(expt_dir=".",
-                                           expt_name=experiment_directory_prefix + optimizer)
+        for fold in range(1):
+            outputs.append(pool.apply_async(run_test, [config, experiment_directory_prefix,
+                                                       fold, id_, optimizer]))
+    pool.close()
+    pool.join()
 
-            # Check if this configuration was already run
-            trial = trials.get_trial_from_id(id_)
-            if np.isfinite(trial['test_instance_results'][fold]):
-                logger.info("Trial #%d, fold %d already evaluated, continuing "
-                            "with next." % (id_, fold))
-                del trials
-                continue
+    # Look at the return states of the run_test function
+    num_errors = 0
+    num_skip = 0
+    num_calculated = 0
+    for output in outputs:
+        _value = output._value
+        if _value < 0:
+            num_errors += 1
+        elif _value == 0:
+            num_skip += 1
+        else:
+            num_calculated += 1
 
-            logger.info("Evaluating trial #%d, fold %d." % (id_, fold))
-
-            configuration = trial["params"]
-
-            trials.set_one_test_fold_running(id_, fold)
-            trials._save_jobs()
-            del trials
-
-            dispatch_function_name = config.get("HPOLIB", "dispatcher")
-            dispatch_function_name = re.sub("(\.py)$", "", dispatch_function_name)
-            try:
-                dispatch_function = importlib.import_module("HPOlib.dispatcher.%s" %
-                                                            dispatch_function_name)
-
-                additional_data, result, status, wallclock_time = \
-                    dispatch_function.dispatch(config, fold, configuration,
-                                               test=True)
-            except ImportError:
-                additional_data = ""
-                result = float("NaN")
-                status = "CRASHED"
-                wallclock_time = 0.
-                logger.error("Invalid value %s for HPOLIB:dispatcher" %
-                             dispatch_function_name)
-
-            trials = Experiment.Experiment(expt_dir=".",
-                                           expt_name=experiment_directory_prefix + optimizer)
-
-            if status == "SAT":
-                trials.set_one_test_fold_complete(id_, fold, result,
-                                             wallclock_time, additional_data)
-            elif status == "CRASHED" or status == "UNSAT":
-                result = config.getfloat("HPOLIB", "result_on_terminate")
-                trials.set_one_test_fold_crashed(id_, fold, result,
-                                                wallclock_time, additional_data)
-                status = "SAT"
-            else:
-                # TODO: We need a global stopping mechanism
-                pass
-            trials._save_jobs()
-            del trials  # release lock
-
-
-            logger.info("Finished: Result: %s, Runtime: %s, Status: %s",
-                        str(result),
-                        str(wallclock_time),
-                        str(status))
+    logger.info("Finished testing HPOlib runs.")
+    logger.info("Errors: %d Skipped: %d Tested: %d" % (num_errors, num_skip,
+                                                       num_calculated))
 
     # TODO: do we need a teardown for testing?
     fn_teardown = config.get("HPOLIB", "function_teardown")

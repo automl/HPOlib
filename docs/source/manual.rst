@@ -556,6 +556,8 @@ Further options are:
 
 * :bash:`--redo-runs`: If argument is given, previous runs will be executed
   again and the previous results will be overwritten.
+* :bash:`--n-jobs`: Number of parallel function evaluations. You should not
+  set this number higher than the number of cores in your computer.
 
 Dispatchers: Different ways to invoke the Target Algorithm
 ==========================================================
