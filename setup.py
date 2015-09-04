@@ -31,6 +31,7 @@ data_files = []
 scripts = ['scripts/HPOlib-run', 'scripts/HPOlib-plot',
            'runsolver/src/runsolver', 'scripts/HPOlib-convert',
            'scripts/remove_minus.py', 'scripts/HPOlib-testbest',
+           'scripts/getBest'
            'scripts/HPOlib-pyFanova']
 
 
