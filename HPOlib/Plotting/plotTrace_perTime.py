@@ -32,69 +32,6 @@ __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 
-def fill_trajectories(trace_list, times_list):
-    """ Each trajectory must have the exact same number of entries
-    and timestamps"""
-    # We need to define the max value =
-    # what is measured before the first evaluation
-    max_value = np.max([np.max(ls) for ls in trace_list])
-
-    number_exp = len(trace_list)
-    new_trajectories = list()
-    new_times = list()
-    for i in range(number_exp):
-        new_trajectories.append(list())
-        new_times.append(list())
-    # noinspection PyUnusedLocal
-    counter = [1 for i in range(number_exp)]
-    finish = False
-
-    # We need to insert the max values in the beginning
-    # and the min values in the end
-    for i in range(number_exp):
-        trace_list[i].insert(0, max_value)
-        trace_list[i].append(np.min(trace_list[i]))
-        times_list[i].insert(0, 0)
-        times_list[i].append(sys.maxint)
-
-    # Add all possible time values
-    while not finish:
-        min_idx = np.argmin([times_list[idx][counter[idx]]
-                             for idx in range(number_exp)])
-        counter[min_idx] += 1
-        for idx in range(number_exp):
-            new_times[idx].append(times_list[min_idx][counter[min_idx] - 1])
-            new_trajectories[idx].append(trace_list[idx][counter[idx] - 1])
-        # Check if we're finished
-        for i in range(number_exp):
-            finish = True
-            if counter[i] < len(trace_list[i]) - 1:
-                finish = False
-                break
-
-    times = new_times
-    trajectories = new_trajectories
-    tmp_times = list()
-
-    # Sanitize lists and delete double entries
-    for i in range(number_exp):
-        tmp_times = list()
-        tmp_traj = list()
-        for t in range(len(times[i]) - 1):
-            if times[i][t + 1] != times[i][t] and not np.isnan(times[i][t]):
-                tmp_times.append(times[i][t])
-                tmp_traj.append(trajectories[i][t])
-        tmp_times.append(times[i][-1])
-        tmp_traj.append(trajectories[i][-1])
-        times[i] = tmp_times
-        trajectories[i] = tmp_traj
-
-    # We need only one list for all times
-    times = tmp_times
-
-    return trajectories, times
-
-
 def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
          log=False, y_min=None, y_max=None, scale_std=1, properties=None,
          aggregation="mean", print_lenght_trial_list=True,
@@ -117,8 +54,8 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
             tmp_trial_list.append(trace)
         # We feed this function with two lists of lists and get
         # one list of lists and one list
-        tmp_trial_list, tmp_times_list = fill_trajectories(tmp_trial_list,
-                                                           tmp_times_list)
+        tmp_trial_list, tmp_times_list = plot_util.\
+            fill_trajectories(tmp_trial_list, tmp_times_list)
         trial_list.append(tmp_trial_list)
         times_list.append(tmp_times_list)
 
@@ -140,7 +77,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
                                       name_list=name_list,
                                       x_ticks=times_list,
                                       optimum=optimum,
-                                      log=log,
+                                      logy=log,
                                       aggregation=aggregation,
                                       scale_std=scale_std,
                                       y_max=y_max, y_min=y_min,

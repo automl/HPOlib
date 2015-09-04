@@ -102,7 +102,7 @@ def main(pkl_list, name_list, autofill, title="", log=False, save="",
     plot_trajectory.plot_trajectories(trial_list=overhead_list,
                                       name_list=name_list, x_ticks=x_ticks,
                                       optimum=0, aggregation=aggregation,
-                                      scale_std=scale_std, log=log,
+                                      scale_std=scale_std, logy=log,
                                       properties=properties,
                                       y_max=y_max, y_min=y_min,
                                       print_lenght_trial_list=
