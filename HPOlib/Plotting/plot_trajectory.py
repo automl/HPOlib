@@ -40,8 +40,8 @@ logger = logging.getLogger("HPOlib.plot_trajectory")
 def plot_trajectories(trial_list, name_list, x_ticks,
                       test_trials=None, optimum=0,
                       aggregation="mean", scale_std=1,
-                      log=False, properties=None,
-                      y_max=None, y_min=None,
+                      logy=False, logx=False, properties=None,
+                      y_max=None, y_min=None, x_max=None, x_min=0,
                       print_lenght_trial_list=True,
                       ylabel="Loss", xlabel=None, title="", save=""):
     """Plot trajectory
@@ -97,14 +97,23 @@ def plot_trajectories(trial_list, name_list, x_ticks,
 
     # One trialList represents all runs from one optimizer
     for i in range(len(trial_list)):
+        if isinstance(x_ticks[0], numpy.ndarray) or \
+                isinstance(x_ticks[0], list):
+            x = x_ticks[i]
+        else:
+            x = x_ticks
+
         performance = numpy.array(trial_list[i]) - optimum
         if aggregation == "mean":
             m = numpy.mean(performance, axis=0)
         else:
             m = numpy.median(performance, axis=0)
 
-        if log:
+        if logy:
             m = numpy.log10(m)
+
+        if logx:
+            x = [max(0.00001, xe) for xe in x]
 
         if aggregation == "mean":
             lower = m - numpy.std(performance, axis=0) * scale_std
@@ -112,12 +121,6 @@ def plot_trajectories(trial_list, name_list, x_ticks,
         else:
             lower = numpy.percentile(performance, axis=0, q=25)
             upper = numpy.percentile(performance, axis=0, q=75)
-
-        if isinstance(x_ticks[0], numpy.ndarray) or \
-                isinstance(x_ticks[0], list):
-            x = x_ticks[i]
-        else:
-            x = x_ticks
 
         assert len(m) == len(x), "%d != %d" % (len(m), len(x))
 
@@ -147,12 +150,19 @@ def plot_trajectories(trial_list, name_list, x_ticks,
             max_val = numpy.max([numpy.max(test_trials[i][1]), max_val])
 
     # Set y, x label
-    if log:
-       ylabel = "log10(%s)" % ylabel
+    if logy:
+        ylabel = "log10(%s)" % ylabel
+        if y_max is not None:
+            y_max = numpy.log10(y_max)
+        if y_min is not None:
+            y_min = numpy.log10(y_min)
+
     if scale_std != 1:
        ylabel = "%s, %s * std" % (ylabel, scale_std)
-    ax1.set_ylabel(ylabel, fontsize=properties["labelfontsize"])
+    if logx:
+        ax1.set_xscale('log')
 
+    ax1.set_ylabel(ylabel, fontsize=properties["labelfontsize"])
     ax1.set_xlabel(xlabel, fontsize=properties["labelfontsize"])
 
     # Set legend
@@ -164,18 +174,23 @@ def plot_trajectories(trial_list, name_list, x_ticks,
         ax1.set_ylim([min_val - 0.1 * abs((max_val - min_val)),
                       max_val + 0.1 * abs((max_val - min_val))])
     elif y_max is None and y_min is not None:
-        assert y_min < max_val
+        assert y_min < max_val, "%f < %f" % (y_min, max_val)
         ax1.set_ylim([y_min,
                       max_val + 0.1 * abs((max_val - min_val))])
     elif y_max is not None and y_min is None:
-        assert min_val < y_max
+        assert min_val < y_max, "%f < %f" % (min_val, y_max)
         ax1.set_ylim([min_val - 0.1 * abs((max_val - min_val)),
                       y_max])
     else:
-        assert y_min < y_max
+        assert y_min < y_max, "%f < %f" % (y_min, y_max)
         ax1.set_ylim([y_min, y_max])
 
     ax1.set_xlim([0, max_trials])
+    if x_max is not None:
+        ax1.set_xlim([ax1.get_xlim()[0], x_max])
+    if x_min is not None:
+        ax1.set_xlim([x_min, ax1.get_xlim()[1]])
+
 
     matplotlib.pyplot.tight_layout()
     matplotlib.pyplot.subplots_adjust(top=0.85)

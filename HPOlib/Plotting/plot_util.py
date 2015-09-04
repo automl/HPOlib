@@ -31,6 +31,7 @@ __contact__ = "automl.org"
 # A super-simple cache for unpickled objects...
 cache = dict()
 
+
 def get_empty_iterator():
     return itertools.cycle([None])
 
@@ -135,6 +136,100 @@ def get_best_dict(name_list, pickles, cut=sys.maxint):
     return best_dict, idx_dict, keys
 
 
+def fill_trajectories(trace_list, times_list):
+    """ Each trajectory must have the exact same number of entries
+    and timestamps
+
+    trace_list: list of n lists with y values
+    times_list: list of n lists with x values
+
+    returns a list of n lists where for each x value and each y-list an
+    entry exists.
+
+    Example:
+
+    trace_list = [[5,3], [5,2,1]]
+    times_list = [[1,2], [1,3,5]]
+
+    returns:
+    trajectories = [[5, 3, 3, 3], [5, 5, 2, 1]]
+    times = [1,2,3,5]
+    """
+    # We need to define the max value =
+    # what is measured before the first evaluation
+    max_value = np.max([np.max(ls) for ls in trace_list])
+
+    number_exp = len(trace_list)
+    new_trajectories = list()
+    new_times = list()
+    for i in range(number_exp):
+        new_trajectories.append(list())
+        new_times.append(list())
+    # noinspection PyUnusedLocal
+    counter = [1 for i in range(number_exp)]
+    finish = False
+
+    # We need to insert the max values in the beginning
+    # and the min values in the end
+    for i in range(number_exp):
+        trace_list[i].insert(0, max_value)
+        trace_list[i].append(np.min(trace_list[i]))
+        times_list[i].insert(0, 0)
+        times_list[i].append(sys.maxint)
+
+    # Add all possible time values
+    while not finish:
+        min_idx = np.argmin([times_list[idx][counter[idx]]
+                             for idx in range(number_exp)])
+        counter[min_idx] += 1
+        for idx in range(number_exp):
+            new_times[idx].append(times_list[min_idx][counter[min_idx] - 1])
+            new_trajectories[idx].append(trace_list[idx][counter[idx] - 1])
+        # Check if we're finished
+        for i in range(number_exp):
+            finish = True
+            if counter[i] < len(trace_list[i]) - 1:
+                finish = False
+                break
+
+    times = new_times
+    trajectories = new_trajectories
+    tmp_times = list()
+
+    # Sanitize lists and delete double entries
+    for i in range(number_exp):
+        tmp_times = list()
+        tmp_traj = list()
+        for t in range(len(times[i]) - 1):
+            if times[i][t + 1] != times[i][t] and not np.isnan(times[i][t]):
+                tmp_times.append(times[i][t])
+                tmp_traj.append(trajectories[i][t])
+        tmp_times.append(times[i][-1])
+        tmp_traj.append(trajectories[i][-1])
+        times[i] = tmp_times
+        trajectories[i] = tmp_traj
+
+    # We need only one list for all times
+    times = tmp_times
+
+    # Now clean data as sometimes the best val doesn't change over time
+    last_perf = [i*10 for i in range(number_exp)]  # dummy entry
+    time_ = list()
+    performance = list([list() for i in range(number_exp)])
+    for idx, t in enumerate(times):
+        # print t, idx, last_perf, perf_list[0][idx], perf_list[1][idx]
+        diff = sum([np.abs(last_perf[i] - trajectories[i][idx]) for i in range(number_exp)])
+        if diff != 0 or idx == 0 or idx == len(times) - 1:
+            # always use first and last entry
+            time_.append(t)
+            [performance[i].append(trajectories[i][idx]) for i in range(number_exp)]
+        last_perf = [p[idx] for p in trajectories]
+
+    trajectories = performance
+    times = time_
+    return trajectories, times
+
+
 def extract_trajectory(experiment, cut=sys.maxint, test=False):
     """Extract a list where the value at position i is the current best after i configurations."""
     if not isinstance(cut, int):
@@ -191,12 +286,31 @@ def extract_results(experiment, cut=sys.maxint):
     return trl
 
 
-def extract_runtime_timestamps(trials, cut=sys.maxint):
-    # return a list like (20, 53, 101, 200)
+def extract_runtime_timestamps(trials, cut=sys.maxint, conf_overhead=False):
+    """Extracts timesteps for a list of trials
+    trials = list of trials as in a HPOlib.pkl
+    cut = consider only that many trials
+    conf_overhead = add conf overhead, if false only add up target algorithm time
+
+    return a list like (0, 20, 53, 101, 200)
+    """
+    # (TODO): This does not work for crossvalidation + intensify
+
     time_list = list()
     time_list.append(0)
-    for trial in trials["trials"][:cut+1]:
-        time_list.append(np.sum(trial["instance_durations"]) + time_list[-1])
+    for idx, trial in enumerate(trials["trials"][:cut+1]):
+        if trial["status"] != 3:
+            # Ignore this trial, it is not yet finished
+            continue
+
+        if conf_overhead:
+            if len(trials["starttime"]) > 1:
+                raise ValueError("Cannot extract runtimes for restarted "
+                                 "experiments, please implement me")
+
+            time_list.append(trials["cv_starttime"][idx] - trials["starttime"][0] + trial["duration"])
+        else:
+            time_list.append(np.sum(trial["instance_durations"]) + time_list[-1])
     return time_list
 
 
