@@ -58,6 +58,7 @@ def plot_trajectories(trial_list, name_list, x_ticks,
     y_max, y_min: float, optional
     properties: dictionary, optional (for keys see plot_util)
     print_lenght_trial_list: bool, optional
+    maxvalue: float, replace all performances higher than this
     save: str, optional
     title, ylabel, xlabel: str, optional
 
@@ -104,6 +105,7 @@ def plot_trajectories(trial_list, name_list, x_ticks,
             x = x_ticks
 
         performance = numpy.array(trial_list[i]) - optimum
+
         if aggregation == "mean":
             m = numpy.mean(performance, axis=0)
         else:
@@ -142,8 +144,9 @@ def plot_trajectories(trial_list, name_list, x_ticks,
             ax1.scatter(x=test_trials[i][:][0], y=test_trials[i][:][1],
                         color=color, marker='o', s=20)
 
-        min_val = numpy.min([numpy.min(lower), min_val])
-        max_val = numpy.max([numpy.max(upper), max_val])
+        # Start from second entry as first entry is always maxint
+        min_val = numpy.min([numpy.min(lower[1:]), min_val])
+        max_val = numpy.max([numpy.max(upper[1:]), max_val])
         max_trials = numpy.max([x[-1], max_trials])
         if test_trials is not None:
             min_val = numpy.min([numpy.min(test_trials[i][1]), min_val])
