@@ -33,7 +33,8 @@ __contact__ = "automl.org"
 
 
 def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
-         log=False, y_min=None, y_max=None, scale_std=1, properties=None,
+         maxvalue=sys.maxint, log=False,
+         y_min=None, y_max=None, scale_std=1, properties=None,
          aggregation="mean", print_lenght_trial_list=True,
          ylabel="Minfunction value", xlabel="Duration [sec]"):
 
@@ -47,8 +48,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
             fh = open(pkl, "r")
             trials = cPickle.load(fh)
             fh.close()
-
-            trace = plot_util.extract_trajectory(trials)
+            trace = plot_util.extract_trajectory(trials, maxvalue=maxvalue)
             times = plot_util.extract_runtime_timestamps(trials)
             tmp_times_list.append(times)
             tmp_trial_list.append(trace)
@@ -89,7 +89,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
     return
 
 if __name__ == "__main__":
-    prog = "python plotTraceWithStd.py WhatIsThis <oneOrMorePickles> " \
+    prog = "python plotTrace_perTime.py WhatIsThis <oneOrMorePickles> " \
            "[WhatIsThis <oneOrMorePickles>]"
     description = "Plot a Trace with std for multiple experiments"
 
@@ -126,6 +126,8 @@ if __name__ == "__main__":
                         action="store_true",
                         help="Print number of optimizer runs "
                              "in brackets (legend)")
+    parser.add_argument("--maxvalue", dest="maxvalue", default=10000,
+                        type=float, help="replace all y values higher than this")
     parser.add_argument("--aggregation", dest="aggregation", default="mean",
                         choices=("mean", "median"),
                         help="Print Median/Quantile or Mean/Std")
@@ -150,6 +152,7 @@ if __name__ == "__main__":
 
     main(pkl_list_main, name_list_main, autofill=args.autofill,
          optimum=args.optimum, save=args.save, title=args.title, log=args.log,
+         maxvalue=args.maxvalue,
          y_min=args.min, y_max=args.max, scale_std=args.scale,
          aggregation=args.aggregation,
          xlabel=args.xlabel, ylabel=args.ylabel, properties=prop,

@@ -144,7 +144,7 @@ def fill_trajectories(trace_list, times_list):
     times_list: list of n lists with x values
 
     returns a list of n lists where for each x value and each y-list an
-    entry exists.
+    entry exists. time list will always start at 0
 
     Example:
 
@@ -152,12 +152,16 @@ def fill_trajectories(trace_list, times_list):
     times_list = [[1,2], [1,3,5]]
 
     returns:
-    trajectories = [[5, 3, 3, 3], [5, 5, 2, 1]]
-    times = [1,2,3,5]
+    trajectories = [[5, 5, 3, 3, 3], [5, 5, 5, 2, 1]]
+    times = [0,1,2,3,5]
     """
     # We need to define the max value =
     # what is measured before the first evaluation
     max_value = np.max([np.max(ls) for ls in trace_list])
+
+    for idx in range(len(trace_list)):
+        assert len(trace_list[idx]) == len(times_list[idx]), \
+            "%d != %d" % (len(trace_list[idx]), len(times_list[idx]))
 
     number_exp = len(trace_list)
     new_trajectories = list()
@@ -230,31 +234,40 @@ def fill_trajectories(trace_list, times_list):
     return trajectories, times
 
 
-def extract_trajectory(experiment, cut=sys.maxint, test=False):
-    """Extract a list where the value at position i is the current best after i configurations."""
+def extract_trajectory(experiment, cut=sys.maxint, maxvalue=sys.maxint,
+                       test=False):
+    """
+    Extract a list where the value at position i is the current best after i
+    configurations. Starts with maxvalue, as at timestep 0 there is no known
+    performance value
+    """
     if not isinstance(cut, int):
         raise ValueError("Argument cut must be an Integer value but is %s" %
             type(cut))
     if cut <= 0:
         raise ValueError("Argument cut cannot be zero or negative.")
 
-    trace = list()
+    trace = list([maxvalue, ])
     test_results = None
     if test:
-        test_results = list()
+        test_results = list([maxvalue, ])
 
     currentbest = experiment['trials'][0]["result"]
     if not np.isfinite(currentbest):
         currentbest = sys.maxint
 
     for result in [trial for trial in experiment['trials'][:cut]]:
-        if not np.isfinite(result["result"]):
+        if result["status"] != 3 or not np.isfinite(result["result"]):
+            # Ignore this trial, it is not valid/finished
+            # add previous result
+            trace.append(currentbest)
             continue
+
         if result["result"] < currentbest:
-            currentbest = result["result"]
+            currentbest = min(maxvalue, result["result"])
         trace.append(currentbest)
         if test and np.isfinite(result["test_result"]):
-            test_results.append([len(trace) - 1, result["test_result"]])
+            test_results.append([len(trace) - 1, min(maxvalue, result["test_result"])])
     if test:
         return trace, test_results
     else:
@@ -300,8 +313,8 @@ def extract_runtime_timestamps(trials, cut=sys.maxint, conf_overhead=False):
     time_list.append(0)
     for idx, trial in enumerate(trials["trials"][:cut+1]):
         if trial["status"] != 3:
-            # Ignore this trial, it is not yet finished
-            continue
+            # Although this trial is crashed, we nevertheless add it
+            pass
 
         if conf_overhead:
             if len(trials["starttime"]) > 1:
@@ -358,7 +371,7 @@ def get_best_value_and_index(trials, cut=sys.maxint):
     return best_value, best_index
 
 
-def get_Trace_cv(trials):
+def get_Trace_cv(trials, maxvalue=sys.maxint):
     trace = list()
     trials_list = trials['trials']
     instance_order = trials['instance_order']
@@ -374,6 +387,8 @@ def get_Trace_cv(trials):
         trace.append(np.min(instance_mean, axis=0)[0])
     if np.isnan(trace[-1]):
         del trace[-1]
+
+    trace = [min(maxvalue, entry) for entry in trace]
     return trace
 
 

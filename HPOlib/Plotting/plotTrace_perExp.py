@@ -108,13 +108,14 @@ def plot_optimization_trace_cv(trial_list, name_list, optimum=0, title="",
         show()
 
 
-def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
+def main(pkl_list, name_list, autofill, optimum=0, maxvalue=sys.maxint,
+         save="", title="", log=False,
          y_min=0, y_max=0, linewidth=1, linestyles=plot_util.get_single_linestyle(),
          colors=None, markers=plot_util.get_empty_iterator(),
          markersize=6, ylabel=None, xlabel=None):
 
     if colors is None:
-        colors= plot_util.get_plot_colors()
+        colors = plot_util.get_plot_colors()
 
     trial_list = list()
     for i in range(len(pkl_list)):
@@ -125,7 +126,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
             trials = cPickle.load(fh)
             fh.close()
 
-            trace = plot_util.get_Trace_cv(trials)
+            trace = plot_util.get_Trace_cv(trials, maxvalue=maxvalue)
             tmp_trial_list.append(trace)
             max_len = max(max_len, len(trace))
         trial_list.append(list())
@@ -135,10 +136,10 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
             trial_list[-1].append(np.array(tr))
 
     plot_optimization_trace_cv(trial_list, name_list, optimum, title=title, log=log,
-                            save=save, y_min=y_min, y_max=y_max,
-                            linewidth=linewidth, linestyles=linestyles,
-                            colors=colors, markers=markers,
-                            markersize=markersize, ylabel=ylabel, xlabel=xlabel)
+                               save=save, y_min=y_min, y_max=y_max,
+                               linewidth=linewidth, linestyles=linestyles,
+                               colors=colors, markers=markers,
+                               markersize=markersize, ylabel=ylabel, xlabel=xlabel)
 
     if save != "":
         sys.stdout.write("Saved plot to " + save + "\n")
@@ -146,7 +147,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
         sys.stdout.write("..Done\n")
 
 if __name__ == "__main__":
-    prog = "python plotTraceWithStd.py WhatIsThis <oneOrMorePickles> [WhatIsThis <oneOrMorePickles>]"
+    prog = "python plotTrace_perExp.py WhatIsThis <oneOrMorePickles> [WhatIsThis <oneOrMorePickles>]"
     description = "Plot a Trace with std for multiple experiments"
 
     parser = ArgumentParser(description=description, prog=prog)
@@ -166,6 +167,8 @@ if __name__ == "__main__":
                         default=0, help="Maximum of the plot")
     parser.add_argument("--min", dest="min", type=float,
                         default=0, help="Minimum of the plot")
+    parser.add_argument("--maxvalue", dest="maxvalue", default=10000,
+                        type=float, help="replace all y values higher than this")
     parser.add_argument("-s", "--save", dest="save",
                         default="", help="Where to save plot instead of showing it?")
     parser.add_argument("-t", "--title", dest="title",
@@ -177,5 +180,7 @@ if __name__ == "__main__":
 
     pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
 
-    main(pkl_list=pkl_list_main, name_list=name_list_main, autofill=args.autofill, optimum=args.optimum,
-         save=args.save, title=args.title, log=args.log, y_min=args.min, y_max=args.max)
+    main(pkl_list=pkl_list_main, name_list=name_list_main,
+         autofill=args.autofill, optimum=args.optimum, maxvalue=args.maxvalue,
+         save=args.save, title=args.title, log=args.log, y_min=args.min,
+         y_max=args.max)

@@ -34,9 +34,11 @@ __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 
-def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
-         y_min=None, y_max=None, scale_std=1, aggregation="mean",
-         cut=sys.maxint, xlabel="#Function evaluations", ylabel="Loss",
+def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
+         log=False, maxvalue=sys.maxint,
+         y_min=None, y_max=None, scale_std=1,
+         aggregation="mean", cut=sys.maxint,
+         xlabel="#Function evaluations", ylabel="Loss",
          properties=None, print_lenght_trial_list=False,
          plot_test_performance=False):
 
@@ -59,6 +61,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
 
             if plot_test_performance:
                 trace, test = plot_util.extract_trajectory(trials, cut=cut,
+                                                           maxvalue=maxvalue,
                                                            test=True)
                 # TODO: We can only plot one test result
                 if len(test) > 1:
@@ -73,6 +76,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
                     test_list[-1][1].append(test[1])
             else:
                 trace = plot_util.extract_trajectory(trials, cut=cut,
+                                                     maxvalue=maxvalue,
                                                      test=False)
             trial_list[-1].append(np.array(trace))
 
@@ -109,7 +113,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
     return
 
 if __name__ == "__main__":
-    prog = "python plotTraceWithStd.py WhatIsThis <oneOrMorePickles> " \
+    prog = "python plotTrace_perEval.py WhatIsThis <oneOrMorePickles> " \
            "[WhatIsThis <oneOrMorePickles>]"
     description = "Plot a Trace with std for multiple experiments"
 
@@ -150,6 +154,8 @@ if __name__ == "__main__":
     parser.add_argument("--aggregation", dest="aggregation", default="mean",
                         choices=("mean", "median"),
                         help="Print Median/Quantile or Mean/Std")
+    parser.add_argument("--maxvalue", dest="maxvalue", default=10000,
+                        type=float, help="replace all y values higher than this")
     parser.add_argument("--test", dest="test", default=False, action="store_true",
                         help="Print test performances?")
 
@@ -174,7 +180,7 @@ if __name__ == "__main__":
 
     main(pkl_list=pkl_list_main, name_list=name_list_main,
          autofill=args.autofill, optimum=args.optimum, save=args.save,
-         title=args.title, log=args.log,
+         title=args.title, log=args.log, maxvalue=args.maxvalue,
          y_min=args.min, y_max=args.max, scale_std=args.scale,
          aggregation=args.aggregation,
          xlabel=args.xlabel, ylabel=args.ylabel, properties=prop,

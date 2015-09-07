@@ -50,7 +50,7 @@ def _plot_trace(pkl_list, name_list, save="", cut=sys.maxint, log=False):
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def _trace_with_std_per_eval(pkl_list, name_list, save="",
+def _trace_with_std_per_eval(pkl_list, name_list, maxvalue, save="",
                              cut=sys.maxint, log=False, aggregation="mean"):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
@@ -61,7 +61,8 @@ def _trace_with_std_per_eval(pkl_list, name_list, save="",
         import plotTrace_perEval
         plotTrace_perEval.main(pkl_list, name_list, autofill=True,
                                aggregation=aggregation, optimum=0,
-                               save=save, log=log, print_lenght_trial_list=True)
+                               maxvalue=maxvalue, save=save, log=log,
+                               print_lenght_trial_list=True)
         os.chdir(cur_dir)
         sys.stdout.write("passed\n")
     except Exception, e:
@@ -69,7 +70,7 @@ def _trace_with_std_per_eval(pkl_list, name_list, save="",
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def _trace_with_std_per_time(pkl_list, name_list, save="",
+def _trace_with_std_per_time(pkl_list, name_list, maxvalue, save="",
                              cut=sys.maxint, log=False, aggregation="mean"):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
@@ -80,7 +81,7 @@ def _trace_with_std_per_time(pkl_list, name_list, save="",
         import plotTrace_perTime
         plotTrace_perTime.main(pkl_list, name_list, autofill=True,
                                aggregation=aggregation, optimum=0,
-                               save=save, log=log)
+                               maxvalue=maxvalue, save=save, log=log)
         os.chdir(cur_dir)
         sys.stdout.write("passed\n")
     except Exception, e:
@@ -178,6 +179,8 @@ def main():
                         default="", help="Where to save plots? (directory)")
     parser.add_argument("-f", "--file", dest="file",
                         default="png", help="File ending")
+    parser.add_argument("--maxvalue", dest="maxvalue", type=float, required=True,
+                        help="Replace all y values higher than this")
     parser.add_argument("-c", "--cut", dest="cut", default=sys.maxint,
                         type=int, help="Cut experiment pickles after a specified number of trials.")
 
@@ -234,7 +237,7 @@ def main():
             tmp_save = save_dir
         sys.stdout.write("generateTexTable.py ... %s ..." % tmp_save)
         ret = _generate_tex_table(pkl_list=pkl_list, name_list=name_list,
-                            save=tmp_save, log=log, cut=args.cut)
+                                  save=tmp_save, log=log, cut=args.cut)
         if ret is not None:
             print ret
 
@@ -265,7 +268,8 @@ def main():
         tmp_save = save_dir
     sys.stdout.write("MeanTrace_perEval.py ... %s ..." % tmp_save)
     _trace_with_std_per_eval(pkl_list=pkl_list, name_list=name_list,
-                             save=tmp_save, log=log, cut=args.cut)
+                             save=tmp_save, log=log, cut=args.cut,
+                             maxvalue=args.maxvalue)
 
     if save_dir is not "":
         tmp_save = os.path.join(save_dir, "MeanTrace_perTime_%s.%s" % (time_str, args.file))
@@ -273,7 +277,8 @@ def main():
         tmp_save = save_dir
     sys.stdout.write("MeanTrace_perTime.py ... %s ..." % tmp_save)
     _trace_with_std_per_time(pkl_list=pkl_list, name_list=name_list,
-                             save=tmp_save, log=log, cut=args.cut)
+                             save=tmp_save, log=log, cut=args.cut,
+                             maxvalue=args.maxvalue)
 
 if __name__ == "__main__":
     main()
