@@ -254,7 +254,7 @@ def extract_trajectory(experiment, cut=sys.maxint, maxvalue=sys.maxint,
 
     currentbest = experiment['trials'][0]["result"]
     if not np.isfinite(currentbest):
-        currentbest = sys.maxint
+        currentbest = maxvalue
 
     for result in [trial for trial in experiment['trials'][:cut]]:
         if result["status"] != 3 or not np.isfinite(result["result"]):
@@ -361,7 +361,10 @@ def get_best_value_and_index(trials, cut=sys.maxint):
     if cut <= 0:
         raise ValueError("Argument cut cannot be zero or negative.")
 
-    traj = extract_trajectory(trials)
+    traj = extract_trajectory(experiment=trials, cut=cut, maxvalue=sys.maxint)
+    if traj[0] == sys.maxint:
+        traj = traj[1:]
+
     if cut < len(traj):
         best_value = traj[cut-1]
         best_index = np.argmin(traj[:cut])
