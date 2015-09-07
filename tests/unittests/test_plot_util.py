@@ -17,21 +17,24 @@ branin_expected = [24.129964413622268, 59.972610578348807, 16.787197168652479,
 class PlotUtilTest(unittest.TestCase):
     def assertListAlmostEqual(self, expected, actual):
         for element1, element2 in itertools.izip(expected, actual):
+            print element1, element2
             self.assertAlmostEqual(element1, element2)
 
     def test_extract_trajectory(self):
-        res = plot_util.extract_trajectory(branin_experiment)
-        expected_trajectory = ([24.129964413622268] * 2) \
+        res = plot_util.extract_trajectory(experiment=branin_experiment,
+                                           maxvalue=1000)
+        expected_trajectory = ([1000.0] * 1) \
+                              + ([24.129964413622268] * 2) \
                               + ([16.787197168652479] * 5) \
                               + ([12.779763397329571] * 3) \
                               + ([2.6962005134978178] * 6) \
                               + ([0.72639128754424731] * 4)
+        self.assertListAlmostEqual(expected=expected_trajectory, actual=res)
+
+        res = plot_util.extract_trajectory(branin_experiment, cut=22, maxvalue=1000)
         self.assertListAlmostEqual(expected_trajectory, res)
 
-        res = plot_util.extract_trajectory(branin_experiment, cut=22)
-        self.assertListAlmostEqual(expected_trajectory, res)
-
-        res = plot_util.extract_trajectory(branin_experiment, cut=10)
+        res = plot_util.extract_trajectory(branin_experiment, cut=10, maxvalue=1000)
         self.assertListAlmostEqual(expected_trajectory[:10], res)
         self.assertAlmostEqual(12.779763397329571, res[-1])
 
@@ -88,8 +91,7 @@ class PlotUtilTest(unittest.TestCase):
         self.assertEqual(10, index)
 
         self.assertRaises(ValueError, plot_util.get_best_value_and_index,
-                         branin_experiment, 0.5)
+                          branin_experiment, 0.5)
 
         self.assertRaises(ValueError, plot_util.get_best_value_and_index,
                           branin_experiment, 0)
-
