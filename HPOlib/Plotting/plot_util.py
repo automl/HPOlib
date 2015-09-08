@@ -18,6 +18,7 @@
 
 import cPickle
 import itertools
+import logging
 import os
 import numpy as np
 import sys
@@ -27,6 +28,11 @@ import HPOlib.wrapping_util
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
+logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
+                           'message)s', datefmt='%H:%M:%S')
+hpolib_logger = logging.getLogger("HPOlib")
+hpolib_logger.setLevel(logging.INFO)
+logger = logging.getLogger("HPOlib.plot_util")
 
 # A super-simple cache for unpickled objects...
 cache = dict()
@@ -312,16 +318,34 @@ def extract_runtime_timestamps(trials, cut=sys.maxint, conf_overhead=False):
     time_list = list()
     time_list.append(0)
     for idx, trial in enumerate(trials["trials"][:cut+1]):
-        if trial["status"] != 3:
-            # Although this trial is crashed, we nevertheless add it
-            pass
-
         if conf_overhead:
             if len(trials["starttime"]) > 1:
                 raise ValueError("Cannot extract runtimes for restarted "
                                  "experiments, please implement me")
 
-            time_list.append(trials["cv_starttime"][idx] - trials["starttime"][0] + trial["duration"])
+            if trial["status"] != 3:
+                # Although this trial is crashed, we add some minor timestep
+                logger.critical("%d: trial is crashed, status %d" % (idx, trial["status"]))
+                t = time_list[-1] + np.sum(trial["instance_durations"])
+                if np.isnan(t):
+                    logger.critical("Trying to use instance durations failed")
+                    if len(trials["trials"]) == len(trials["cv_endtime"]):
+                        t = time_list[-1] + trials["cv_endtime"][idx] - trials["cv_starttime"][idx]
+                        logging.critical("Use 'cv_starttime' and 'cv_endtime': %d" % t)
+                    elif idx == len(trials["trials"][:cut+1]):
+                        t = trials["total_wallclock_time"]
+                        logging.critical("Assuming last trial, use 'max_wallclock_time' ")
+
+            else:
+                t = trials["cv_starttime"][idx] - trials["starttime"][0] + trial["duration"]
+
+            if np.isnan(t):
+                logger.critical("%d: Cannot extract sample as trial is broken. "
+                                "Assuming it is the last one and returning "
+                                "'total_wallclock_time'" % idx)
+                logger.critical("%d: Obtain duration failed, use %f" % (idx, 0.1))
+                t = time_list[-1] + 0.1
+            time_list.append(t)
         else:
             time_list.append(np.sum(trial["instance_durations"]) + time_list[-1])
     return time_list
