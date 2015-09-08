@@ -33,8 +33,9 @@ __contact__ = "automl.org"
 
 
 def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
-         maxvalue=sys.maxint, log=False,
-         y_min=None, y_max=None, scale_std=1, properties=None,
+         maxvalue=sys.maxint, logy=False, logx=False,
+         y_min=None, y_max=None, x_min=None, x_max=None,
+         scale_std=1, properties=None,
          aggregation="mean", print_lenght_trial_list=True,
          ylabel="Minfunction value", xlabel="Duration [sec]"):
 
@@ -49,7 +50,11 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
             trials = cPickle.load(fh)
             fh.close()
             trace = plot_util.extract_trajectory(trials, maxvalue=maxvalue)
-            times = plot_util.extract_runtime_timestamps(trials)
+            times = plot_util.extract_runtime_timestamps(trials=trials)
+            if np.isnan(times[-1]):
+                print "Last time is nan, removing trial"
+                times = times[:-1]
+                trace = trace[:-1]
             tmp_times_list.append(times)
             tmp_trial_list.append(trace)
         # We feed this function with two lists of lists and get
@@ -77,10 +82,11 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
                                       name_list=name_list,
                                       x_ticks=times_list,
                                       optimum=optimum,
-                                      logy=log,
+                                      logy=logy, logx=logx,
                                       aggregation=aggregation,
                                       scale_std=scale_std,
                                       y_max=y_max, y_min=y_min,
+                                      x_max=x_max, x_min=x_min,
                                       properties=properties,
                                       print_lenght_trial_list=
                                       print_lenght_trial_list,
@@ -107,12 +113,18 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--scale", type=float, dest="scale",
                         default=1, help="Multiply std to get a nicer plot")
     # General Options
-    parser.add_argument("-l", "--log", action="store_true", dest="log",
-                        default=False, help="Plot on log scale")
-    parser.add_argument("--max", dest="max", type=float,
-                        default=None, help="Maximum of the plot")
-    parser.add_argument("--min", dest="min", type=float,
-                        default=None, help="Minimum of the plot")
+    parser.add_argument("--logy", action="store_true", dest="logy",
+                        default=False, help="Plot y on log scale")
+    parser.add_argument("--logx", action="store_true", dest="logx",
+                        default=False, help="Plot x on log scale")
+    parser.add_argument("--ymax", dest="ymax", type=float,
+                        default=None, help="Y-Maximum of the plot")
+    parser.add_argument("--ymin", dest="ymin", type=float,
+                        default=None, help="Y-Minimum of the plot")
+    parser.add_argument("--xmax", dest="xmax", type=float,
+                        default=None, help="X-Maximum of the plot")
+    parser.add_argument("--xmin", dest="xmin", type=float,
+                        default=None, help="X-Minimum of the plot")
     parser.add_argument("-s", "--save", dest="save",
                         default="",
                         help="Where to save plot instead of showing it?")
@@ -151,9 +163,12 @@ if __name__ == "__main__":
         prop[key] = args_dict[key]
 
     main(pkl_list_main, name_list_main, autofill=args.autofill,
-         optimum=args.optimum, save=args.save, title=args.title, log=args.log,
+         optimum=args.optimum, save=args.save, title=args.title,
+         logy=args.logy, logx=args.logx,
          maxvalue=args.maxvalue,
-         y_min=args.min, y_max=args.max, scale_std=args.scale,
+         y_min=args.ymin, y_max=args.ymax,
+         x_min=args.xmin, x_max=args.xmax,
+         scale_std=args.scale,
          aggregation=args.aggregation,
          xlabel=args.xlabel, ylabel=args.ylabel, properties=prop,
          print_lenght_trial_list=args.printlength)

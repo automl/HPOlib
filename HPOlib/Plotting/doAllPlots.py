@@ -81,7 +81,7 @@ def _trace_with_std_per_time(pkl_list, name_list, maxvalue, save="",
         import plotTrace_perTime
         plotTrace_perTime.main(pkl_list, name_list, autofill=True,
                                aggregation=aggregation, optimum=0,
-                               maxvalue=maxvalue, save=save, log=log)
+                               maxvalue=maxvalue, save=save, logy=log)
         os.chdir(cur_dir)
         sys.stdout.write("passed\n")
     except Exception, e:
