@@ -108,7 +108,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
                                       properties=properties,
                                       scale_std=scale_std,
                                       test_trials=test_list,
-                                      print_lenght_trial_list=
+                                      print_length_trial_list=
                                       print_lenght_trial_list)
     return
 
