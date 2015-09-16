@@ -88,7 +88,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
                                       y_max=y_max, y_min=y_min,
                                       x_max=x_max, x_min=x_min,
                                       properties=properties,
-                                      print_lenght_trial_list=
+                                      print_length_trial_list=
                                       print_lenght_trial_list,
                                       title=title, save=save,
                                       ylabel=ylabel, xlabel=xlabel)
