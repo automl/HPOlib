@@ -110,6 +110,9 @@ def collect_results(directory):
 
                     try:
                         best_performance = plot_util.get_best(pkl)
+                        if best_performance == sys.maxint:
+                            # There is not at least one evaluated config
+                            best_performance = np.nan
                     except Exception as e:
                         errors.append(str(e) + ' ' + exp_pkl)
                         continue
@@ -117,7 +120,7 @@ def collect_results(directory):
                     instance_durations = get_instance_durations(pkl)
                     mean_instance_durations = np.mean(instance_durations)
 
-                    total_runtime = get_total_time(pkl)
+                    #total_runtime = get_total_time(pkl)
                     results[optimizer].append([optimizer, int(seed),
                         configurations, instance_runs, complete, incomplete,
                         crashs, running, candidates, nans, best_performance,
