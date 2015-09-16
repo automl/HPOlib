@@ -105,7 +105,7 @@ def main(pkl_list, name_list, autofill, title="", log=False, save="",
                                       scale_std=scale_std, logy=log,
                                       properties=properties,
                                       y_max=y_max, y_min=y_min,
-                                      print_lenght_trial_list=
+                                      print_length_trial_list=
                                       print_lenght_trial_list,
                                       ylabel=ylabel, xlabel=xlabel,
                                       title=title, save=save)
