@@ -39,10 +39,10 @@ logger = logging.getLogger("HPOlib.plot_trajectory")
 
 def plot_trajectories(trial_list, name_list, x_ticks,
                       test_trials=None, optimum=0,
-                      aggregation="mean", scale_std=1,
+                      aggregation="mean", scale_std=1, legend_loc='best',
                       logy=False, logx=False, properties=None,
                       y_max=None, y_min=None, x_max=None, x_min=0,
-                      print_lenght_trial_list=True,
+                      print_length_trial_list=True, baseline=None,
                       ylabel="Loss", xlabel=None, title="", save=""):
     """Plot trajectory
     Plots a given
@@ -55,9 +55,11 @@ def plot_trajectories(trial_list, name_list, x_ticks,
     log: bool, optional
     aggregation: {'mean', 'median'}, optional
     scale_std: bool, optional (ignored if !std)
+    legend_loc: Location for legend in plot
     y_max, y_min: float, optional
     properties: dictionary, optional (for keys see plot_util)
     print_lenght_trial_list: bool, optional
+    baseline: if not None, plot line parallel to x-axis with this value
     maxvalue: float, replace all performances higher than this
     save: str, optional
     title, ylabel, xlabel: str, optional
@@ -131,7 +133,7 @@ def plot_trajectories(trial_list, name_list, x_ticks,
         linestyle = properties["linestyles"].next()
         label = name_list[i][0]
 
-        if print_lenght_trial_list:
+        if print_length_trial_list:
             label += "(" + str(len(trial_list[i])) + ")"
 
         ax1.fill_between(x, lower, upper, facecolor=color, alpha=0.3,
@@ -169,7 +171,7 @@ def plot_trajectories(trial_list, name_list, x_ticks,
     ax1.set_xlabel(xlabel, fontsize=properties["labelfontsize"])
 
     # Set legend
-    leg = ax1.legend(loc='best', fancybox=True)
+    leg = ax1.legend(loc=legend_loc, fancybox=True)
     leg.get_frame().set_alpha(0.5)
 
     if y_max is None and y_min is None:
@@ -194,6 +196,13 @@ def plot_trajectories(trial_list, name_list, x_ticks,
     if x_min is not None:
         ax1.set_xlim([x_min, ax1.get_xlim()[1]])
 
+    if baseline is not None:
+        for base in baseline:
+            ax1.plot(ax1.get_xlim(), [base[0], base[0]], c="k", linestyle="--",
+                     linewidth=properties["linewidth"], zorder=1)
+            ax1.text(ax1.get_xlim()[0] * 1.01,
+                     base[0] + 0.02 * (ax1.get_ylim()[1] - ax1.get_ylim()[0]),
+                     base[1])
 
     matplotlib.pyplot.tight_layout()
     matplotlib.pyplot.subplots_adjust(top=0.85)
