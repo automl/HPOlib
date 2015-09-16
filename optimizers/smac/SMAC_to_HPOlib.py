@@ -39,6 +39,7 @@ def command_line_function(params, fold, cli_target):
     lines = stdout.split("\n")
 
     result = np.Inf
+    runtime = np.Inf
     for line in lines:
         pos = line.find("Result:")
         if pos != -1:
