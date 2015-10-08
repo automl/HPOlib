@@ -155,8 +155,8 @@ class AdditionalInstall(install):
     def run(self):
         # RUNSOLVER STUFF
         here_we_are = os.getcwd()
-        runsolver_tar_name = "runsolver-3.3.5.tar.bz2"
-        runsolver_name = "runsolver-3.3.5"
+        runsolver_tar_name = "runsolver-3.3.4.tar.bz2"
+        runsolver_name = "runsolver-3.3.4"
         if sys.version_info < (2, 7, 0) or sys.version_info >= (2, 8, 0):
             sys.stderr.write("HPOlib requires Python 2.7.0\n")
             sys.exit(-1)
@@ -175,7 +175,7 @@ class AdditionalInstall(install):
                               runsolver_tar_name, os.getcwd(), runsolver_tar_name))
             downloaded = download_source(download_url='http://www.cril.univ-artois.fr/~roussel/runsolver/%s' %
                                                       runsolver_tar_name,
-                                         md5="3fa9649879bc5df0744932bbfb1c0154",
+                                         md5="5a9511266489c87f4a276b9e54ea4082",
                                          save_as=os.path.join(here_we_are, runsolver_tar_name))
 
         if runsolver_needs_to_be_installed and downloaded:
@@ -191,7 +191,7 @@ class AdditionalInstall(install):
             except subprocess.CalledProcessError, e:
                 sys.stdout.write("Replacing did not work: %s\n" % e)
             md5_new = hashlib.md5(open("runsolver/src/Makefile").read()).hexdigest()
-            runsolver_md5 = "862af64ce554e3c4c8a501dbf40b02ca"
+            runsolver_md5 = "4870722e47a6f74d5167376d371f1730"
             if md5_new != runsolver_md5:
                 raise Exception("md5 checksum of runsolver Makefile has "
                                 "changed: %s to %s, not compiling runsolver\n"
