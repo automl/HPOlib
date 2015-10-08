@@ -2,7 +2,4 @@ doc-warnings: no
 test-warnings: no
 strictness: medium
 max-line-length: 80
-uses:
 autodetect: yes
-ignore-paths:
-ignore-patterns:
