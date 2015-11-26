@@ -1,0 +1,141 @@
+###################################################### -*- mode: r -*- #####
+## Configuration for Iterated Race (iRace).
+############################################################################
+# path = HPOlib/optimizers/irace/
+## To use the default value of a parameter of iRace, simply do not set
+## the parameter (comment it out in this file, and do not give any
+## value on the command line).
+
+## File that contains the description of the parameters.
+# parameterFile <- "./parameters"
+# parameterFile <- "../irace_1_06-dev/params.pcs"
+
+## Directory where the programs will be run.
+execDir <- "./"
+
+## File to save tuning results as an R dataset, either absolute path
+## or relative to execDir.
+logFile <- "./irace.Rdata"
+
+## Folder where tuning instances are located, either absolute or
+## relative to working directory.
+#instanceDir <- "./Instances"
+
+## File with a list of instances and (optionally) parameters.
+## If empty or NULL, does not use a file.
+instanceFile <- NULL
+
+## A file containing a list of initial candidates.
+## If empty or NULL, do not use a file.
+# candidatesFile <- ""
+
+## The script called for each candidate that launches the program to be tuned.
+## See templates/hook-run.tmpl
+hookRun <- "./hook-run"
+
+## Optional R function to provide custom parallelization of hook.run.
+## The signature of this function should be 'function(candidates,
+## hook.run, instance, extra.params, config)' where 'candidates' is a
+## list of candidates, hook.run is an R function and the rest are
+## parameters to hook.run (see hook.run.default)
+# hookRunParallel <- NULL
+
+## Optional script that provides a numeric value for each candidate.
+## See templates/hook-evaluate.tmpl
+# hookEvaluate <- ""
+
+## The maximum number of runs (invocations of hookRun) that will performed. It
+## determines the (maximum) budget of experiments for the tuning, unless
+## timeBudget is positive.
+# maxExperiments <- 500
+
+## The maximum computation time that should be used for tuning in
+## seconds. This only works when tuning for time. 0 means no time
+## limit (use maxExperiments).
+# timeBudget <- 0
+
+## An estimation of the average time in seconds required for one
+## experiment. Only required if timeBudget is positive.
+# timeEstimate <- 0
+
+## Indicates the number of decimal places to be considered for the
+## real parameters.
+# digits <- 3
+
+## A value of 0 silences all debug messages. Higher values provide
+## more verbose debug messages.
+debugLevel <- 1
+
+## Number of iterations of Race. Do not use something else than the
+## default (that is, the dynamic value) unless you know exactly what
+## you are doing.
+# nbIterations <- 0
+
+## Number of experiments per iteration. Do no use something else than
+## the default (that is, the dynamic value) unless you know exactly
+## what you are doing.
+# nbExperimentsPerIteration <- 0
+
+## Sample the instances or take them always in the same order.
+# sampleInstances <- 1
+
+## Specifies the statistical test type: F-test or t-test.
+# testType <- "F-test"
+
+## Specifies how many instances are seen before the first elimination
+## test. It must be a multiple of eachTest.
+# firstTest <- 5
+
+## Specifies how many instances are seen between elimination tests.
+# eachTest <- 1
+
+## The minimum number of candidates that should survive to continue one
+## iteration. Do not use something else than the default (that is, the
+## dynamic value) unless you know exactly what you are doing.
+# minNbSurvival <- 0
+
+## The number of candidates that should be sampled and evaluated at
+## each iteration. Do no use something else than
+## the default (that is, the dynamic value) unless you know exactly
+## what you are doing.
+# nbCandidates  <- 0
+
+## This value is used to determine the number of candidates
+## to be sampled and evaluated at each iteration. Use
+## the default unless you know exactly what you are doing.
+# mu <- 5
+
+## Seed of the random number generator (must be a positive integer, NA
+## means use a random seed).
+# seed <- NA
+
+## Number of calls to hookRun to execute in parallel. Less than 2
+# means calls to hookRun are sequentially executed.
+# parallel <- 0
+
+## Enable/disable SGE cluster mode. Use qstat to wait for
+## cluster jobs to finish (hookRun must invoke qsub).
+# sgeCluster <- 0
+
+## Enable/disable MPI. Use MPI to execute hookRun in parallel
+## (parameter parallel is the number of slaves).
+# mpi <- 0
+
+## Enable/disable a soft restart strategy to avoid premature convergence 
+## of the probabilistic model.
+# softRestart <- 1
+
+## Confidence level for the elimination test.
+# confidence <- 0.95
+
+## Previously saved log file to recover the execution of irace, either
+## absolute path or relative to the current directory. If empty or
+## NULL, recovery is not performed.
+# recoveryFile <- ""
+
+## File containing a list of logical expressions that cannot be true
+## for any evaluated candidate. If empty or NULL, do not use a file.
+# forbiddenFile <- ""
+
+## END of configuration file
+############################################################################
