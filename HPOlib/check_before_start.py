@@ -75,7 +75,8 @@ def check_optimizer(optimizer):
         # User told us, e.g. "tpe"
         # Optimizer is in our optimizer directory
         # Now check how many versions are present
-        parser = glob.glob(os.path.join(path, '*_parser.py'))
+        parser = glob.glob(path + '*_parser.py')
+        logger.info("parser %s", parser)
         if len(parser) > 1:
             logger.critical("Sorry I don't know which optimizer to use: %s",
                             parser)

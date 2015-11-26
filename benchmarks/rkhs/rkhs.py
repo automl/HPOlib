@@ -23,20 +23,18 @@ __function__ = ["RKHS"]
 
 import time
 
-import numpy as np
-from scipy.spatial.distance import cdist
-
 import HPOlib.benchmarks.benchmark_util as benchmark_util
 
 
 def covSEard(hyp, x, z):
-    
-    """
-    ARD covariance:
-        x is of dimension n X D
-        y is of dimension m X D
-    """
-    hyp = np.exp(hyp)
+	import numpy as np
+	from scipy.spatial.distance import cdist
+	"""
+	ARD covariance:
+		x is of dimension n X D
+		y is of dimension m X D
+	"""
+	hyp = np.exp(hyp)
 
     D = x.shape[1]
     X = (1 / hyp[:D]) * x
@@ -92,6 +90,6 @@ if __name__ == "__main__":
     args, params = benchmark_util.parse_cli()
     result = main(params, **args)
     duration = time.time() - starttime
-    print 
+
     print "Result for ParamILS: %s, %f, 1, %f, %d, %s" % \
         ("SAT", abs(duration), result, -1, str(__file__))
