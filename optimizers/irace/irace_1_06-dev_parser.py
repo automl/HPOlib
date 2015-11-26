@@ -4,8 +4,6 @@ import logging
 import os
 import sys
 
-import ConfigParser
-
 logger = logging.getLogger("HPOlib.optimizers.irace_1_06-dev_parser.py")
 
 
