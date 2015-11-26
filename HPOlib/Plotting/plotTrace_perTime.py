@@ -36,7 +36,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
          maxvalue=sys.maxint, logy=False, logx=False,
          y_min=None, y_max=None, x_min=None, x_max=None,
          scale_std=1, properties=None,
-         aggregation="mean", print_lenght_trial_list=True,
+         aggregation="mean", print_length_trial_list=True,
          ylabel="Minfunction value", xlabel="Duration [sec]"):
 
     trial_list = list()
@@ -89,7 +89,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="",
                                       x_max=x_max, x_min=x_min,
                                       properties=properties,
                                       print_length_trial_list=
-                                      print_lenght_trial_list,
+                                      print_length_trial_list,
                                       title=title, save=save,
                                       ylabel=ylabel, xlabel=xlabel)
     return
@@ -171,4 +171,4 @@ if __name__ == "__main__":
          scale_std=args.scale,
          aggregation=args.aggregation,
          xlabel=args.xlabel, ylabel=args.ylabel, properties=prop,
-         print_lenght_trial_list=args.printlength)
+         print_length_trial_list=args.printlength)

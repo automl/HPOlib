@@ -208,8 +208,9 @@ def plot_trajectories(trial_list, name_list, x_ticks,
     matplotlib.pyplot.subplots_adjust(top=0.85)
     if save != "":
         logger.info("Save plot to %s" % save)
-        matplotlib.pyplot.savefig(save, dpi=properties["dpi"], facecolor='w',
-                                  edgecolor='w', orientation='portrait',
+        matplotlib.pyplot.savefig(save, dpi=int(properties["dpi"]),
+                                  facecolor='w', edgecolor='w',
+                                  orientation='portrait',
                                   papertype=None, format=None,
                                   transparent=False, bbox_inches="tight",
                                   pad_inches=0.1)

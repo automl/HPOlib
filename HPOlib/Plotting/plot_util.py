@@ -48,7 +48,7 @@ def get_plot_markers():
 
 
 def get_plot_linestyles():
-    return itertools.cycle(['-', '--', '-.', '--.', ':', ])
+    return itertools.cycle(['-', '--', '-.', ':', ])
 
 
 def get_single_linestyle():
