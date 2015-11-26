@@ -4,7 +4,6 @@ import re
 import StringIO
 import subprocess
 import sys
-import time
 
 import numpy as np
 
@@ -40,6 +39,7 @@ def command_line_function(params, fold, cli_target):
     lines = stdout.split("\n")
 
     result = np.Inf
+    runtime = np.Inf
     for line in lines:
         pos = line.find("Result:")
         if pos != -1:
@@ -83,7 +83,7 @@ def format_return_string(status, runtime, runlength, quality, seed,
 def main():
     """Implement the SMAC interface and then call HPOlib"""
     logger.info("irace_to_HPOlib")
-    sys.exit()
+
     cfg = load_experiment_config_file()
     log_level = cfg.getint("HPOLIB", "HPOlib_loglevel")
     logging.basicConfig(format='[%(levelname)s] [%(asctime)s:%(name)s] %('
