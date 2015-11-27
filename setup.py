@@ -202,7 +202,7 @@ class AdditionalInstall(install):
         # COPY/DOWNLOAD OPTIMIZER TO ROOT FOLDER
         optimizer_dir = os.path.join(here_we_are, "optimizers")
 
-        tpe, smac, spearmint, smac_2_08, smac_2_10 = (False, False, False, False, False)
+        tpe, smac, spearmint, smac_2_08, smac_2_10, irace_1_07 = (False, False, False, False, False, False)
         tpe = self._copy_and_download_optimizer(optimizer_dir=optimizer_dir,
                                                 optimizer_name='tpe',
                                                 optimizer_tar_name="hyperopt_august2013_mod_src.tar.gz",
@@ -233,21 +233,37 @@ class AdditionalInstall(install):
                                                           optimizer_tar_name="smac_2_10_00-dev_src.tar.gz",
                                                           url="http://www.automl.org/smac_2_10_00-dev_src.tar.gz",
                                                           md5='510a9ad71e0713bd5ac906f021d8d3be')
+        irace_1_07 = download_source(download_url="http://www.automl.org/irace_1.07.tar.gz",
+                                     md5="ef05296cbcf0219068cb6878eb466606",
+                                     save_as=os.path.join(optimizer_dir, "irace_1.07.tar.gz"))
+        if irace_1_07:
+            # Install IRACE
+            cur_dir = os.getcwd()
+            os.chdir(os.path.join(optimizer_dir, 'irace'))
+
+            call = "R CMD INSTALL irace_1.07.tar.gz -l `pwd`"
+            try:
+                subprocess.check_call(call, shell=True)
+            except subprocess.CalledProcessError, e:
+                sys.stdout.write("Installing IRACE did not work: %s\n" % e)
+                irace_1_07 = False
+            os.chdir(cur_dir)
 
         # TODO: Normally one wants to call run(self), but this runs distutils and ignores install_requirements for unknown reasons
         # if anyone knows a better way, feel free to change
         install.do_egg_install(self)
 
         # Give detailed output to user
-        if not tpe or not smac or not spearmint or not smac_2_08 or not smac_2_10:
+        if not tpe or not smac or not spearmint or not smac_2_08 or not smac_2_10 or not irace_1_07:
             sys.stderr.write("[ERROR] Something went wrong while copying and downloading optimizers." +
                              "Please do the following to be ready to start optimizing:\n\n" +
                              "cd optimizers\n" +
                              "wget http://www.automl.org/hyperopt_august2013_mod_src.tar.gz \n" +
                              "wget http://www.automl.org/smac_2_06_01-dev_src.tar.gz \n" +
-                             "wget http://www.automl.org/smac_2_08_00-master_src.tar.gz \n" +
-                             "wget http://www.automl.org/smac_2_10_00-dev_src.tar.gz \n", +
+                             "wget http://www.automl.org/smac_2_08_00-master_src.tar.gz \n"
+                             "wget http://www.automl.org/smac_2_10_00-dev_src.tar.gz \n" +
                              "wget http://www.automl.org/spearmint_april2013_mod_src.tar.gz \n" +
+                             "http://www.automl.org/irace_1.07.tar.gz\n"
                              "tar -xf hyperopt_august2013_mod_src.tar.gz \n" +
                              "mv hyperopt_august2013_mod_src tpe/ \n" +
                              "tar -xf smac_2_06_01-dev_src.tar.gz \n" +
@@ -258,6 +274,8 @@ class AdditionalInstall(install):
                              "mv smac_2_10_00-dev_src smac/ \n" +
                              "tar -xf spearmint_april2013_mod_src.tar.gz \n" +
                              "mv spearmint_april2013_mod_src spearmint/ \n\n" +
+                             "cd irace\n" +
+                             "R CMD INSTALL irace_1.07.tar.gz -l `pwd`\n"
                              "Thank You!\n")
         if runsolver_needs_to_be_installed and not built:
             sys.stdout.write("[ERROR] Please install runsolver on your own! You can download it from:\n%s%s\n" % \

@@ -19,8 +19,6 @@
 import logging
 import os
 import subprocess
-import sys
-import time
 import shutil
 
 import HPOlib.wrapping_util as wrapping_util
@@ -57,7 +55,7 @@ def check_dependencies():
 
 
 def build_irace_call(config, options, optimizer_dir):
-    call = "".join([config.get('irace', 'path_to_optimizer'), "/irace"])
+    call = os.path.join(config.get('irace', 'path_to_optimizer'), "bin", "irace")
     # call = "irace"
     call = " ".join([call,
                      '--param-file', config.get("irace", "params"),
@@ -88,9 +86,13 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
     # experiment_dir:   Experiment directory/Benchmark_directory
     # **kwargs:         Nothing so far
 
-    # os.environ["PATH"] = config.get("irace", "path_to_optimizer") + ":" + os.environ["PATH"]
-    # logger.info("path variable:%s", os.environ["PATH"])
-    logger.info("abs path:%s", config.sections())
+    r_lib = os.path.dirname(os.path.abspath(config.get("irace", "path_to_optimizer")))
+    if "R_LIBS" in os.environ:
+        os.environ["R_LIBS"] = r_lib + ":" + os.environ["R_LIBS"]
+    else:
+        os.environ["R_LIBS"] = r_lib
+
+    logger.info("R_LIBS: %s" % str(os.environ["R_LIBS"]))
     time_string = wrapping_util.get_time_string()
     optimizer_str = os.path.splitext(os.path.basename(__file__))[0]
 
