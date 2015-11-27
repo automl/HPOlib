@@ -113,8 +113,8 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
     open(instances_dir, 'a').close()
 
     # copy tune-conf and hook-run to experiment dir
-    shutil.copy("../../optimizers/irace/tune-conf", optimizer_dir)
-    shutil.copy("../../optimizers/irace/hook-run", optimizer_dir)
+    shutil.copy(os.path.join(os.path.dirname(os.path.realpath(__file__)), "tune-conf"), optimizer_dir)
+    shutil.copy(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hook-run"), optimizer_dir)
 
     logger.info("### INFORMATION ################################################################")
     logger.info("# You're running %35s                  #" % config.get('irace', 'path_to_optimizer'))
