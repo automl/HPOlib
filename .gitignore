@@ -5,6 +5,7 @@ docs/build/*
 
 # Optimizers
 *_src*
+optimizers/irace/irace/
 
 # Runsolver
 runsolver/src/*
