@@ -24,14 +24,14 @@ import shutil
 import HPOlib.wrapping_util as wrapping_util
 
 
-logger = logging.getLogger("HPOlib.irace_1_06-dev")
+logger = logging.getLogger("HPOlib.irace_1_07")
 
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 version_info = ["R ==> 3.0.2",
-                "irace ==> 1.06.997"
+                "irace ==> 1.07.1202"
                 ]
 
 
@@ -72,7 +72,7 @@ def build_irace_call(config, options, optimizer_dir):
                      '--num-candidates', config.get("irace", "num-candidates"),
                      '--mu', config.get("irace", "mu"),
                      '--confidence', config.get("irace", "confidence"),
-                     '--seed', config.get("irace", "seed"),
+                     '--seed', str(options.seed),
                      '--soft-restart', config.get("irace", "softRestart"),
                      ])
     logger.info("call:%s", call)

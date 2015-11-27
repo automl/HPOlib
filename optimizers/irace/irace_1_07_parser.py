@@ -4,7 +4,7 @@ import logging
 import os
 import sys
 
-logger = logging.getLogger("HPOlib.optimizers.irace_1_06-dev_parser.py")
+logger = logging.getLogger("HPOlib.optimizers.irace_1_07_parser.py")
 
 
 def manipulate_config(config):

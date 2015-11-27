@@ -10,7 +10,7 @@ import numpy as np
 from HPOlib.wrapping_util import remove_param_metadata, \
     load_experiment_config_file
 
-logger = logging.getLogger("IRACE_to_HPOlib")
+logger = logging.getLogger("HPOlib.optimizers.irace_to_HPOlib")
 
 
 def construct_cli_call(cli_target, fold, params):

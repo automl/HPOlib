@@ -8,7 +8,7 @@
 
 ## File that contains the description of the parameters.
 # parameterFile <- "./parameters"
-# parameterFile <- "../irace_1_06-dev/params.pcs"
+# parameterFile <- "../irace_1_07/params.pcs"
 
 ## Directory where the programs will be run.
 execDir <- "./"
