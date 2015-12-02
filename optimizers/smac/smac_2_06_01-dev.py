@@ -115,7 +115,8 @@ def build_smac_call(config, options, optimizer_dir):
                     '--rf-split-min', config.get('SMAC', 'rf_split_min'),
                     '--validation', config.get('SMAC', 'validation'),
                     '--runtime-limit', config.get('SMAC', 'runtime_limit'),
-                    '--exec-mode', config.get('SMAC', 'exec_mode')])
+                    '--exec-mode', config.get('SMAC', 'exec_mode'),
+                    '--rf-num-trees', config.get('SMAC', 'rf_num_trees')])
 
     if config.getboolean('SMAC', 'save_runs_every_iteration'):
         call = " ".join([call, '--save-runs-every-iteration true'])
