@@ -108,9 +108,9 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
     # Set up experiment directory
     os.mkdir(optimizer_dir)
     os.mkdir(os.path.join(optimizer_dir, "Instances"))
-    instances_dir = os.path.join(optimizer_dir, "Instances", "1")
-
-    open(instances_dir, 'a').close()
+    for i in range(config.getint("HPOLIB", "number_cv_folds")):
+        instances_dir = os.path.join(optimizer_dir, "Instances", str(i))
+        open(instances_dir, 'a').close()
 
     # copy tune-conf and hook-run to experiment dir
     shutil.copy(os.path.join(os.path.dirname(os.path.realpath(__file__)), "tune-conf"), optimizer_dir)

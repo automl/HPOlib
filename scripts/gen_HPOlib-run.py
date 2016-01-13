@@ -59,11 +59,12 @@ def main():
 
     for opt in opts:
         optVersions = []
-        optimizerDir = os.path.join(optimizers_dir, opt)
-        insideOpt = os.walk(optimizerDir).next()[2]
-        for s in filter(lambda x: ".cfg" in x, insideOpt):
-            optVersions.append(s[0:-11])
-        optimizers[opt] = optVersions
+        if opt != "ConfigurationRunner":
+            optimizerDir = os.path.join(optimizers_dir, opt)
+            insideOpt = os.walk(optimizerDir).next()[2]
+            for s in filter(lambda x: ".cfg" in x, insideOpt):
+                optVersions.append(s[0:-11])
+            optimizers[opt] = optVersions
 
     if sum([len(v) for k, v in optimizers.iteritems()]) == 0:
         print "no *.cfg files found in given optimizers directory"
