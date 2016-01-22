@@ -134,7 +134,8 @@ class Hookrun(object):
         test = 0
         cost = None
         while test < self.max_tests:
-            command_list = [self.executable] + self.fixed_params.split() + self.parameters
+            command_list = [self.executable] + self.instance.split() + self.fixed_params.split() + self.parameters
+
             (status, out, err) = self.execute(command_list)
             if status != 0:
                 test += 1
@@ -217,7 +218,7 @@ if __name__ == '__main__':
     #executable = 'python michalewicz.py'
     executable = "python -m HPOlib.optimization_interceptor"
     fixed_params = '--params '
-    instance = ''
+    instance = '--fold ' + re.compile("//").split(sys.argv[1])[-1]
     candidate = ''
     parameters = sys.argv[3:]
     # maximum number of trials before giving up with the configuration
