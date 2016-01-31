@@ -9,6 +9,9 @@ logger = logging.getLogger("HPOlib.optimizers_algorithm")
 class OptimizerAlgorithm(object):
     __metaclass__ = ABCMeta
 
+    def __init__(self, opt_name):
+        self.optimizer_name = opt_name
+
     @abstractmethod
     def check_dependencies(self):
         # Check if all dependencies of optimizer are available
@@ -20,19 +23,19 @@ class OptimizerAlgorithm(object):
         pass
 
     @abstractmethod
-    def build_call(self):
+    def build_call(self, config, options, optimizer_dir):
         # Get parameters from config file and add them to command line
 
         pass
 
     @abstractmethod
-    def manipulate_config(self, config, opt_name):
+    def manipulate_config(self, config):
         # This callback allows to add further defaults to the config or
         # change the values of current config. Implementing this method is not mandatory.
-        if not config.has_option(opt_name, 'params'):
-            raise Exception(opt_name, ":params not specified in .cfg")
+        if not config.has_option(self.optimizer_name, 'params'):
+            raise Exception(self.optimizer_name, ":params not specified in .cfg")
 
-        path_to_optimizer = config.get(opt_name, 'path_to_optimizer')
+        path_to_optimizer = config.get(self.optimizer_name, 'path_to_optimizer')
         if not os.path.isabs(path_to_optimizer):
             path_to_optimizer = os.path.join(os.path.dirname(os.path.realpath(__file__)), path_to_optimizer)
 
@@ -41,7 +44,7 @@ class OptimizerAlgorithm(object):
             logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
             sys.exit(1)
 
-        config.set(opt_name, 'path_to_optimizer', path_to_optimizer)
+        config.set(self.optimizer_name, 'path_to_optimizer', path_to_optimizer)
         # pass
 
     @abstractmethod
@@ -56,13 +59,6 @@ class OptimizerAlgorithm(object):
 
         pass
 
-    @abstractmethod
-    def restore(self, config, optimizer_dir, **kwargs):
-        # Returns the number of restored runs. This is the number of different configs
-        # tested multiplied by the number of crossvalidation folds.
-        # Optimizer might not have this function
-
-        pass
 
 if __name__ == "__main__":
     print("Optimizer algorithm class")

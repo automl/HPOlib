@@ -20,6 +20,7 @@ import logging
 import os
 import subprocess
 import shutil
+import sys
 
 import HPOlib.wrapping_util as wrapping_util
 
@@ -33,11 +34,6 @@ __contact__ = "automl.org"
 version_info = ["R ==> 3.0.2",
                 "irace ==> 1.07.1202"
                 ]
-
-
-def get_algo_exec():
-    return '"python ' + os.path.join(os.path.dirname(__file__),
-                                     'irace_to_HPOlib.py') + '"'
 
 
 def check_dependencies():
@@ -54,7 +50,7 @@ def check_dependencies():
                         "Your $PATH is: " + os.environ['PATH'])
 
 
-def build_irace_call(config, options, optimizer_dir):
+def build_call(config, options, optimizer_dir):
     call = os.path.join(config.get('irace', 'path_to_optimizer'), "bin", "irace")
     # call = "irace"
     call = " ".join([call,
@@ -96,6 +92,10 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
     time_string = wrapping_util.get_time_string()
     optimizer_str = os.path.splitext(os.path.basename(__file__))[0]
 
+    print("os.environ:%s" % os.environ)
+    print("optStr:%s" % optimizer_str)
+
+
     # Find experiment directory
     optimizer_dir = os.path.join(experiment_dir,
                                  experiment_directory_prefix +
@@ -103,7 +103,7 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
                                  str(options.seed) + "_" + time_string)
 
     # Build call
-    cmd = build_irace_call(config, options, optimizer_dir)
+    cmd = build_call(config, options, optimizer_dir)
 
     # Set up experiment directory
     os.mkdir(optimizer_dir)
@@ -122,4 +122,5 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
         logger.info("# %76s #" % v)
     logger.info("# This is an updated version.                                                  #")
     logger.info("################################################################################")
+    sys.exit()
     return cmd, optimizer_dir

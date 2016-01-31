@@ -64,32 +64,32 @@ def check_dependencies():
                         "you continue at you own risk" % (output, version_str))
 
 
-def build_smac_call(config, options, optimizer_dir):
+def build_call(config, options, optimizer_dir):
     call = config.get('SMAC', 'path_to_optimizer') + "/smac"
 
     # Set all general parallel stuff here
     call = " ".join([call, '--numRun', str(options.seed),
-                    '--cli-log-all-calls true',
-                    '--cutoffTime', config.get('SMAC', 'cutoff_time'),
-                    '--intraInstanceObj', config.get('SMAC', 'intra_instance_obj'),
-                    '--runObj', config.get('SMAC', 'run_obj'),
-                    '--algoExec', get_algo_exec(),
-                    '--numIterations', config.get('SMAC', 'num_iterations'),
-                    '--totalNumRunsLimit', config.get('SMAC', 'total_num_runs_limit'),
-                    '--outputDirectory', optimizer_dir,
-                    '--numConcurrentAlgoExecs', config.get('SMAC', 'num_concurrent_algo_execs'),
-                    '--maxIncumbentRuns', config.get('SMAC', 'max_incumbent_runs'),
-                    '--retryTargetAlgorithmRunCount',
-                    config.get('SMAC', 'retry_target_algorithm_run_count'),
-                    '--intensification-percentage',
-                    config.get('SMAC', 'intensification_percentage'),
-                    '--initial-incumbent', config.get('SMAC', 'initial_incumbent'),
-                    '--rf-split-min', config.get('SMAC', 'rf_split_min'),
-                    '--validation', config.get('SMAC', 'validation'),
-                    '--runtime-limit', config.get('SMAC', 'runtime_limit'),
-                    '--exec-mode', config.get('SMAC', 'exec_mode'),
-                    '--rf-num-trees', config.get('SMAC', 'rf_num_trees'),
-                    '--continous-neighbours', config.get('SMAC', 'continous_neighbours')])
+                     '--cli-log-all-calls true',
+                     '--cutoffTime', config.get('SMAC', 'cutoff_time'),
+                     '--intraInstanceObj', config.get('SMAC', 'intra_instance_obj'),
+                     '--runObj', config.get('SMAC', 'run_obj'),
+                     '--algoExec', get_algo_exec(),
+                     '--numIterations', config.get('SMAC', 'num_iterations'),
+                     '--totalNumRunsLimit', config.get('SMAC', 'total_num_runs_limit'),
+                     '--outputDirectory', optimizer_dir,
+                     '--numConcurrentAlgoExecs', config.get('SMAC', 'num_concurrent_algo_execs'),
+                     '--maxIncumbentRuns', config.get('SMAC', 'max_incumbent_runs'),
+                     '--retryTargetAlgorithmRunCount',
+                     config.get('SMAC', 'retry_target_algorithm_run_count'),
+                     '--intensification-percentage',
+                     config.get('SMAC', 'intensification_percentage'),
+                     '--initial-incumbent', config.get('SMAC', 'initial_incumbent'),
+                     '--rf-split-min', config.get('SMAC', 'rf_split_min'),
+                     '--validation', config.get('SMAC', 'validation'),
+                     '--runtime-limit', config.get('SMAC', 'runtime_limit'),
+                     '--exec-mode', config.get('SMAC', 'exec_mode'),
+                     '--rf-num-trees', config.get('SMAC', 'rf_num_trees'),
+                     '--continous-neighbours', config.get('SMAC', 'continous_neighbours')])
 
     if config.getboolean('SMAC', 'save_runs_every_iteration'):
         call = " ".join([call, '--save-runs-every-iteration true'])
@@ -126,7 +126,7 @@ def build_smac_call(config, options, optimizer_dir):
     return call
 
 
-#noinspection PyUnusedLocal
+# noinspection PyUnusedLocal
 def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs):
     # config:           Loaded .cfg file
     # options:          Options containing seed, restore_dir,
@@ -143,11 +143,11 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
                                      config.get('SMAC', 'shared_model'))
     else:
         optimizer_dir = os.path.join(experiment_dir,
-                                     experiment_directory_prefix
-                                     + optimizer_str + "_" +
+                                     experiment_directory_prefix +
+                                     optimizer_str + "_" +
                                      str(options.seed) + "_" + time_string)
     # Build call
-    cmd = build_smac_call(config, options, optimizer_dir)
+    cmd = build_call(config, options, optimizer_dir)
 
     # Set up experiment directory
     try:

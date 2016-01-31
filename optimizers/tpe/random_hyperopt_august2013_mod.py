@@ -69,8 +69,7 @@ def check_dependencies():
                           " installed?")
 
 
-
-def build_random_call(config, options, optimizer_dir):
+def build_call(config, options, optimizer_dir):
     call = "python " + os.path.dirname(os.path.realpath(__file__)) + \
            "/tpecall.py"
     call = ' '.join([call, '-p', os.path.join(optimizer_dir, os.path.basename(config.get('TPE', 'space'))),
@@ -133,7 +132,7 @@ def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs)
                                      time_string)
 
     # Build call
-    cmd = build_random_call(config, options, optimizer_dir)
+    cmd = build_call(config, options, optimizer_dir)
 
     # Set up experiment directory
     if not os.path.exists(optimizer_dir):

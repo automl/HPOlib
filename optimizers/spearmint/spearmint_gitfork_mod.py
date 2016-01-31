@@ -57,7 +57,7 @@ def check_dependencies():
                           " installed?")
 
 
-def build_spearmint_call(config, options, optimizer_dir):
+def build_call(config, options, optimizer_dir):
     if not 'PYTHONPATH' in os.environ:
         os.environ['PYTHONPATH'] = \
             os.path.join(config.get('SPEARMINT', 'path_to_optimizer'),
@@ -125,7 +125,7 @@ def main(config, options, experiment_dir, experiment_directory_prefix,
                                    os.environ['PYTHONPATH']
 
     # Build call
-    cmd = build_spearmint_call(config, options, optimizer_dir)
+    cmd = build_call(config, options, optimizer_dir)
 
     # Set up experiment directory
     if not os.path.exists(optimizer_dir):
