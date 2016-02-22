@@ -41,7 +41,7 @@ def main():
         optimizers_dir = os.path.abspath(args.optimizerDir)
 
     if os.path.isabs(args.benchmark_dir):
-        benchmark_dir = args.benchmarkDir
+        benchmark_dir = args.benchmark_dir
     else:
         benchmark_dir = os.path.abspath(args.benchmark_dir)
 
