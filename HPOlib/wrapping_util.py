@@ -31,7 +31,7 @@ import signal
 from StringIO import StringIO
 import sys
 import types
-
+import inspect
 import config_parser.parse as parse
 
 
@@ -71,8 +71,8 @@ def nan_std(arr):
 def get_time_string():
     local_time = datetime.datetime.today()
     time_string = "%d-%d-%d--%d-%d-%d-%d" % (local_time.year, local_time.month,
-                  local_time.day, local_time.hour, local_time.minute,
-                  local_time.second, local_time.microsecond)
+                                             local_time.day, local_time.hour, local_time.minute,
+                                             local_time.second, local_time.microsecond)
     return time_string
 
 
@@ -83,7 +83,7 @@ def float_eq(a, b, eps=0.0001):
 def format_traceback(exc_info):
     traceback_template = '''Traceback (most recent call last):
     File "%(filename)s", line %(lineno)s, in %(name)s
-    %(type)s: %(message)s\n''' # Skipping the "actual line" item
+    %(type)s: %(message)s\n'''# Skipping the "actual line" item
 
     # Also note: we don't walk all the way through the frame stack in this example
     # see hg.python.org/cpython/file/8dffb76faacc/Lib/traceback.py#l280
@@ -128,8 +128,8 @@ def load_experiment_config_file():
         config.read(cfg_filename)
         if not config.has_option("HPOLIB", "is_not_original_config_file"):
             logger.critical("Config file in directory %s seems to be an"
-                " original config which was not created by wrapping.py. "
-                "Are you sure that you are in the right directory?" %
+                            " original config which was not created by wrapping.py. "
+                            "Are you sure that you are in the right directory?" %
                             os.getcwd())
             sys.exit(1)
         return config
@@ -139,7 +139,7 @@ def load_experiment_config_file():
         sys.exit(1)
 
 
-def get_configuration(experiment_dir, optimizer_version, unknown_arguments,
+def get_configuration(experiment_dir, optimizer_version, unknown_arguments, opt_obj,
                       strict=True):
     """How the configuration is parsed:
     1. The command line is already parsed, we have a list of unknown arguments
@@ -172,7 +172,7 @@ def get_configuration(experiment_dir, optimizer_version, unknown_arguments,
         except Exception as e:
             logger.critical('Could not find\n%s\n\tin\n%s\n\t relative to\n%s',
                             optimizer_version_parser,
-                             optimizer_version_parser_path, os.getcwd())
+                            optimizer_version_parser_path, os.getcwd())
             import traceback
 
             logger.critical(traceback.format_exc())
@@ -190,7 +190,8 @@ def get_configuration(experiment_dir, optimizer_version, unknown_arguments,
         config_files.append(os.path.join(experiment_dir, "config.cfg"))
     else:
         logger.info("No config file found. Only considering CLI arguments.")
-    #TODO Is the config file really the right place to get the allowed keys for a hyperparameter optimizer?
+
+    # TODO Is the config file really the right place to get the allowed keys for a hyperparameter optimizer?
     config = parse.parse_config(config_files, allow_no_value=True,
                                 optimizer_version=optimizer_version)
 
@@ -215,7 +216,7 @@ def get_configuration(experiment_dir, optimizer_version, unknown_arguments,
     if fh is not None:
         fh.close()
     if optimizer_version != "" and optimizer_version is not None:
-        config = optimizer_module_parser.manipulate_config(config)
+        config = opt_obj.manipulate_config(config)
 
     # Check whether we have all necessary options
     parse.check_config(config)
@@ -270,8 +271,8 @@ def save_config_to_file(file_handle, config, write_nones=True):
         file_handle.write("[" + section + "]\n")
         for key in config.options(section):
             if (config.get(section, key) is None and write_nones) or \
-                config.get(section, key) is not None:
-                    file_handle.write("%s = %s\n" % (key, config.get(section, key)))
+                    config.get(section, key) is not None:
+                        file_handle.write("%s = %s\n" % (key, config.get(section, key)))
 
 
 def kill_processes(sig, processes):
@@ -285,7 +286,6 @@ def kill_processes(sig, processes):
     processes : list of psutil.Process
     """
     # TODO: somehow wait, until the Experiment pickle is written to disk
-
 
     pids_with_commands = []
     for process in processes:
@@ -417,7 +417,7 @@ def flatten_parameter_dict(params):
                 else:
                     for v_idx, v in enumerate(value):
                         new_dict[key + "_%s" % v_idx] = v
-                        #new_dict[key] = value[0]
+                        # new_dict[key] = value[0]
             elif type(value) in (list, tuple, np.ndarray):
                 for v in value:
                     params_to_check.append(v)

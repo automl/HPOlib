@@ -32,7 +32,7 @@ from threading import Thread
 import thread
 import time
 import warnings
-
+import inspect
 import HPOlib
 import HPOlib.check_before_start as check_before_start
 import HPOlib.wrapping_util as wrapping_util
@@ -97,6 +97,7 @@ def calculate_optimizer_time(trials):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         return np.nansum(optimizer_time)
+
 
 def use_arg_parser():
     """Parse all options which can be handled by the wrapping script.
@@ -174,6 +175,7 @@ def main():
     # Convert the path to the optimizer to be an absolute path, which is
     # necessary later when we change the working directory
     optimizer = args.optimizer
+
     if not os.path.isabs(optimizer):
         relative_path = optimizer
         optimizer = os.path.abspath(optimizer)
@@ -190,15 +192,15 @@ def main():
     import HPOlib.Experiment as Experiment          # Wants numpy and scipy
 
     # Check how many optimizer versions are present and if all dependencies
-    # are installed
-    optimizer_version = check_before_start.check_optimizer(optimizer)
+    # are installed also dynamically load optimizer obj
+    optimizer_version, opt_obj = check_before_start.check_optimizer(optimizer)
 
     logger.warning("You called -o %s, I am using optimizer defined in "
                    "%sDefault.cfg", optimizer, optimizer_version)
     optimizer = os.path.basename(optimizer_version)
 
     config = wrapping_util.get_configuration(experiment_dir,
-                                             optimizer_version, unknown_arguments)
+                                             optimizer_version, unknown_arguments, opt_obj)
 
     # DO NOT LOG UNTIL HERE UNLESS SOMETHING DRAMATIC HAS HAPPENED!!!
     loglevel = config.getint("HPOLIB", "HPOlib_loglevel")
@@ -225,10 +227,11 @@ def main():
     # So the optimizer module can acces the seed from the config and
     config.set("HPOLIB", "seed", str(args.seed))
     experiment_directory_prefix = config.get("HPOLIB", "experiment_directory_prefix")
+
     optimizer_call, optimizer_dir_in_experiment = \
-        optimizer_module.main(config=config, options=args,
-                              experiment_dir=experiment_dir,
-                              experiment_directory_prefix=experiment_directory_prefix)
+        opt_obj.main(config=config, options=args,
+                     experiment_dir=experiment_dir)
+                     # experiment_directory_prefix=experiment_directory_prefix)
     cmd = optimizer_call
 
     # Start the server for logging from subprocesses here, because its port must
@@ -286,7 +289,7 @@ def main():
     optimizer_output_file = os.path.join(optimizer_dir_in_experiment, optimizer + wrapping_util.get_time_string() +
                                          "_" + str(args.seed) + ".out")
     if args.restore:
-        #noinspection PyBroadException
+        # noinspection PyBroadException
         try:
             restored_runs = optimizer_module.restore(config=config,
                                                      optimizer_dir=optimizer_dir_in_experiment,
@@ -308,7 +311,7 @@ def main():
         trials.starttime.append(time.time())
     else:
         trials.starttime.append(time.time())
-    #noinspection PyProtectedMember
+    # noinspection PyProtectedMember
     trials._save_jobs()
     del trials
     sys.stdout.flush()
@@ -368,7 +371,7 @@ def main():
         # call target_function.setup()
         fn_setup = config.get("HPOLIB", "function_setup")
         if fn_setup:
-            #if temporary_output_dir:
+            # if temporary_output_dir:
             #    logger.critical("The options 'temporary_output_directory' "
             #                    "and 'function_setup' cannot be used "
             #                    "together.")
@@ -379,7 +382,7 @@ def main():
             runsolver_cmd = runsolver_wrapper._make_runsolver_command(
                 config, fn_setup_output)
             setup_cmd = runsolver_cmd + " " + fn_setup
-            #runsolver_output = subprocess.STDOUT
+            # runsolver_output = subprocess.STDOUT
             runsolver_output = open("/dev/null")
             runsolver_wrapper._run_command_with_shell(setup_cmd,
                                                       runsolver_output)
@@ -504,7 +507,6 @@ def main():
         logger.info("Finished with return code: %d", ret)
         del proc
 
-
         fh.close()
 
         # Change back into to directory
@@ -513,7 +515,7 @@ def main():
         # call target_function.setup()
         fn_teardown = config.get("HPOLIB", "function_teardown")
         if fn_teardown:
-            #if temporary_output_dir:
+            # if temporary_output_dir:
             #    logger.critical("The options 'temporary_output_directory' "
             #                    "and 'function_teardown' cannot be used "
             #                    "together.")
@@ -554,11 +556,10 @@ def main():
 
             optimizer_dir_in_experiment = new_dir
 
-
         trials = Experiment.Experiment(optimizer_dir_in_experiment,
                                        experiment_directory_prefix + optimizer)
         trials.endtime.append(time.time())
-        #noinspection PyProtectedMember
+        # noinspection PyProtectedMember
         trials._save_jobs()
         # trials.finish_experiment()
         total_time = 0
@@ -569,11 +570,11 @@ def main():
                 total_time += endtime - starttime
             logger.info("  Needed a total of %f seconds", total_time)
             logger.info("  The optimizer %s took %10.5f seconds",
-                  optimizer, float(calculate_optimizer_time(trials)))
+                        optimizer, float(calculate_optimizer_time(trials)))
             logger.info("  The overhead of HPOlib is %f seconds",
-                  calculate_wrapping_overhead(trials))
+                        calculate_wrapping_overhead(trials))
             logger.info("  The benchmark itself took %f seconds" % \
-                  trials.total_wallclock_time)
+                        trials.total_wallclock_time)
         except Exception as e:
             logger.error(HPOlib.wrapping_util.format_traceback(sys.exc_info()))
             logger.error("Experiment itself went fine, but calculating "

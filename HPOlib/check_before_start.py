@@ -22,6 +22,7 @@ import logging
 import os
 import subprocess
 import sys
+import inspect
 
 logger = logging.getLogger("HPOlib.check_before_start")
 
@@ -105,10 +106,15 @@ def check_optimizer(optimizer):
                         "optimizer: %s.py", version)
         sys.exit(1)
 
-    # Check the optimizer dependencies
-    optimizer_module = imp.load_source(version, version + ".py")
-    optimizer_module.check_dependencies()
-    return version
+    # dynamically load optimizer class which is abstracted by OptimizerAlgorithm
+    imp.load_source("opt", version + ".py")
+    import opt
+    opt_class = [m[1] for m in inspect.getmembers(opt, inspect.isclass) if m[0] != "OptimizerAlgorithm"]
+    obj = getattr(opt, opt_class[0].__name__)
+    opt_obj = obj()
+    opt_obj.check_dependencies()
+
+    return version, opt_obj
 
 
 # noinspection PyUnusedLocal
