@@ -89,7 +89,8 @@ def build_smac_call(config, options, optimizer_dir):
                     '--runtime-limit', config.get('SMAC', 'runtime_limit'),
                     '--exec-mode', config.get('SMAC', 'exec_mode'),
                     '--rf-num-trees', config.get('SMAC', 'rf_num_trees'),
-                    '--continous-neighbours', config.get('SMAC', 'continous_neighbours')])
+                    '--continous-neighbours', config.get('SMAC', 'continous_neighbours'),
+                    '--acquisition-function', config.get('SMAC', 'acquisition_function')])
 
     if config.getboolean('SMAC', 'save_runs_every_iteration'):
         call = " ".join([call, '--save-runs-every-iteration true'])
