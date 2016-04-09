@@ -44,9 +44,15 @@ def _check_runsolver():
 def _check_modules():
     """Checks whether all dependencies are installed"""
 
+    # [issue #110] bug in line: if numpy.__version__ < "1.6.0":
+    # e.g. "1.11.0" < "1.6.0" (False)
+    # --- FIX
+    # Just replace "X.XX.X" --> distutils.version.LooseVersion("X.XX.X")
+    from distutils.version import LooseVersion
+
     try:
         import numpy
-        if numpy.__version__ < "1.6.0":
+        if LooseVersion(numpy.__version__) < LooseVersion("1.6.0"):
             logger.warning("WARNING: You are using a numpy %s < 1.6.0. This "
                            "might not work", numpy.__version__)
     except:
@@ -54,7 +60,7 @@ def _check_modules():
 
     try:
         import scipy
-        if scipy.__version__ < "0.12.0":
+        if LooseVersion(scipy.__version__) < LooseVersion("0.12.0"):
             logger.warning("WARNING: You are using a scipy %s < 0.12.0. "
                            "This might not work", scipy.__version__)
     except:
