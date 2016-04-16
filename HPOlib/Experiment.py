@@ -57,7 +57,6 @@ def load_experiment_file():
 class Experiment:
     def __init__(self, expt_dir, expt_name, max_wallclock_time=
                  sys.float_info.max, title=None, folds=1):
-
         self.expt_dir = expt_dir
 
         if folds < 1:
