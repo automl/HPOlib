@@ -25,14 +25,11 @@ from Queue import Queue, Empty
 import signal
 import shlex
 import shutil
-import StringIO
 import subprocess
 import sys
 from threading import Thread
-import thread
 import time
 import warnings
-import inspect
 import HPOlib
 import HPOlib.check_before_start as check_before_start
 import HPOlib.wrapping_util as wrapping_util
@@ -175,7 +172,7 @@ def main():
     # Convert the path to the optimizer to be an absolute path, which is
     # necessary later when we change the working directory
     optimizer = args.optimizer
-
+    print("opti:", optimizer)
     if not os.path.isabs(optimizer):
         relative_path = optimizer
         optimizer = os.path.abspath(optimizer)

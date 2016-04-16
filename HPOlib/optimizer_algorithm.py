@@ -3,8 +3,6 @@ import os
 import logging
 import HPOlib.wrapping_util as wrapping_util
 
-logger = logging.getLogger("HPOlib.optimizers_algorithm")
-
 
 class OptimizerAlgorithm(object):
     """This is an abstract wrapper class defining methods needed to incorporate optimizers in HPOlib.
@@ -18,8 +16,9 @@ class OptimizerAlgorithm(object):
     def __init__(self, opt_name):
         self.optimizer_name = None
         self.optimizer_dir = None
-        logger.info("opt path in obj initialization:%s" % self.optimizer_dir)
-        logger.info("opt name:%s" % self.optimizer_name)
+        self.logger = logging.getLogger("HPOlib.optimizers_algorithm")
+        self.logger.info("opt path in obj initialization:%s" % self.optimizer_dir)
+        self.logger.info("opt name:%s" % self.optimizer_name)
 
     @abstractmethod
     def check_dependencies(self):
@@ -120,11 +119,11 @@ class OptimizerAlgorithm(object):
         # Build call
         cmd = self.build_call(config, options, optimizer_dir)
 
-        logger.info("### INFORMATION ###############################################################################")
-        logger.info("# You're running %35s" % config.get(self.optimizer_name, 'path_to_optimizer'))
-        logger.info("optimization dir %s" % optimizer_dir)
-        logger.info("optimization str %s" % optimizer_str)
-        logger.info("###############################################################################################\n")
+        self.logger.info("### INFORMATION ############################################################################")
+        self.logger.info("# You're running %35s" % config.get(self.optimizer_name, 'path_to_optimizer'))
+        self.logger.info("optimization dir %s" % optimizer_dir)
+        self.logger.info("optimization str %s" % optimizer_str)
+        self.logger.info("##########################################################################################\n")
         # logger.info("exp dir:%s" % experiment_dir)
         return cmd, optimizer_dir
 

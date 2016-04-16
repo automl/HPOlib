@@ -159,7 +159,7 @@ def get_configuration(experiment_dir, optimizer_version, unknown_arguments, opt_
     config_files.append(general_default)
     # Load optimizer parsing module
     if optimizer_version != "" and optimizer_version is not None:
-        optimizer_version_parser = optimizer_version + "_parser"
+        optimizer_version_parser = optimizer_version # + "_parser"
         # If optimizer_version_parser is an absolute path, the path of
         # __file__ will be ignored
         optimizer_version_parser_path = os.path.join(
@@ -177,9 +177,9 @@ def get_configuration(experiment_dir, optimizer_version, unknown_arguments, opt_
 
             logger.critical(traceback.format_exc())
             sys.exit(1)
-
+        # print(os.path.splitext(optimizer_module_parser.__file__)[0])
         optimizer_config_fn = os.path.splitext(optimizer_module_parser
-                                               .__file__)[0][:-7] + "Default.cfg"
+                                               .__file__)[0] + "Default.cfg"
         if not os.path.exists(optimizer_config_fn):
             logger.critical("No default config %s found", optimizer_config_fn)
             sys.exit(1)

@@ -28,9 +28,6 @@ __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 
-logger = logging.getLogger("HPOlib.spearmint_april2013_mod")
-
-
 path_to_optimizer = "optimizers/spearmint_march2014_mod/"
 version_info = ("# %76s #\n" % "git version march 2014")
 
@@ -40,8 +37,9 @@ class SPEARMINT(OptimizerAlgorithm):
     def __init__(self):
         self.optimizer_name = 'SPEARMINT'
         self.optimizer_dir = os.path.abspath("./spearmint_gitfork_mod")
-        logger.info("optimizer_name:%s" % self.optimizer_name)
-        logger.info("optimizer_dir:%s" % self.optimizer_dir)
+        self.logger = logging.getLogger("HPOlib.spearmint_april2013_mod")
+        self.logger.info("optimizer_name:%s" % self.optimizer_name)
+        self.logger.info("optimizer_dir:%s" % self.optimizer_dir)
 
     # noinspection PyUnresolvedReferences
     def check_dependencies(self):
@@ -94,7 +92,7 @@ class SPEARMINT(OptimizerAlgorithm):
                          '--grid-seed', str(options.seed)])
         if config.get('SPEARMINT', 'method') != "GPEIChooser" and \
                 config.get('SPEARMINT', 'method') != "GPEIOptChooser":
-            logger.warning('WARNING: This chooser might not work yet\n')
+            self.logger.warning('WARNING: This chooser might not work yet\n')
             call = ' '.join([call, config.get("SPEARMINT", 'method_args')])
         return call
 
@@ -147,7 +145,7 @@ class SPEARMINT(OptimizerAlgorithm):
 
         path_to_optimizer = os.path.normpath(path_to_optimizer)
         if not os.path.exists(path_to_optimizer):
-            logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
+            self.logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
             sys.exit(1)
 
         config.set('SPEARMINT', 'path_to_optimizer', path_to_optimizer)
@@ -176,7 +174,7 @@ class SPEARMINT(OptimizerAlgorithm):
 #     # Build call
 #     cmd = build_call(config, options, optimizer_dir)
 #
-#     logger.info("""
+#     self.logger.info("""
 #     ### INFORMATION ############################################################
 #     # You're running: %40s                 #
 #     # Version:        %40s                 #

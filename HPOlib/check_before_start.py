@@ -71,26 +71,28 @@ def _check_config(experiment_dir):
 
 
 def check_optimizer(optimizer):
+    # *parser.py files were integrated into optimizer class files but parser variable is still used to avoid too many
+    # variable changes
     path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "optimizers", optimizer)
     if os.path.isdir(path):
         # User told us, e.g. "tpe"
         # Optimizer is in our optimizer directory
         # Now check how many versions are present
-        parser = glob.glob(path + '*_parser.py')
+        parser = glob.glob(path + '*.py')
         logger.info("parser %s", parser)
         if len(parser) > 1:
             logger.critical("Sorry I don't know which optimizer to use: %s",
                             parser)
             sys.exit(1)
-        version = parser[0][:-10]
-    elif len(glob.glob(path + '*_parser.py')) == 1:
-        parser = glob.glob(path + '*_parser.py')
-        version = parser[0][:-10]
-    elif len(glob.glob(path + '*_parser.py')) > 1:
+        version = parser[0][:-3]
+    elif len(glob.glob(path + '.py')) == 1:
+        parser = glob.glob(path + '.py')
+        version = parser[0][:-3]
+    elif len(glob.glob(path + '.py')) > 1:
         # Note this is a different case
         # User told us e.g. "tpe/hyperopt_august" but this was not specific enough
         logger.critical("Sorry I don't know which optimizer to use: %s",
-                        glob.glob(path + '*_parser.py'))
+                        glob.glob(path + '*.py'))
         sys.exit(1)
     else:
         logger.critical("We cannot find: %s", path)
@@ -113,7 +115,6 @@ def check_optimizer(optimizer):
     obj = getattr(opt, opt_class[0].__name__)
     opt_obj = obj()
     opt_obj.check_dependencies()
-
     return version, opt_obj
 
 

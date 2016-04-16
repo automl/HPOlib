@@ -25,8 +25,6 @@ import HPOlib.wrapping_util as wrapping_util
 from HPOlib.optimizer_algorithm import OptimizerAlgorithm
 
 
-logger = logging.getLogger("HPOlib.optimizers.tpe.hyperopt_august2013_mod")
-
 version_info = ("# %76s #" % "https://github.com/hyperopt/hyperopt/tree/486aebec8a4170e4781d99bbd6cca09123b12717")
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -37,39 +35,40 @@ class TPE(OptimizerAlgorithm):
     def __init__(self):
         self.optimizer_name = 'TPE'
         self.optimizer_dir = os.path.abspath("./hyperopt_august2013_mod")
-        logger.info("optimizer_name:%s" % self.optimizer_name)
-        logger.info("optimizer_dir:%s" % self.optimizer_dir)
+        self.logger = logging.getLogger("HPOlib.optimizers.tpe.hyperopt_august2013_mod")
+        self.logger.info("optimizer_name:%s" % self.optimizer_name)
+        self.logger.info("optimizer_dir:%s" % self.optimizer_dir)
 
     # noinspection PyUnresolvedReferences
     def check_dependencies(self):
         try:
             import nose
-            logger.debug("\tNose: %s\n" % str(nose.__version__))
+            self.logger.debug("\tNose: %s\n" % str(nose.__version__))
         except ImportError:
             raise ImportError("Nose cannot be imported. Are you sure it's "
                               "installed?")
         try:
             import networkx
-            logger.debug("\tnetworkx: %s\n" % str(networkx.__version__))
+            self.logger.debug("\tnetworkx: %s\n" % str(networkx.__version__))
         except ImportError:
             raise ImportError("Networkx cannot be imported. Are you sure it's "
                               "installed?")
         try:
             import pymongo
-            logger.debug("\tpymongo: %s\n" % str(pymongo.version))
+            self.logger.debug("\tpymongo: %s\n" % str(pymongo.version))
             from bson.objectid import ObjectId
         except ImportError:
             raise ImportError("Pymongo cannot be imported. Are you sure it's"
                               " installed?")
         try:
             import numpy
-            logger.debug("\tnumpy: %s" % str(numpy.__version__))
+            self.logger.debug("\tnumpy: %s" % str(numpy.__version__))
         except ImportError:
             raise ImportError("Numpy cannot be imported. Are you sure that it's"
                               " installed?")
         try:
             import scipy
-            logger.debug("\tscipy: %s" % str(scipy.__version__))
+            self.logger.debug("\tscipy: %s" % str(scipy.__version__))
         except ImportError:
             raise ImportError("Scipy cannot be imported. Are you sure that it's"
                               " installed?")
@@ -162,7 +161,7 @@ class TPE(OptimizerAlgorithm):
         if not config.has_option('TPE', 'number_evals'):
             config.set('TPE', 'number_evals', config.get('HPOLIB', 'number_of_jobs'))
         elif config.getint('TPE', 'number_evals') != number_of_jobs:
-            logger.warning("Found a total_num_runs_limit (%d) which differs from "
+            self.logger.warning("Found a total_num_runs_limit (%d) which differs from "
                            "the one read from the config (%d). This can e.g. "
                            "happen when restoring a TPE run" %
                            (config.getint('TPE', 'number_evals'),
@@ -175,7 +174,7 @@ class TPE(OptimizerAlgorithm):
 
         path_to_optimizer = os.path.normpath(path_to_optimizer)
         if not os.path.exists(path_to_optimizer):
-            logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
+            self.logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
             sys.exit(1)
 
         config.set('TPE', 'path_to_optimizer', path_to_optimizer)

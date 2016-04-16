@@ -24,7 +24,6 @@ import sys
 import HPOlib.wrapping_util as wrapping_util
 from HPOlib.optimizer_algorithm import OptimizerAlgorithm
 
-logger = logging.getLogger("HPOlib.irace_1_07")
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -39,8 +38,9 @@ class IRACE(OptimizerAlgorithm):
     def __init__(self):
         self.optimizer_name = 'irace'
         self.optimizer_dir = os.path.abspath("./irace_1_07")
-        logger.info("optimizer_name:%s" % self.optimizer_name)
-        logger.info("optimizer_dir:%s" % self.optimizer_dir)
+        self.logger = logging.getLogger("HPOlib.irace_1_07")
+        self.logger.info("optimizer_name:%s" % self.optimizer_name)
+        self.logger.info("optimizer_dir:%s" % self.optimizer_dir)
 
     def check_dependencies(self):
         process = subprocess.Popen("which R", stdout=subprocess.PIPE,
@@ -76,7 +76,7 @@ class IRACE(OptimizerAlgorithm):
                          '--seed', str(options.seed),
                          '--soft-restart', config.get("irace", "softRestart"),
                          ])
-        logger.info("call:%s", call)
+        self.logger.info("call:%s", call)
         return call
 
     # setup directory where experiment will run
@@ -89,7 +89,7 @@ class IRACE(OptimizerAlgorithm):
         else:
             os.environ["R_LIBS"] = r_lib
 
-        logger.info("R_LIBS: %s" % str(os.environ["R_LIBS"]))
+        self.logger.info("R_LIBS: %s" % str(os.environ["R_LIBS"]))
 
         # Set up experiment directory
         os.mkdir(optimizer_dir)
@@ -118,39 +118,10 @@ class IRACE(OptimizerAlgorithm):
 
         path_to_optimizer = os.path.normpath(path_to_optimizer)
         if not os.path.exists(path_to_optimizer):
-            logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
+            self.logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
             sys.exit(1)
 
         config.set('irace', 'path_to_optimizer', path_to_optimizer)
-        logger.info("path_to_opt:%s" % path_to_optimizer)
+        self.logger.info("path_to_opt:%s" % path_to_optimizer)
 
         return config
-    # # noinspection PyUnusedLocal
-    # def main(self, config, options, experiment_dir, experiment_directory_prefix, **kwargs):
-    #     # config:           Loaded .cfg file
-    #     # options:          Options containing seed, restore_dir,
-    #     # experiment_dir:   Experiment directory/Benchmark_directory
-    #     # **kwargs:         Nothing so far
-    #
-    #     time_string = wrapping_util.get_time_string()
-    #     optimizer_str = os.path.splitext(os.path.basename(__file__))[0]
-    #
-    #     # Find experiment directory
-    #     optimizer_dir = os.path.join(experiment_dir,
-    #                                  experiment_directory_prefix +
-    #                                  optimizer_str + "_" +
-    #                                  str(options.seed) + "_" + time_string)
-    #
-    #     # setup directory where experiment will run
-    #     optimizer_dir = custom_setup(config, options, experiment_dir, experiment_directory_prefix, optimizer_dir)
-    #
-    #     # Build call
-    #     cmd = build_call(config, options, optimizer_dir)
-    #
-    #     logger.info("### INFORMATION ################################################################")
-    #     logger.info("# You're running %35s                  #" % config.get('irace', 'path_to_optimizer'))
-    #     for v in version_info:
-    #         logger.info("# %76s #" % v)
-    #     logger.info("# This is an updated version.                                                  #")
-    #     logger.info("################################################################################")
-    #     return cmd, optimizer_dir

@@ -30,8 +30,6 @@ __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 
-logger = logging.getLogger("HPOlib.optimizers.tpe.randomtpe")
-
 version_info = ("# %76s #" % "https://github.com/hyperopt/hyperopt/tree/486aebec8a4170e4781d99bbd6cca09123b12717")
 
 
@@ -40,39 +38,40 @@ class TPE(OptimizerAlgorithm):
     def __init__(self):
         self.optimizer_name = 'TPE'
         self.optimizer_dir = os.path.abspath("./random_hyperopt_august2013_mod")
-        logger.info("optimizer_name:%s" % self.optimizer_name)
-        logger.info("optimizer_dir:%s" % self.optimizer_dir)
+        self.logger = logging.getLogger("HPOlib.optimizers.tpe.randomtpe")
+        self.logger.info("optimizer_name:%s" % self.optimizer_name)
+        self.logger.info("optimizer_dir:%s" % self.optimizer_dir)
 
     # noinspection PyUnresolvedReferences
     def check_dependencies(self):
         try:
             import nose
-            logger.debug("\tNose: %s\n" % str(nose.__version__))
+            self.logger.debug("\tNose: %s\n" % str(nose.__version__))
         except ImportError:
             raise ImportError("Nose cannot be imported. Are you sure it's "
                               "installed?")
         try:
             import networkx
-            logger.debug("\tnetworkx: %s\n" % str(networkx.__version__))
+            self.logger.debug("\tnetworkx: %s\n" % str(networkx.__version__))
         except ImportError:
             raise ImportError("Networkx cannot be imported. Are you sure it's "
                               "installed?")
         try:
             import pymongo
-            logger.debug("\tpymongo: %s\n" % str(pymongo.version))
+            self.logger.debug("\tpymongo: %s\n" % str(pymongo.version))
             from bson.objectid import ObjectId
         except ImportError:
             raise ImportError("Pymongo cannot be imported. Are you sure it's"
                               " installed?")
         try:
             import numpy
-            logger.debug("\tnumpy: %s" % str(numpy.__version__))
+            self.logger.debug("\tnumpy: %s" % str(numpy.__version__))
         except ImportError:
             raise ImportError("Numpy cannot be imported. Are you sure that it's"
                               " installed?")
         try:
             import scipy
-            logger.debug("\tscipy: %s" % str(scipy.__version__))
+            self.logger.debug("\tscipy: %s" % str(scipy.__version__))
         except ImportError:
             raise ImportError("Scipy cannot be imported. Are you sure that it's"
                               " installed?")
@@ -92,7 +91,7 @@ class TPE(OptimizerAlgorithm):
     def restore(self, config, optimizer_dir, **kwargs):
         restore_file = os.path.join(optimizer_dir, 'state.pkl')
         if not os.path.exists(restore_file):
-            logger.error("Oups, this should have been checked before")
+            self.logger.error("Oups, this should have been checked before")
             raise Exception("%s does not exist" % (restore_file,))
 
         fh = open(restore_file)
@@ -154,7 +153,7 @@ class TPE(OptimizerAlgorithm):
         if not config.has_option('TPE', 'number_evals'):
             config.set('TPE', 'number_evals', config.get('HPOLIB', 'number_of_jobs'))
         elif config.getint('TPE', 'number_evals') != number_of_jobs:
-            logger.warning("Found a total_num_runs_limit (%d) which differs from "
+            self.logger.warning("Found a total_num_runs_limit (%d) which differs from "
                            "the one read from the config (%d). This can e.g. "
                            "happen when restoring a TPE run" %
                            (config.getint('TPE', 'number_evals'),
@@ -167,7 +166,7 @@ class TPE(OptimizerAlgorithm):
 
         path_to_optimizer = os.path.normpath(path_to_optimizer)
         if not os.path.exists(path_to_optimizer):
-            logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
+            self.logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
             sys.exit(1)
 
         config.set('TPE', 'path_to_optimizer', path_to_optimizer)
@@ -193,16 +192,16 @@ class TPE(OptimizerAlgorithm):
     #     # Build call
     #     cmd = build_call(config, options, optimizer_dir)
     #
-    #     logger.info("### INFORMATION ################################################################")
-    #     logger.info("# You are running:                                                             #")
-    #     logger.info("# %76s #" % optimizer_dir)
+    #     self.logger.info("### INFORMATION ################################################################")
+    #     self.logger.info("# You are running:                                                             #")
+    #     self.logger.info("# %76s #" % optimizer_dir)
     #     if not os.path.samefile(optimizer_dir, config.get('TPE', 'path_to_optimizer')):
-    #         logger.warning("# BUT random_hyperopt_august2013_modDefault.cfg says:")
-    #         logger.warning("# %76s #" % config.get('TPE', 'path_to_optimizer'))
-    #         logger.warning("# Found a global hyperopt version. This installation will be used!             #")
+    #         self.logger.warning("# BUT random_hyperopt_august2013_modDefault.cfg says:")
+    #         self.logger.warning("# %76s #" % config.get('TPE', 'path_to_optimizer'))
+    #         self.logger.warning("# Found a global hyperopt version. This installation will be used!             #")
     #     else:
-    #         logger.info("# To reproduce our results you need version 0.0.3.dev, which can be found here:#")
-    #         logger.info("%s" % version_info)
-    #         logger.info("# A newer version might be available, but not yet built in.                    #")
-    #     logger.info("################################################################################")
+    #         self.logger.info("# To reproduce our results you need version 0.0.3.dev, which can be found here:#")
+    #         self.logger.info("%s" % version_info)
+    #         self.logger.info("# A newer version might be available, but not yet built in.                    #")
+    #     self.logger.info("################################################################################")
     #     return cmd, optimizer_dir

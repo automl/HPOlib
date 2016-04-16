@@ -57,8 +57,6 @@ class Experiment:
     def __init__(self, expt_dir, expt_name, max_wallclock_time=
                  sys.float_info.max, title=None, folds=1):
 
-        # logger.info("expt_name:%s" % expt_name)
-        # logger.info("expt_dir:%s" % expt_dir)
         self.expt_dir = expt_dir
 
         if folds < 1:
@@ -676,7 +674,6 @@ class Experiment:
 
     # Automatically loads this object from a pickle file
     def _load_jobs(self):
-        # logger.info("loading pickle file:%s" % self.jobs_pkl)
         fh = open(self.jobs_pkl, 'r')
         jobs = cPickle.load(fh)
         fh.close()
@@ -713,6 +710,5 @@ class Experiment:
                        'instance_order'       : self.instance_order,
                        'trials'               : self.trials}, fh)
         fh.close()
-        # logger.info("saving pickle file:%s" % self.jobs_pkl)
         cmd = 'mv "%s" "%s"' % (fh.name, self.jobs_pkl)
         os.system(cmd)  # TODO: Replace with subprocess modules

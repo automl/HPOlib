@@ -26,9 +26,6 @@ import HPOlib.wrapping_util as wrapping_util
 from HPOlib.optimizer_algorithm import OptimizerAlgorithm
 
 
-logger = logging.getLogger("HPOlib.smac_2_10_00-dev")
-
-
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
@@ -43,8 +40,9 @@ class SMAC(OptimizerAlgorithm):
     def __init__(self):
         self.optimizer_name = 'SMAC'
         self.optimizer_dir = os.path.abspath("./smac_2_10_00-dev")
-        logger.info("optimizer_name:%s" % self.optimizer_name)
-        logger.info("optimizer_dir:%s" % self.optimizer_dir)
+        self.logger = logging.getLogger("HPOlib.smac_2_10_00-dev")
+        self.logger.info("optimizer_name:%s" % self.optimizer_name)
+        self.logger.info("optimizer_dir:%s" % self.optimizer_dir)
 
     def get_algo_exec(self):
         return '"python ' + os.path.join(os.path.dirname(__file__),
@@ -68,7 +66,7 @@ class SMAC(OptimizerAlgorithm):
         output = subprocess.check_output(["java", "-version"],
                                          stderr=subprocess.STDOUT)
         if version_str not in output:
-            logger.critical("Java version (%s) does not contain %s,"
+            self.logger.critical("Java version (%s) does not contain %s,"
                             "you continue at you own risk" % (output, version_str))
 
     def build_call(self, config, options, optimizer_dir):
@@ -202,7 +200,7 @@ class SMAC(OptimizerAlgorithm):
                     all_found = os.path.join(optimizer_dir, "scenario.txt")
                     continue
             if all_found is not None:
-                logger.critical("Could not find all necessary files..abort. " +
+                self.logger.critical("Could not find all necessary files..abort. " +
                                 "Experiment directory %s is somehow created, but not complete\n" % optimizer_dir +
                                 "Missing: %s" % all_found)
                 sys.exit(1)
@@ -232,7 +230,7 @@ class SMAC(OptimizerAlgorithm):
 
         path_to_optimizer = os.path.normpath(path_to_optimizer)
         if not os.path.exists(path_to_optimizer):
-            logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
+            self.logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
             sys.exit(1)
 
         config.set('SMAC', 'path_to_optimizer', path_to_optimizer)
@@ -246,6 +244,6 @@ class SMAC(OptimizerAlgorithm):
                 config.set('SMAC', 'shared_model_scenario_file', os.path.join(shared_model, 'scenario.txt'))
 
             if config.get('HPOLIB', 'temporary_output_directory') != '':
-                logger.critical('Using a temp_out_dir and a shared model is not possible')
+                self.logger.critical('Using a temp_out_dir and a shared model is not possible')
                 sys.exit(1)
         return config

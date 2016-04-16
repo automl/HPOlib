@@ -28,8 +28,6 @@ import numpy as np
 import HPOlib.wrapping_util as wrapping_util
 from HPOlib.optimizer_algorithm import OptimizerAlgorithm
 
-logger = logging.getLogger("HPOlib.smac_2_06_01-dev")
-
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -44,8 +42,9 @@ class SMAC(OptimizerAlgorithm):
     def __init__(self):
         self.optimizer_name = 'SMAC'
         self.optimizer_dir = os.path.abspath("./smac_2_06_01-dev")
-        logger.info("optimizer_name:%s" % self.optimizer_name)
-        logger.info("optimizer_dir:%s" % self.optimizer_dir)
+        self.logger = logging.getLogger("HPOlib.smac_2_06_01-dev")
+        self.logger.info("optimizer_name:%s" % self.optimizer_name)
+        self.logger.info("optimizer_dir:%s" % self.optimizer_dir)
 
     def get_algo_exec(self):
         return '"python ' + os.path.join(os.path.dirname(__file__),
@@ -70,13 +69,13 @@ class SMAC(OptimizerAlgorithm):
         if len(rungroups) == 1:
             rungroup = rungroups[0]
         else:
-            logger.warning("Found multiple rungroups, take the newest one.")
+            self.logger.warning("Found multiple rungroups, take the newest one.")
             creation_times = []
             for i, filename in enumerate(rungroups):
                 creation_times.append(float(os.path.getctime(filename)))
             newest = np.argmax(creation_times)
             rungroup = rungroups[newest]
-            logger.info(creation_times, newest, rungroup)
+            self.logger.info(creation_times, newest, rungroup)
         state_runs = glob.glob(rungroup + "/state-run*")
 
         if len(state_runs) != 1:
@@ -162,17 +161,17 @@ class SMAC(OptimizerAlgorithm):
         ############################################################################
         # Run SMAC in a manner that it restores the files but then exits
         fh = open(optimizer_dir + "smac_restart.out", "w")
-        logger.info(self.get_algo_exec())
+        self.logger.info(self.get_algo_exec())
         smac_cmd = re.sub(self.get_algo_exec(), 'pwd', cmd)
         smac_cmd = re.sub(" --rungroup restore_", " --rungroup restore_dummy_", smac_cmd)
-        logger.info(smac_cmd)
+        self.logger.info(smac_cmd)
         process = subprocess.Popen(smac_cmd, stdout=fh, stderr=fh, shell=True,
                                    executable="/bin/bash")
-        logger.info("----------------------RUNNING--------------------------------")
+        self.logger.info("----------------------RUNNING--------------------------------")
         ret = process.wait()
         fh.close()
 
-        logger.info("Finished with return code: " + str(ret))
+        self.logger.info("Finished with return code: " + str(ret))
 
         # read smac.out and look how many states are restored
         fh = open(optimizer_dir + "smac_restart.out")
@@ -186,7 +185,7 @@ class SMAC(OptimizerAlgorithm):
         # Find out all rungroups and state-runs
         ############################################################################
         state_run = self._get_state_run(optimizer_dir)
-        logger.info(state_run)
+        self.logger.info(state_run)
 
         state_run_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                       os.getcwd(), state_run)
@@ -225,7 +224,7 @@ class SMAC(OptimizerAlgorithm):
 
         # Find experiment directory
         if options.restore:
-            logger.info(options.restore)
+            self.logger.info(options.restore)
             if not os.path.exists(options.restore):
                 raise Exception("The restore directory %s does not exist at "
                                 "location %s" % (os.getcwd(), options.restore))
@@ -282,7 +281,7 @@ class SMAC(OptimizerAlgorithm):
         if not config.has_option('SMAC', 'total_num_runs_limit'):
             config.set('SMAC', 'total_num_runs_limit', str(total_num_runs_limit))
         elif config.getint('SMAC', 'total_num_runs_limit') != total_num_runs_limit:
-            logger.warning("Found a total_num_runs_limit (%d) which differs from "
+            self.logger.warning("Found a total_num_runs_limit (%d) which differs from "
                            "the one read from the config (%d). This can e.g. "
                            "happen when restoring a SMAC run" %
                            (config.getint('SMAC', 'total_num_runs_limit'),
@@ -301,7 +300,7 @@ class SMAC(OptimizerAlgorithm):
 
         path_to_optimizer = os.path.normpath(path_to_optimizer)
         if not os.path.exists(path_to_optimizer):
-            logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
+            self.logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
             sys.exit(1)
 
         config.set('SMAC', 'path_to_optimizer', path_to_optimizer)
