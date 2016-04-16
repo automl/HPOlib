@@ -47,6 +47,7 @@ COMPLETE_STATE = 3
 BROKEN_STATE = -1
 
 
+
 def load_experiment_file():
     optimizer = wrapping_util.get_optimizer()
     experiment = Experiment(".", optimizer)
@@ -343,6 +344,7 @@ class Experiment:
             trial['test_instance_durations'][fold] = np.NaN
             trial['test_instance_results'][fold] = np.NaN
             trial['test_additional_data'][fold] = ""
+
 
     def set_one_fold_running(self, _id, fold):
         """Change the status of one fold to running.
