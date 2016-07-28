@@ -13,6 +13,7 @@ from HPOlib.wrapping_util import remove_param_metadata, \
 
 logger = logging.getLogger("SMAC_to_HPOlib")
 
+
 def construct_cli_call(cli_target, fold, params):
     cli_call = StringIO.StringIO()
     cli_call.write("python -m ")
