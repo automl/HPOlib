@@ -263,7 +263,6 @@ class AdditionalInstall(install):
                              "wget http://www.automl.org/smac_2_08_00-master_src.tar.gz \n"
                              "wget http://www.automl.org/smac_2_10_00-dev_src.tar.gz \n" +
                              "wget http://www.automl.org/spearmint_april2013_mod_src.tar.gz \n" +
-                             "http://www.automl.org/irace_1.07.tar.gz\n"
                              "tar -xf hyperopt_august2013_mod_src.tar.gz \n" +
                              "mv hyperopt_august2013_mod_src tpe/ \n" +
                              "tar -xf smac_2_06_01-dev_src.tar.gz \n" +
@@ -273,9 +272,10 @@ class AdditionalInstall(install):
                              "tar -xf smac_2_10_00-dev_src.tar.gz \n" +
                              "mv smac_2_10_00-dev_src smac/ \n" +
                              "tar -xf spearmint_april2013_mod_src.tar.gz \n" +
-                             "mv spearmint_april2013_mod_src spearmint/ \n\n" +
-                             "cd irace\n" +
-                             "R CMD INSTALL irace_1.07.tar.gz -l `pwd`\n"
+                             "mv spearmint_april2013_mod_src spearmint/ \n" +
+                             "cd irace\n" +                             
+                             "wget http://www.automl.org/irace_1.07.tar.gz\n" +
+                             "tar -xf irace_1.07.tar.gz \n" +
                              "Thank You!\n")
         if runsolver_needs_to_be_installed and not built:
             sys.stdout.write("[ERROR] Please install runsolver on your own! You can download it from:\n%s%s\n" % \

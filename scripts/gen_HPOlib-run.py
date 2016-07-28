@@ -17,7 +17,7 @@ def main():
 
     # General Options
     parser.add_argument("-b", "--benchmark", dest="benchmark_dir",
-                        default="../benchmarks/branin", help="specify benchmark name")
+                        default="../benchmarks/rkhs", help="specify benchmark name")
     parser.add_argument("-opt", "--optDir", dest="optimizerDir",
                         default="../optimizers", help="path to optimizers directory")
     parser.add_argument("-o", "--outputFile", dest="Output",

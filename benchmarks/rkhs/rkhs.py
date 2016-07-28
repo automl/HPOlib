@@ -27,14 +27,13 @@ import HPOlib.benchmarks.benchmark_util as benchmark_util
 
 
 def covSEard(hyp, x, z):
-	import numpy as np
-	from scipy.spatial.distance import cdist
-	"""
-	ARD covariance:
-		x is of dimension n X D
-		y is of dimension m X D
-	"""
-	hyp = np.exp(hyp)
+    import numpy as np
+    from scipy.spatial.distance import cdist
+    """ARD covariance:
+    x is of dimension n X D
+    y is of dimension m X D
+    """
+    hyp = np.exp(hyp)
 
     D = x.shape[1]
     X = (1 / hyp[:D]) * x
@@ -61,7 +60,7 @@ def rkhs_synth(params, **kwargs):
     if "x" not in params:
         raise ValueError("No params found ['x']\n")
     x = float(params["x"])
-    #y = float(params["y"])
+    # y = float(params["y"])
 
     x = np.atleast_2d(x)
     hyp_1 = np.log(np.array([0.1, 1]))
