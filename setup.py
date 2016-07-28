@@ -276,20 +276,23 @@ class AdditionalInstall(install):
         downloaded_aeatk, extracted_aeatk = (False, False)
         # Download the AEATK/MySQLTAE-bundle
         aeatk_bundle_base_url = "http://automl.org/"
-        aeatk_bundle_filename = "aeatk-v2.08.01-development-4.tar.gz"
+        aeatk_bundle_filename = "MySQLDBTAE_v001.tar.gz"
         aeatk_url = aeatk_bundle_base_url + aeatk_bundle_filename
         sys.stdout.write("[INFO] downloading MySQLDBTAE from %s\n" % aeatk_url)
         downloaded_aeatk = download_source(aeatk_url,
-                                           "59b6947d3e76b9ec0d60f0702570f710",
-            save_as=os.path.join(here_we_are, "MySQLDBTAE.tar.gz"))
+                                           "8ffa69b260649cc51a5d71ca321c85f7",
+            save_as=os.path.join(here_we_are,
+                                 "MySQLDBTAE.tar.gz"))
         if downloaded_aeatk:
             extracted_aeatk = extract_source(
-                os.path.join(here_we_are, "MySQLDBTAE.tar.gz"),
+                os.path.join(here_we_are,
+                             "MySQLDBTAE.tar.gz"),
                 extract_as=os.path.join(here_we_are, 'HPOlib', 'dispatcher'))
         if not (downloaded_aeatk and extracted_aeatk):
             sys.stderr.write("[ERROR] MySQLDBTAE could not be installed "
                              "properly. You will not be able to use the "
                              "MySQLDBTAE dispatcher.")
+
 
         # TODO: Normally one wants to call run(self), but this runs distutils and ignores install_requirements for unknown reasons
         # if anyone knows a better way, feel free to change
