@@ -1,3 +1,0 @@
-[submodule "optimizers/spearmint/spearmint_gitfork_mod_src"]
-	path = optimizers/spearmint/spearmint_gitfork_mod_src
-	url = https://github.com/automl/spearmint.git
