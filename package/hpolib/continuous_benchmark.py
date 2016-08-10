@@ -90,7 +90,7 @@ class AbstractContinuousBenchmark(abstract_benchmark.AbstractBenchmark):
         return rval
 
     def _convert_dict_to_array(self, configuration):
-        l, u = self.get_lower_and_upper_bounds()
+        l, _ = self.get_lower_and_upper_bounds()
 
         if len(l) != len(configuration):
             raise ValueError('Configuration should have %d elements, but has '

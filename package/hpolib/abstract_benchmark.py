@@ -1,7 +1,5 @@
 import abc
 
-import numpy as np
-
 
 class AbstractBenchmark(object):
     __metaclass__ = abc.ABCMeta
@@ -95,7 +93,7 @@ class AbstractBenchmark(object):
         return rval
 
     def test(self, n_runs=5):
-        for i in range(n_runs):
+        for _ in range(n_runs):
             configuration = self.configuration_space.sample_configuration()
             self.evaluate_dict(configuration)
             self.evaluate_dict_test(configuration)
