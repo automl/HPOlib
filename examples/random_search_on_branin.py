@@ -1,11 +1,5 @@
 import numpy as np
 
-
-import sys
-gh_root= '/ihome/sfalkner/repositories/github/'
-sys.path.extend([gh_root + 'RoBO/', gh_root + 'HPOlibConfigSpace/'])
-sys.path.extend([gh_root + 'HPOlib/'])
-
 from hpolib.benchmarks.synthetic_functions import Branin
 
 

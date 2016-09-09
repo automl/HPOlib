@@ -1,10 +1,3 @@
-import sys
-
-gh_root= '/ihome/sfalkner/repositories/github/'
-sys.path.extend([gh_root + 'RoBO/', gh_root + 'HPOlibConfigSpace/'])
-sys.path.extend([gh_root + 'HPOlib/'])
-
-
 import numpy as np
 
 import hpolib.benchmarks.synthetic_functions as hpobench

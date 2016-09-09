@@ -1,5 +1,3 @@
-import sys
-
 import numpy as np
 
 import hpolib.benchmarks.synthetic_functions as hpobench
