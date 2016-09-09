@@ -2,7 +2,7 @@ import os
 import sys
 import numpy as np
 
-from benchmarks.ml.svm_benchmark import SupportVectorMachineBenchmark
+from hpolib.benchmarks.ml.svm_benchmark import SupportVectorMachineBenchmark
 
 
 class SvmOnMnist(SupportVectorMachineBenchmark):

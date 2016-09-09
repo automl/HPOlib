@@ -1,0 +1,5 @@
+from hpolib.benchmarks.synthetic_functions.branin import Branin
+from hpolib.benchmarks.synthetic_functions.hartmann3 import Hartmann3
+from hpolib.benchmarks.synthetic_functions.hartmann6 import Hartmann6
+from hpolib.benchmarks.synthetic_functions.forrester import Forrester
+from hpolib.benchmarks.synthetic_functions.misc import SyntheticNoiseAndCost

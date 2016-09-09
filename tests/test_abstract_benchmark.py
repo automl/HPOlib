@@ -25,20 +25,20 @@ class Benchmark(abstract_benchmark.AbstractBenchmark):
 class TestAbstractBenchmark(unittest.TestCase):
 
     @mock.patch.object(Benchmark, 'objective_function', autospec=True)
-    def test_evaluate_dict(self, benchmark_mock):
+    def test_objective_function(self, benchmark_mock):
         sentinel = 'Sentinel'
         benchmark_mock.return_value = sentinel
         benchmark = Benchmark()
-        rval = benchmark.evaluate_dict({})
+        rval = benchmark.objective_function({})
         self.assertEqual(rval, sentinel)
         self.assertEqual(benchmark_mock.call_count, 1)
 
     @mock.patch.object(Benchmark, 'objective_function_test', autospec=True)
-    def test_evaluate_dict_test(self, benchmark_mock):
+    def test_objective_function_test(self, benchmark_mock):
         sentinel = 'Sentinel'
         benchmark_mock.return_value = sentinel
         benchmark = Benchmark()
-        rval = benchmark.evaluate_dict_test({})
+        rval = benchmark.objective_function_test({})
         self.assertEqual(rval, sentinel)
         self.assertEqual(benchmark_mock.call_count, 1)
 
