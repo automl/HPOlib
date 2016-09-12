@@ -12,9 +12,9 @@ from hpolib.abstract_benchmark import AbstractBenchmark
 
 class SyntheticNoiseAndCost(AbstractBenchmark):
 
-    def __init__(self, original_benchmark, sigma_min, sigma_max,
-                 c_min, c_max,
-                 k_cost, k_noise):
+    def __init__(self, original_benchmark,
+                    sigma_min, sigma_max, k_noise,
+                    c_min, c_max, k_cost):
 
         self.sigma_min = sigma_min
         self.sigma_max = sigma_max
@@ -54,7 +54,8 @@ class SyntheticNoiseAndCost(AbstractBenchmark):
 
     #   can't be a @staticmethod anymore
     def get_meta_information(self):
-        d = self.original_task.get_meta_information()
-        d['noise_model'] = [self.sigma_min, self.sigma_max, k_noise]
-        d['cost_model'] = [self.c_min, self.c_max, k_cost]
+        d = self.original_benchmark.get_meta_information()
+        d['noise_model'] = [self.sigma_min, self.sigma_max, self.k_noise]
+        d['cost_model'] = [self.c_min, self.c_max, self.k_cost]
         d['name'] = d['name'] + " + noise and cost model"
+        return(d)
