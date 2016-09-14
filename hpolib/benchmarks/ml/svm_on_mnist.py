@@ -2,13 +2,13 @@ import os
 import sys
 import numpy as np
 
-from hpolib.benchmarks.ml.svm_benchmark import SupportVectorMachineBenchmark
+from hpolib.benchmarks.ml.svm_benchmark import SupportVectorMachine
 
 
-class SvmOnMnist(SupportVectorMachineBenchmark):
+class SvmOnMnist(SupportVectorMachine):
 
     def get_data(self, path):
-        # This function loads the MNIST data, its copied from the Lasagne tutorial
+        # This function loads the MNIST data, it's copied from the Lasagne tutorial
         # We first define a download function, supporting both Python 2 and 3.
         if sys.version_info[0] == 2:
             from urllib import urlretrieve
