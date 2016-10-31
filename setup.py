@@ -252,7 +252,8 @@ setup(
                       'protobuf',
                       'scipy>=0.13.2',
                       'pymongo',
-                      'psutil'
+                      'psutil',
+                      'nose'
                       ],
     author_email='eggenspk@informatik.uni-freiburg.de',
     description=desc,
