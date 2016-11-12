@@ -57,4 +57,4 @@ class Hartmann6(AbstractBenchmark):
 				'num_function_evals': 200,
                 'optima': ([[0.20169, 0.150011, 0.476874, 0.275332, 0.311652, 0.6573]]),
                 'bounds': [[0,1]]*6,
-                'f_opt': -3.32237}
+                'f_opt': -3.322368011391339}

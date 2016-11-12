@@ -27,7 +27,7 @@ class AbstractBenchmark(object):
         flexibility you have to return a dictionary with the only mandatory
         key being `function_value`, the objective function value for the
         configuration which was passed. By convention, all benchmarks are
-        minization problems.
+        minimization problems.
 
         Parameters
         ----------
@@ -72,7 +72,7 @@ class AbstractBenchmark(object):
                     squirtle = {k: configuration[i] for (i,k) in enumerate(self.configuration_space)}
                     wartortle = ConfigSpace.Configuration(self.configuration_space, squirtle)
                 except Exception as e:
-                    raise Exception('Error during the conversion of the provided'
+                    raise Exception('Error during the conversion of the provided '
                                     'into a ConfigSpace.Configuration object') from e
             else:
                 wartortle = configuration
