@@ -36,6 +36,12 @@ class TestAbstractBenchmark(unittest.TestCase):
         for x in f.get_meta_information()["optima"]:
             assert np.isclose(f(x), f.get_meta_information()["f_opt"])
 
+    def test_goldstein_price(self):
+        f = synthetic_functions.GoldsteinPrice()
+
+        for x in f.get_meta_information()["optima"]:
+            assert np.isclose(f(x), f.get_meta_information()["f_opt"])
+
     def test_rosenbrock(self):
         f = synthetic_functions.Rosenbrock()
 
