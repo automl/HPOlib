@@ -24,26 +24,31 @@ class FullyConnectedNetwork(AbstractBenchmark):
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._configuration_as_array
     def objective_function(self, x, steps=1, **kwargs):
-
+        print(x)
         num_epochs = int(1 + (self.max_num_epochs - 1) * steps)
 
-        lc_curve, cost_curve = self.train_net(self.train, self.train_targets,
-                                              self.valid, self.valid_targets,
-                                              init_learning_rate=np.power(10., x[0]),
-                                              l2_reg=np.power(10., x[1]),
-                                              batch_size=int(x[2]),
-                                              gamma=np.power(10., x[3]),
-                                              power=x[4],
-                                              momentum=x[5],
-                                              n_units_1=int(np.power(2, x[6])),
-                                              n_units_2=int(np.power(2, x[7])),
-                                              dropout_rate_1=x[8],
-                                              dropout_rate_2=x[9],
-                                              num_epochs=num_epochs)
+        lc_curve, cost_curve, train_loss, valid_loss = self.train_net(self.train, self.train_targets,
+                                                                      self.valid, self.valid_targets,
+                                                                      init_learning_rate=np.power(10., x[0]),
+                                                                      l2_reg=np.power(10., x[1]),
+                                                                      batch_size=int(x[2]),
+                                                                      gamma=np.power(10., x[3]),
+                                                                      power=x[4],
+                                                                      momentum=x[5],
+                                                                      n_units_1=int(np.power(2, x[6])),
+                                                                      n_units_2=int(np.power(2, x[7])),
+                                                                      dropout_rate_1=x[8],
+                                                                      dropout_rate_2=x[9],
+                                                                      num_epochs=num_epochs)
 
         y = lc_curve[-1]
         c = cost_curve[-1]
-        return {'function_value': y, "cost": c, "learning_curve": lc_curve}
+        return {'function_value': y,
+                "cost": c,
+                "learning_curve_valid_error": lc_curve,
+                "train_loss": train_loss,
+                "valid_loss": valid_loss,
+                "learning_curve_cost": cost_curve}
 
     @AbstractBenchmark._check_configuration
     @AbstractBenchmark._configuration_as_array
@@ -72,23 +77,23 @@ class FullyConnectedNetwork(AbstractBenchmark):
 
     @staticmethod
     def get_configuration_space():
-        cs = CS.ConfigurationSpace()
+        cs = CS.ConfigurationSpace(seed=np.random.randint(1, 100000))
         cs.generate_all_continuous_from_bounds(FullyConnectedNetwork.get_meta_information()['bounds'])
         return cs
 
     @staticmethod
     def get_meta_information():
         return {'name': 'Fully Connected Network',
-                'bounds': [[-4, -1],  # init_learning_rate
-                            [-6, -1],  # l2_reg
-                            [32, 265],  # batch_size
-                            [-3, -1],  # gamma
-                            [0, 1],  # power
-                            [0.3, 0.999],  # momentum
-                            [5, 10],  # n_units_1
-                            [5, 10],  # n_units_2
-                            [0.0, 0.99],  # dropout_rate_1
-                            [0.0, 0.99]]  # dropout_rate_2
+                'bounds': [[-6, 0],  # init_learning_rate
+                           [-8, -1],  # l2_reg
+                           [32, 512],  # batch_size
+                           [-3, -1],  # gamma
+                           [0, 1],  # power
+                           [0.3, 0.999],  # momentum
+                           [5, 12],  # n_units_1
+                           [5, 12],  # n_units_2
+                           [0.0, 0.99],  # dropout_rate_1
+                           [0.0, 0.99]]  # dropout_rate_2
                 }
 
     def iterate_minibatches(self, inputs, targets, batch_size, shuffle=False):
@@ -176,6 +181,8 @@ class FullyConnectedNetwork(AbstractBenchmark):
         print("Starting training...")
 
         learning_curve = np.zeros([num_epochs])
+        train_loss = np.zeros([num_epochs])
+        valid_loss = np.zeros([num_epochs])
         cost = np.zeros([num_epochs])
 
         for e in range(num_epochs):
@@ -205,8 +212,10 @@ class FullyConnectedNetwork(AbstractBenchmark):
             print("  validation accuracy:\t\t{:.2f} %".format(val_acc / val_batches * 100))
 
             learning_curve[e] = 1 - val_acc / val_batches
+            train_loss[e] = train_err / train_batches
+            valid_loss[e] = val_err / val_batches
             cost[e] = time.time() - start_time
 
             adapt_lr(e + 1)
 
-        return learning_curve, cost
+        return learning_curve, cost, train_loss, valid_loss

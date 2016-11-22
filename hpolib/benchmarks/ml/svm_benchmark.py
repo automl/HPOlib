@@ -25,6 +25,10 @@ class SupportVectorMachine(AbstractBenchmark):
         n_classes = np.unique(self.train_targets).shape[0]
         self.s_min = float(10 * n_classes) / self.train.shape[0]
 
+        super(SupportVectorMachine, self).__init__()
+
+        self.n_calls = 0
+
     def get_data(self, path):
         pass
 
@@ -80,7 +84,7 @@ class SupportVectorMachine(AbstractBenchmark):
 
     @staticmethod
     def get_configuration_space():
-        cs = CS.ConfigurationSpace()
+        cs = CS.ConfigurationSpace(seed=np.random.randint(1, 100000))
         cs.generate_all_continuous_from_bounds(SupportVectorMachine.get_meta_information()['bounds'])
         return cs
 
