@@ -6,6 +6,8 @@
 Welcome to HPOlib's documentation!
 ==================================
 
+HPOlib is a package which aiming to simplify the development and use of hyperparameter optimization algorithms. It features benchmarks which have been used in papers introducing state-of-the-art hyperparameter optimization tools like spearmint and hyperopt. Furthermore, it provides a common interface to several Bayesian optimization packages as well as the possibility to add your own optimization package.
+
 Contents:
 
 .. toctree::

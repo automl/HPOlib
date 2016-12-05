@@ -21,8 +21,7 @@ How to run listed benchmarks
 ============================
 
 After having succesfully installed the basic **HPOlib** you can download more
-benchmarks or create your own. Each benchmarks comes with an algorithm and
-(if necessary) a wrapper and data. If you want to use one of the benchmarks
+benchmarks or create your own. Each benchmarks resides in an own directory and  consists of an algorithm (+ wrapper if necessary), a configuration file and several hyperparameter configuration descriptions. If you want to use one of the benchmarks
 listed here, follow these steps:
 
 Let's say you want to run the Reproducing Kernel Hilbert space (`RKHS <https://github.com/iassael/function-rkhs>`_) function:
@@ -48,7 +47,7 @@ Let's say you want to run the Reproducing Kernel Hilbert space (`RKHS <https://g
         HPOlib-run /path/to/optimizers/<tpe/hyperopt|smac|spearmint|tpe/random> [-s seed] [-t title]
 
 
-    By default optimizers will run 200 evaluations on the function. For smac and tpe this will take about 2 mins but for spearmint it will be longer than 45 mins, so change :bash:`number_of_jobs` parameter in :bash:`config.cfg` file in same folder to 50 or less.
+    By default, the optimizers will run 200 evaluations on the function. For smac and tpe this will take about 2 mins but for spearmint it will be longer than 45 mins, so change :bash:`number_of_jobs` parameter in :bash:`config.cfg` file in same folder to 50 or less.
 
     .. code:: cfg
 
@@ -169,12 +168,12 @@ be as easy as
         args, params = benchmark_util.parse_cli()
         result = myAlgo(params, **args)
         duration = time.time() - starttime
-        print "Result for ParamILS: %s, %f, 1, %f, %d, %s" % \
+        print "Result for this algorithm run: %s, %f, 1, %f, %d, %s" % \
             ("SAT", abs(duration), result, -1, str(__file__))
 
 As you can see, the script parses command line arguments, calls the target function
 which is implemented in myAlgo, measures the runtime of the target algorithm and
-prints a return string to the command line. This relevant information is extracted
+prints a return string to the command line. All relevant information is then  extracted
 by the HPOlib. If you write a new algorithm/wrapper script, you must parse the
 following call:
 
@@ -186,15 +185,14 @@ The return string must take the following form:
 
 .. code:: bash
 
-    Result for ParamILS: SAT, <duration>, 1, <result>, -1, <additional information>
+    Result for this algorithm run: SAT, <duration>, 1, <result>, -1, <additional information>
 
-This return string is far from optimal and contains unnecessary and confusing
-parts. It is therefore subject to change in one of the next versions of the HPOlib.
+This return string is not yet optimal and exists for historic reasons. It's subject to change in one of the next versions of HPOlib.
 
 .. _config_example:
 
 Next, create :bash:`HPOlib/benchmarks/myBenchmark/config.cfg`,
-which is the configuration file. It tells the HPOlib what to do then looks like this:
+which is the configuration file. It tells the HPOlib everything about the benchmark and looks like this:
 
 .. code:: cfg
 
@@ -299,7 +297,7 @@ HPOLIB      number_of_concurrent_jobs           :cfg:`1`        WARNING: this on
 HPOLIB      function_setup                                      An executable which is called before the first target algorithm call. This can be for example check if everything is installed properly.
 HPOLIB      function_teardown                                   An executable which is called after the last target algorithm call. This can be for example delete temporary directories.
 HPOLIB      experiment_directory_prefix                         Adds a prefix to the automatically generated experiment directory. Can be useful if one experiments is run several times with different parameter settings.
-HPOLIB      handles_cv                                          This flag determines whether cv.py or runsolver_wrapper.py is the proxy which a hyperparameter optimization package optimizes. This is only set to 1 for SMAC and must only be used by optimization algorithm developers.
+HPOLIB      handles_cv                                          This flag determines whether optimization_interceptor or the optimizer handles cross validation. This is only set to 1 for SMAC and must only be used by optimization algorithm developers.
 =========== =================================== =============== ====================================
 
 
@@ -418,12 +416,13 @@ files (replace BayesOpt2 if your optimization package has a different name):
 * BayesOpt2Default.cfg: default configuration for your optimization algorithm
 
 Moreover, your algorithm has to call a script of the HPOlib namely
-:bash:`cv.py`, which does bookkeeping and manages a potential cross validation.
-The rest of this section will explain how to call :bash:`cv.py` and the
-interface your scripts must provide and the functionality which they must
+:bash:`optimization_interceptor.py`, which does bookkeeping and manages a 
+potential cross validation. The rest of this section will explain how to call 
+:bash:`optimization_interceptor.py` and the interface your scripts must provide 
+and the functionality which they must
 perform.
 
-Calling :bash:`cv.py`
+Calling :bash:`optimization_interceptor.py`
 ---------------------
 
 BayesOpt2.py
@@ -457,14 +456,15 @@ therefore do the following in the :bash:`main` function:
 
 2.  Return a valid bash shell command, which will be used to call your optimizer
     from the command line interface. The target algorithm you want to optimize
-    is mostly called :bash:`cv.py`, except for SMAC which handles
-    corssvalidation on its own. Calling :bash:`cv.py` allows optimizer
-    independend bookkeeping. The actual function call is the invoked by the
+    is mostly called :bash:`optimization_interceptor.py`, except for SMAC which 
+    handles crossvalidation on its own. Calling 
+    :bash:`optimization_interceptor.py` allows optimizer independend 
+    bookkeeping. The actual function call is the invoked by the
     HPOlib. Its interface is
 
     .. code:: bash
 
-        python cv.py -param_name1 'param_value' -x '5' -y '3.0'`
+        python optimization_interceptor.py -param_name1 'param_value' -x '5' -y '3.0'`
 
     etc... The function simply prints the loss to the command line.
     If your hyperparameter optimization package is written in python, you can

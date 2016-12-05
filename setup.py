@@ -254,6 +254,7 @@ class AdditionalInstall(install):
         install.do_egg_install(self)
 
         # Give detailed output to user
+        # TODO generate this output automatically!
         if not tpe or not smac or not spearmint or not smac_2_08 or not smac_2_10 or not irace_1_07:
             sys.stderr.write("[ERROR] Something went wrong while copying and downloading optimizers." +
                              "Please do the following to be ready to start optimizing:\n\n" +
@@ -263,7 +264,7 @@ class AdditionalInstall(install):
                              "wget http://www.automl.org/smac_2_08_00-master_src.tar.gz \n"
                              "wget http://www.automl.org/smac_2_10_00-dev_src.tar.gz \n" +
                              "wget http://www.automl.org/spearmint_april2013_mod_src.tar.gz \n" +
-                             "http://www.automl.org/irace_1.07.tar.gz\n"
+                             "wget http://www.automl.org/irace_1.07.tar.gz\n"
                              "tar -xf hyperopt_august2013_mod_src.tar.gz \n" +
                              "mv hyperopt_august2013_mod_src tpe/ \n" +
                              "tar -xf smac_2_06_01-dev_src.tar.gz \n" +

@@ -1,6 +1,6 @@
-=========================
-Optimizeration algorithms
-=========================
+=======================
+Optimization algorithms
+=======================
 
 .. _bergstra and bengio, 2012: http://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf
 .. _bergstra et al., 2011: http://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf

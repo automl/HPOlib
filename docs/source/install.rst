@@ -34,9 +34,8 @@ Installing inside an virtualenv
 
     .. code:: bash
 
-        easy_install -U distribute
         pip install numpy
-        pip install scipy==0.13.2
+        pip install scipy
         pip install matplotlib
 
     This may take some time. Afterwards you can verify having those libs installed with:
@@ -44,18 +43,6 @@ Installing inside an virtualenv
     .. code:: bash
 
         pip freeze
-        argparse==1.2.1
-        backports.ssl-match-hostname==3.4.0.2
-        distribute==0.7.3
-        matplotlib==1.3.1
-        nose==1.3.0
-        numpy==1.8.0
-        pyparsing==2.0.1
-        python-dateutil==2.2
-        scipy==0.13.2
-        six==1.5.2
-        tornado==3.2
-        wsgiref==0.1.2
 
 4.  run setup.py
 
@@ -71,6 +58,7 @@ Installing inside an virtualenv
     .. code:: bash
 
         pip freeze
+        
             HPOlib==0.0.1
             argparse==1.2.1
             backports.ssl-match-hostname==3.4.0.2
