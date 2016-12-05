@@ -22,167 +22,161 @@ import os
 import sys
 
 import HPOlib.wrapping_util as wrapping_util
+from HPOlib.optimizer_algorithm import OptimizerAlgorithm
 
-logger = logging.getLogger("HPOlib.optimizers.tpe.hyperopt_august2013_mod")
 
 version_info = ("# %76s #" % "https://github.com/hyperopt/hyperopt/tree/486aebec8a4170e4781d99bbd6cca09123b12717")
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
 
 
-# noinspection PyUnresolvedReferences
-def check_dependencies():
-    try:
-        import nose
-        logger.debug("\tNose: %s\n" % str(nose.__version__))
-    except ImportError:
-        raise ImportError("Nose cannot be imported. Are you sure it's "
-                          "installed?")
-    try:
-        import networkx
-        logger.debug("\tnetworkx: %s\n" % str(networkx.__version__))
-    except ImportError:
-        raise ImportError("Networkx cannot be imported. Are you sure it's "
-                          "installed?")
-    try:
-        import pymongo
-        logger.debug("\tpymongo: %s\n" % str(pymongo.version))
-        from bson.objectid import ObjectId
-    except ImportError:
-        raise ImportError("Pymongo cannot be imported. Are you sure it's"
-                          " installed?")
-    try:
-        import numpy
-        logger.debug("\tnumpy: %s" % str(numpy.__version__))
-    except ImportError:
-        raise ImportError("Numpy cannot be imported. Are you sure that it's"
-                          " installed?")
-    try:
-        import scipy
-        logger.debug("\tscipy: %s" % str(scipy.__version__))
-    except ImportError:
-        raise ImportError("Scipy cannot be imported. Are you sure that it's"
-                          " installed?")
+class TPE(OptimizerAlgorithm):
 
+    def __init__(self):
+        self.optimizer_name = 'TPE'
+        self.optimizer_dir = os.path.abspath("./hyperopt_august2013_mod")
+        self.logger = logging.getLogger("HPOlib.optimizers.tpe.hyperopt_august2013_mod")
+        self.logger.info("optimizer_name:%s" % self.optimizer_name)
+        self.logger.info("optimizer_dir:%s" % self.optimizer_dir)
 
-def build_tpe_call(config, options, optimizer_dir):
-    # For TPE we have to cd to the exp_dir
-    call = "python " + os.path.dirname(os.path.realpath(__file__)) + \
-           "/tpecall.py"
-    call = ' '.join([call, '-p', os.path.join(optimizer_dir, os.path.basename(config.get('TPE', 'space'))),
-                     "-m", config.get('TPE', 'number_evals'),
-                     "-s", str(options.seed),
-                     "--cwd", optimizer_dir])
-    if options.restore:
-        call = ' '.join([call, '-r'])
-    return call
+    # noinspection PyUnresolvedReferences
+    def check_dependencies(self):
+        try:
+            import nose
+            self.logger.debug("\tNose: %s\n" % str(nose.__version__))
+        except ImportError:
+            raise ImportError("Nose cannot be imported. Are you sure it's "
+                              "installed?")
+        try:
+            import networkx
+            self.logger.debug("\tnetworkx: %s\n" % str(networkx.__version__))
+        except ImportError:
+            raise ImportError("Networkx cannot be imported. Are you sure it's "
+                              "installed?")
+        try:
+            import pymongo
+            self.logger.debug("\tpymongo: %s\n" % str(pymongo.version))
+            from bson.objectid import ObjectId
+        except ImportError:
+            raise ImportError("Pymongo cannot be imported. Are you sure it's"
+                              " installed?")
+        try:
+            import numpy
+            self.logger.debug("\tnumpy: %s" % str(numpy.__version__))
+        except ImportError:
+            raise ImportError("Numpy cannot be imported. Are you sure that it's"
+                              " installed?")
+        try:
+            import scipy
+            self.logger.debug("\tscipy: %s" % str(scipy.__version__))
+        except ImportError:
+            raise ImportError("Scipy cannot be imported. Are you sure that it's"
+                              " installed?")
 
+    def build_call(self, config, options, optimizer_dir):
+        # For TPE we have to cd to the exp_dir
+        call = "python " + os.path.dirname(os.path.realpath(__file__)) + \
+               "/tpecall.py"
+        call = ' '.join([call, '-p', os.path.join(optimizer_dir, os.path.basename(config.get('TPE', 'space'))),
+                         "-m", config.get('TPE', 'number_evals'),
+                         "-s", str(options.seed),
+                         "--cwd", optimizer_dir])
+        if options.restore:
+            call = ' '.join([call, '-r'])
+        return call
 
-#noinspection PyUnusedLocal
-def restore(config, optimizer_dir, **kwargs):
-    """
-    Returns the number of restored runs. This is the number of different configs
-    tested multiplied by the number of crossvalidation folds.
-    """
-    restore_file = os.path.join(optimizer_dir, 'state.pkl')
-    if not os.path.exists(restore_file):
-        print "Oups, this should have been checked before"
-        raise Exception("%s does not exist" % (restore_file,))
+    # noinspection PyUnusedLocal
+    def restore(self, config, optimizer_dir, **kwargs):
+        """
+        Returns the number of restored runs. This is the number of different configs
+        tested multiplied by the number of crossvalidation folds.
+        """
+        restore_file = os.path.join(optimizer_dir, 'state.pkl')
+        if not os.path.exists(restore_file):
+            print "Oups, this should have been checked before"
+            raise Exception("%s does not exist" % (restore_file,))
 
-    # Special settings for restoring
-    with open(restore_file) as fh:
-        state = cPickle.load(fh)
-    complete_runs = 0
-    #noinspection PyProtectedMember
-    tpe_trials = state['trials']._trials
-    for trial in tpe_trials:
-        # Assumes that all not valid states states are marked crashed
-        if trial['state'] == 2:
-            complete_runs += 1
-    restored_runs = complete_runs * config.getint('HPOLIB', 'number_cv_folds')
-    return restored_runs
+        # Special settings for restoring
+        with open(restore_file) as fh:
+            state = cPickle.load(fh)
+        complete_runs = 0
+        # noinspection PyProtectedMember
+        tpe_trials = state['trials']._trials
+        for trial in tpe_trials:
+            # Assumes that all not valid states states are marked crashed
+            if trial['state'] == 2:
+                complete_runs += 1
+        restored_runs = complete_runs * config.getint('HPOLIB', 'number_cv_folds')
+        return restored_runs
 
-
-#noinspection PyUnusedLocal
-def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs):
-    # config:           Loaded .cfg file
-    # options:          Options containing seed, restore_dir, 
-    # experiment_dir:   Experiment directory/Benchmark_directory
-    # **kwargs:         Nothing so far
-    time_string = wrapping_util.get_time_string()
-    cmd = ""
-
-    # Add path_to_optimizer to PYTHONPATH and to sys.path
-    # Only for HYPEROPT
-    if not 'PYTHONPATH' in os.environ:
-        os.environ['PYTHONPATH'] = config.get('TPE', 'path_to_optimizer')
-    else:
-        os.environ['PYTHONPATH'] = config.get('TPE', 'path_to_optimizer') + os.pathsep + os.environ['PYTHONPATH']
-    sys.path.append(config.get('TPE', 'path_to_optimizer'))
-
-    optimizer_str = os.path.splitext(os.path.basename(__file__))[0]
-
-# TODO: Check whether we might need this again
-#    SYSTEM_WIDE = 0
-#    AUGUST_2013_MOD = 1
-#    try:
-#        import hyperopt
-#        version = SYSTEM_WIDE
-#    except ImportError:
-#        try:
-#            cmd += "export PYTHONPATH=$PYTHONPATH:" + os.path.dirname(os.path.abspath(__file__)) + \
-#                "/optimizers/hyperopt_august2013_mod\n"
-#            import optimizers.hyperopt_august2013_mod.hyperopt as hyperopt
-#        except ImportError, e:
-#            import HPOlib.optimizers.hyperopt_august2013_mod.hyperopt as hyperopt
-#        version = AUGUST_2013_MOD
-
-    # Find experiment directory
-    if options.restore:
-        if not os.path.exists(options.restore):
-            raise Exception("The restore directory does not exist")
-        optimizer_dir = options.restore
-    else:
-        optimizer_dir = os.path.join(experiment_dir,
-                                     experiment_directory_prefix
-                                     + optimizer_str + "_" +
-                                     str(options.seed) + "_" +
-                                     time_string)
-
-    # Build call
-    cmd += build_tpe_call(config, options, optimizer_dir)
-
-    # Set up experiment directory
-    if not os.path.exists(optimizer_dir):
-        os.mkdir(optimizer_dir)
-        space = config.get('TPE', 'space')
-        abs_space = os.path.abspath(space)
-        parent_space = os.path.join(experiment_dir, optimizer_str, space)
-        if os.path.exists(abs_space):
-            space = abs_space
-        elif os.path.exists(parent_space):
-            space = parent_space
+    # setup directory where experiment will run
+    def custom_setup(self, config, options, experiment_dir, optimizer_dir):
+        # Add path_to_optimizer to PYTHONPATH and to sys.path
+        # Only for HYPEROPT
+        if not 'PYTHONPATH' in os.environ:
+            os.environ['PYTHONPATH'] = config.get('TPE', 'path_to_optimizer')
         else:
-            raise Exception("TPE search space not found. Searched at %s and "
-                            "%s" % (abs_space, parent_space))
-        # Copy the hyperopt search space
-        if not os.path.exists(os.path.join(optimizer_dir, os.path.basename(space))):
-            os.symlink(os.path.join(experiment_dir, optimizer_str, space),
-                       os.path.join(optimizer_dir, os.path.basename(space)))
+            os.environ['PYTHONPATH'] = config.get('TPE', 'path_to_optimizer') + os.pathsep + os.environ['PYTHONPATH']
+        sys.path.append(config.get('TPE', 'path_to_optimizer'))
 
-    import hyperopt
-    path_to_loaded_optimizer = os.path.abspath(os.path.dirname(os.path.dirname(hyperopt.__file__)))
+        optimizer_str = os.path.splitext(os.path.basename(__file__))[0]
 
-    logger.info("### INFORMATION ################################################################")
-    logger.info("# You are running:                                                             #")
-    logger.info("# %76s #" % path_to_loaded_optimizer)
-    if not os.path.samefile(path_to_loaded_optimizer, config.get('TPE', 'path_to_optimizer')):
-        logger.warning("# BUT hyperopt_august2013_modDefault.cfg says:")
-        logger.warning("# %76s #" % config.get('TPE', 'path_to_optimizer'))
-        logger.warning("# Found a global hyperopt version. This installation will be used!             #")
-    else:
-        logger.info("# To reproduce our results you need version 0.0.3.dev, which can be found here:#")
-        logger.info("%s" % version_info)
-        logger.info("# A newer version might be available, but not yet built in.                    #")
-    logger.info("################################################################################")
-    return cmd, optimizer_dir
+        if options.restore:
+            if not os.path.exists(options.restore):
+                raise Exception("The restore directory does not exist")
+            optimizer_dir = options.restore
+
+        # Set up experiment directory
+        if not os.path.exists(optimizer_dir):
+            os.mkdir(optimizer_dir)
+            space = config.get('TPE', 'space')
+            abs_space = os.path.abspath(space)
+            parent_space = os.path.join(experiment_dir, optimizer_str, space)
+            if os.path.exists(abs_space):
+                space = abs_space
+            elif os.path.exists(parent_space):
+                space = parent_space
+            else:
+                raise Exception("TPE search space not found. Searched at %s and "
+                                "%s" % (abs_space, parent_space))
+            # Copy the hyperopt search space
+            if not os.path.exists(os.path.join(optimizer_dir, os.path.basename(space))):
+                os.symlink(os.path.join(experiment_dir, optimizer_str, space),
+                           os.path.join(optimizer_dir, os.path.basename(space)))
+
+        import hyperopt
+        path_to_loaded_optimizer = os.path.abspath(os.path.dirname(os.path.dirname(hyperopt.__file__)))
+
+        return optimizer_dir
+
+    def manipulate_config(self, config):
+        if not config.has_section('TPE'):
+            config.add_section('TPE')
+
+        # optional cases
+        if not config.has_option('TPE', 'space'):
+            raise Exception("TPE:space not specified in .cfg")
+
+        number_of_jobs = config.getint('HPOLIB', 'number_of_jobs')
+        if not config.has_option('TPE', 'number_evals'):
+            config.set('TPE', 'number_evals', config.get('HPOLIB', 'number_of_jobs'))
+        elif config.getint('TPE', 'number_evals') != number_of_jobs:
+            self.logger.warning("Found a total_num_runs_limit (%d) which differs from "
+                           "the one read from the config (%d). This can e.g. "
+                           "happen when restoring a TPE run" %
+                           (config.getint('TPE', 'number_evals'),
+                            number_of_jobs))
+            config.set('TPE', 'number_evals', str(number_of_jobs))
+
+        path_to_optimizer = config.get('TPE', 'path_to_optimizer')
+        if not os.path.isabs(path_to_optimizer):
+            path_to_optimizer = os.path.join(os.path.dirname(os.path.realpath(__file__)), path_to_optimizer)
+
+        path_to_optimizer = os.path.normpath(path_to_optimizer)
+        if not os.path.exists(path_to_optimizer):
+            self.logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
+            sys.exit(1)
+
+        config.set('TPE', 'path_to_optimizer', path_to_optimizer)
+
+        return config

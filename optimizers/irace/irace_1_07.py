@@ -20,11 +20,9 @@ import logging
 import os
 import subprocess
 import shutil
-
+import sys
 import HPOlib.wrapping_util as wrapping_util
-
-
-logger = logging.getLogger("HPOlib.irace_1_07")
+from HPOlib.optimizer_algorithm import OptimizerAlgorithm
 
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
@@ -35,91 +33,95 @@ version_info = ["R ==> 3.0.2",
                 ]
 
 
-def get_algo_exec():
-    return '"python ' + os.path.join(os.path.dirname(__file__),
-                                     'irace_to_HPOlib.py') + '"'
+class IRACE(OptimizerAlgorithm):
 
+    def __init__(self):
+        self.optimizer_name = 'irace'
+        self.optimizer_dir = os.path.abspath("./irace_1_07")
+        self.logger = logging.getLogger("HPOlib.irace_1_07")
+        self.logger.info("optimizer_name:%s" % self.optimizer_name)
+        self.logger.info("optimizer_dir:%s" % self.optimizer_dir)
 
-def check_dependencies():
-    process = subprocess.Popen("which R", stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, shell=True,
-                               executable="/bin/bash")
-    stdoutdata, stderrdata = process.communicate()
+    def check_dependencies(self):
+        process = subprocess.Popen("which R", stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE, shell=True,
+                                   executable="/bin/bash")
+        stdoutdata, stderrdata = process.communicate()
 
-    if stdoutdata is not None and "R" in stdoutdata:
-        pass
-    else:
-        raise Exception("R cannot be found"
-                        "Are you sure that it's installed?\n"
-                        "Your $PATH is: " + os.environ['PATH'])
+        if stdoutdata is not None and "R" in stdoutdata:
+            pass
+        else:
+            raise Exception("R cannot be found"
+                            "Are you sure that it's installed?\n"
+                            "Your $PATH is: " + os.environ['PATH'])
 
+    def build_call(self, config, options, optimizer_dir):
+        call = os.path.join(config.get('irace', 'path_to_optimizer'), "bin", "irace")
+        # call = "irace"
+        call = " ".join([call,
+                         '--param-file', config.get("irace", "params"),
+                         '--max-experiments', config.get("HPOLIB", "number_of_jobs"),
+                         '--digits', config.get("irace", "digits"),
+                         '--debug-level', config.get("irace", "debug-level"),
+                         '--iterations', config.get("irace", "iterations"),
+                         '--experiment-per-iteration', config.get("irace", "experiment-per-iteration"),
+                         '--sample-instances', config.get("irace", "sample-instances"),
+                         '--test-type', config.get("irace", "test-type"),
+                         '--first-test', config.get("irace", "first-test"),
+                         '--each-test', config.get("irace", "each-test"),
+                         '--min-survival', config.get("irace", "min-survival"),
+                         '--num-candidates', config.get("irace", "num-candidates"),
+                         '--mu', config.get("irace", "mu"),
+                         '--confidence', config.get("irace", "confidence"),
+                         '--seed', str(options.seed),
+                         '--soft-restart', config.get("irace", "softRestart"),
+                         ])
+        self.logger.info("call:%s", call)
+        return call
 
-def build_irace_call(config, options, optimizer_dir):
-    call = os.path.join(config.get('irace', 'path_to_optimizer'), "bin", "irace")
-    # call = "irace"
-    call = " ".join([call,
-                     '--param-file', config.get("irace", "params"),
-                     '--max-experiments', config.get("HPOLIB", "number_of_jobs"),
-                     '--digits', config.get("irace", "digits"),
-                     '--debug-level', config.get("irace", "debug-level"),
-                     '--iterations', config.get("irace", "iterations"),
-                     '--experiment-per-iteration', config.get("irace", "experiment-per-iteration"),
-                     '--sample-instances', config.get("irace", "sample-instances"),
-                     '--test-type', config.get("irace", "test-type"),
-                     '--first-test', config.get("irace", "first-test"),
-                     '--each-test', config.get("irace", "each-test"),
-                     '--min-survival', config.get("irace", "min-survival"),
-                     '--num-candidates', config.get("irace", "num-candidates"),
-                     '--mu', config.get("irace", "mu"),
-                     '--confidence', config.get("irace", "confidence"),
-                     '--seed', str(options.seed),
-                     '--soft-restart', config.get("irace", "softRestart"),
-                     ])
-    logger.info("call:%s", call)
-    return call
+    # setup directory where experiment will run
+    def custom_setup(self, config, options, experiment_dir, optimizer_dir):
 
+        # setup path of irace optimizer
+        r_lib = os.path.dirname(os.path.abspath(config.get("irace", "path_to_optimizer")))
+        if "R_LIBS" in os.environ:
+            os.environ["R_LIBS"] = r_lib + ":" + os.environ["R_LIBS"]
+        else:
+            os.environ["R_LIBS"] = r_lib
 
-# noinspection PyUnusedLocal
-def main(config, options, experiment_dir, experiment_directory_prefix, **kwargs):
-    # config:           Loaded .cfg file
-    # options:          Options containing seed, restore_dir,
-    # experiment_dir:   Experiment directory/Benchmark_directory
-    # **kwargs:         Nothing so far
+        self.logger.info("R_LIBS: %s" % str(os.environ["R_LIBS"]))
 
-    r_lib = os.path.dirname(os.path.abspath(config.get("irace", "path_to_optimizer")))
-    if "R_LIBS" in os.environ:
-        os.environ["R_LIBS"] = r_lib + ":" + os.environ["R_LIBS"]
-    else:
-        os.environ["R_LIBS"] = r_lib
+        # Set up experiment directory
+        os.mkdir(optimizer_dir)
+        os.mkdir(os.path.join(optimizer_dir, "Instances"))
+        instances_dir = os.path.join(optimizer_dir, "Instances", "1")
 
-    logger.info("R_LIBS: %s" % str(os.environ["R_LIBS"]))
-    time_string = wrapping_util.get_time_string()
-    optimizer_str = os.path.splitext(os.path.basename(__file__))[0]
+        open(instances_dir, 'a').close()
 
-    # Find experiment directory
-    optimizer_dir = os.path.join(experiment_dir,
-                                 experiment_directory_prefix +
-                                 optimizer_str + "_" +
-                                 str(options.seed) + "_" + time_string)
+        # copy tune-conf and hook-run to experiment dir
+        shutil.copy(os.path.join(os.path.dirname(os.path.realpath(__file__)), "tune-conf"), optimizer_dir)
+        shutil.copy(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hook-run"), optimizer_dir)
 
-    # Build call
-    cmd = build_irace_call(config, options, optimizer_dir)
+        return optimizer_dir
 
-    # Set up experiment directory
-    os.mkdir(optimizer_dir)
-    os.mkdir(os.path.join(optimizer_dir, "Instances"))
-    instances_dir = os.path.join(optimizer_dir, "Instances", "1")
+    def manipulate_config(self, config):
+        if not config.has_section('irace'):
+            config.add_section('irace')
 
-    open(instances_dir, 'a').close()
+        # optional cases
+        if not config.has_option('irace', 'params'):
+            raise Exception("irace:params not specified in .cfg")
 
-    # copy tune-conf and hook-run to experiment dir
-    shutil.copy(os.path.join(os.path.dirname(os.path.realpath(__file__)), "tune-conf"), optimizer_dir)
-    shutil.copy(os.path.join(os.path.dirname(os.path.realpath(__file__)), "hook-run"), optimizer_dir)
+        path_to_optimizer = config.get('irace', 'path_to_optimizer')
+        if not os.path.isabs(path_to_optimizer):
+            path_to_optimizer = os.path.join(os.path.dirname(os.path.realpath(__file__)), path_to_optimizer)
 
-    logger.info("### INFORMATION ################################################################")
-    logger.info("# You're running %35s                  #" % config.get('irace', 'path_to_optimizer'))
-    for v in version_info:
-        logger.info("# %76s #" % v)
-    logger.info("# This is an updated version.                                                  #")
-    logger.info("################################################################################")
-    return cmd, optimizer_dir
+        path_to_optimizer = os.path.normpath(path_to_optimizer)
+        if not os.path.exists(path_to_optimizer):
+            self.logger.critical("Path to optimizer not found: %s" % path_to_optimizer)
+            sys.exit(1)
+
+        config.set('irace', 'path_to_optimizer', path_to_optimizer)
+        self.logger.info("path_to_opt:%s" % path_to_optimizer)
+
+        return config
