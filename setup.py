@@ -307,6 +307,7 @@ setup(
                       'pymongo',
                       'psutil',
                       'pyparsing'
+                      'nose'
                       ],
     author_email='eggenspk@informatik.uni-freiburg.de',
     description=desc,
