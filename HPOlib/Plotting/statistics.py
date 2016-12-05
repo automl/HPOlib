@@ -19,11 +19,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from argparse import ArgumentParser
+from collections import defaultdict
 import cPickle
+import StringIO
 import sys
 
 import numpy
-import scipy
+
 from scipy import stats
 
 from HPOlib.Plotting import plot_util
@@ -112,58 +114,115 @@ def _mann_whitney_u(x, y=None):
 """
 
 
-def main(pkl_list, name_list, cut=sys.maxint):
-    pickles = plot_util.load_pickles(name_list, pkl_list)
-    best_dict, idx_dict, keys = plot_util.get_best_dict(name_list, pickles,
-                                                       cut=cut)
-
-    for k in keys:
-        sys.stdout.write("%10s: %s experiment(s)\n" % (k, len(best_dict[k])))
-
-    sys.stdout.write("Unpaired t-tests-----------------------------------------------------\n")
-    # TODO: replace by itertools
-    for idx, k in enumerate(keys):
-        if len(keys) > 1:
-            for j in keys[idx+1:]:
-                t_true, p_true = stats.ttest_ind(best_dict[k], best_dict[j])
-                rounded_t_true, rounded_p_true = stats.ttest_ind(numpy.round(best_dict[k], 3),
-                                                                 numpy.round(best_dict[j], 3))
-
-                sys.stdout.write("%10s vs %10s\n" % (k, j))
-                sys.stdout.write("Standard independent 2 sample test, equal population variance\n")
-                sys.stdout.write(" "*24 + "  T: %10.5e, p-value: %10.5e (%5.3f%%) \n" %
-                                (t_true, p_true, p_true*100))
-                sys.stdout.write("Rounded:                ")
-                sys.stdout.write("  T: %10.5e, p-value: %10.5e (%5.3f%%)\n" %
-                                (rounded_t_true, rounded_p_true, rounded_p_true*100))
-                if tuple(map(int, (scipy.__version__.split(".")))) >= (0, 11, 0):
+# This are some artefacts from the welch test (t-test with unequal variance)
+"""if tuple(map(int, (scipy.__version__.split(".")))) >= (0, 11, 0):
                     # print scipy.__version__ >= '0.11.0'
                     t_false, p_false = stats.ttest_ind(best_dict[k], best_dict[j], equal_var=False)
                     rounded_t_false, rounded_p_false = stats.ttest_ind(numpy.round(best_dict[k], 3),
                                                                        numpy.round(best_dict[j], 3),
                                                                        equal_var=False)
-                    sys.stdout.write("Welch's t-test, no equal population variance\n")
-                    sys.stdout.write(" "*24)
-                    sys.stdout.write(": T: %10.5e, p-value: %10.5e (%5.3f%%)\n" %
-                                    (t_false, p_false, p_false*100))
-                    sys.stdout.write("Rounded:                ")
-                    sys.stdout.write(": T: %10.5e, p-value: %10.5e (%5.3f%%)\n" %
-                                    (rounded_t_false, rounded_p_false, rounded_p_false*100))
-                sys.stdout.write("\n")
 
-    sys.stdout.write("Best Value-----------------------------------------------------------\n")
+                    if p_false < 0.05:
+                        if best_dict[k] < best_dict[j]:
+                            wins_of_optimizer_welch[k][j] += 1
+                        elif best_dict[j] < best_dict[k]:
+                            wins_of_optimizer_welch[j][k] += 1
+
+                    output.write("Welch's t-test, no equal population variance\n")
+                    output.write(" "*24)
+                    output.write(": T: %10.5e, p-value: %10.5e (%5.3f%%)\n" %
+                                    (t_false, p_false, p_false*100))
+                    output.write("Rounded:                ")
+                    output.write(": T: %10.5e, p-value: %10.5e (%5.3f%%)\n" %
+                                    (rounded_t_false, rounded_p_false, rounded_p_false*100))
+"""
+
+
+def get_statistics_as_text(pkl_list, name_list, cut=sys.maxint, round_=0):
+    pickles = plot_util.load_pickles(name_list, pkl_list)
+    best_dict, idx_dict, keys = plot_util.get_best_dict(name_list, pickles,
+                                                        cut=cut)
+
+    p_values = calculate_statistics(best_dict, keys, round_=round_)
+    output = StringIO.StringIO()
+    output.write("Unpaired t-tests-----------------------------------------------------\n")
+    output.write("Standard independent 2 sample test, equal population variance\n")
+
+    for key in keys:
+        output.write("%10s: %s experiment(s)\n" % (key, len(best_dict[key])))
+
+    for idx, key0 in enumerate(p_values):
+        if len(keys) > 1:
+            for j, key1 in enumerate(p_values[key0]):
+                output.write("%10s vs %10s" % (key0, key1))
+                output.write("      p-value: %10.5e (%5.3f%%) \n" %
+                                (p_values[key0][key1], p_values[key0][key1]*100))
+                output.write("\n")
+
+    output.write("Best Value-----------------------------------------------------------\n")
     for k in keys:
-        sys.stdout.write("%10s: %10.5f (min: %10.5f, max: %10.5f, std: %5.3f)\n" %
+        output.write("%10s: %10.5f (min: %10.5f, max: %10.5f, std: %5.3f)\n" %
                         (k, float(numpy.mean(best_dict[k])), float(numpy.min(best_dict[k])),
                          numpy.max(best_dict[k]), float(numpy.std(best_dict[k]))))
 
-    sys.stdout.write("Needed Trials--------------------------------------------------------\n")
+    output.write("Needed Trials--------------------------------------------------------\n")
     for k in keys:
-        sys.stdout.write("%10s: %10.5f (min: %10.5f, max: %10.5f, std: %5.3f)\n" %
+        output.write("%10s: %10.5f (min: %10.5f, max: %10.5f, std: %5.3f)\n" %
                         (k, float(numpy.mean(idx_dict[k])), float(numpy.min(idx_dict[k])),
                          numpy.max(idx_dict[k]), float(numpy.std(idx_dict[k]))))
 
-    sys.stdout.write("------------------------------------------------------------------------\n")
+    output.write("------------------------------------------------------------------------\n")
+    output.seek(0)
+    return output
+
+
+def get_p_values(pkl_list, name_list, cut=sys.maxint, round_=0):
+    pickles = plot_util.load_pickles(name_list, pkl_list)
+    best_dict, idx_dict, keys = plot_util.get_best_dict(name_list, pickles,
+                                                       cut=cut)
+    p_values = calculate_statistics(best_dict, keys, round_=round_)
+    return p_values
+
+
+def get_pairwise_wins(pkl_list, name_list, cut=sys.maxint, round_=0):
+    pickles = plot_util.load_pickles(name_list, pkl_list)
+    best_dict, idx_dict, keys = plot_util.get_best_dict(name_list, pickles,
+                                                       cut=cut)
+    p_values = calculate_statistics(best_dict, keys, round_=round_)
+
+    wins_of_optimizer = dict()
+    for key in p_values:
+        wins_of_optimizer[key] = defaultdict(int)
+
+    for idx, key0 in enumerate(p_values):
+        if len(keys) > 1:
+            for j, key1 in enumerate(p_values[key0]):
+                if p_values[key0][key1] < 0.05:
+                    if best_dict[key0] < best_dict[key1]:
+                        wins_of_optimizer[key0][key1] += 1
+                    elif best_dict[key1] < best_dict[key0]:
+                        wins_of_optimizer[key1][key0] += 1
+
+    return wins_of_optimizer
+
+
+def calculate_statistics(best_dict, keys, round_=0):
+    p_values = dict()
+    for key in keys:
+        p_values[key] = defaultdict(float)
+
+    for idx, key0 in enumerate(keys):
+        if len(keys) > 1:
+            for j, key1 in enumerate(keys[idx+1:]):
+                if round_ > 0:
+                    t_true, p_true = stats.ttest_ind(numpy.round(best_dict[key0], round_),
+                                                        numpy.round(best_dict[key1], round_))
+                else:
+                    t_true, p_true = stats.ttest_ind(best_dict[key0], best_dict[key1])
+                p_values[key0][key1] = p_true
+
+    return p_values
+
 
 if __name__ == "__main__":
     prog = "python statistics.py WhatIsThis <manyPickles> WhatIsThis <manyPickles> [WhatIsThis <manyPickles>]"
@@ -172,8 +231,14 @@ if __name__ == "__main__":
     parser = ArgumentParser(description=description, prog=prog)
 
     parser.add_argument("-c", "--cut", dest="cut", default=sys.maxint,
-                        type=int, help="Only consider that many evaluations")
+                        type=int, help="Only consider that many evaluations.")
+    parser.add_argument("--round", dest="round_", default=0, type=int,
+                        help="Round the best result before performing the"
+                             "statistical test.")
     args, unknown = parser.parse_known_args()
 
     pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
-    main(pkl_list=pkl_list_main, name_list=name_list_main, cut=args.cut)
+    output = get_statistics_as_text(pkl_list=pkl_list_main,
+                                    name_list=name_list_main,
+                                    cut=args.cut, round_=args.round_)
+    print output.getvalue()

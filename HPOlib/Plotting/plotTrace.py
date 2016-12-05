@@ -19,7 +19,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from argparse import ArgumentParser
-import itertools
 import sys
 import cPickle
 
@@ -35,12 +34,15 @@ __contact__ = "automl.org"
 
 
 def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=False,
-                            save="", y_min=0, y_max=0, cut=sys.maxint):
-    markers = plot_util.get_plot_markers()
-    colors = plot_util.get_plot_colors()
-    linestyles = itertools.cycle(['-'])
-    size = 1
+                            save="", y_min=0, y_max=0, cut=sys.maxint,
+                            linewidth=1, linestyles=plot_util.get_single_linestyle(),
+                            colors=None, markers=plot_util.get_empty_iterator(),
+                            ylabel=None, xlabel=None):
 
+    if colors is None:
+        colors= plot_util.get_plot_colors()
+
+    size = 1
     # get handles
     ratio = 5
     gs = matplotlib.gridspec.GridSpec(ratio, 1)
@@ -79,11 +81,12 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=Fals
         # Plot the stuff
         marker = markers.next()
         color = colors.next()
-        l = linestyles.next()
+        line_style_ = linestyles.next()
         ax.scatter(np.argmin(line), min(line), facecolor="w", edgecolor=color,
                    s=size*10*15, marker=marker)
         ax.scatter(x, y, color=color, marker=marker, s=size*15)
-        ax.plot(x, line, color=color, label=name_list[i][0], linestyle=l, linewidth=size)
+        ax.plot(x, line, color=color, label=name_list[i][0], linestyle=line_style_,
+                linewidth=linewidth)
 
         if min(y) < min_val:
             min_val = min(y)
@@ -93,11 +96,16 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=Fals
             max_trials = num_plotted_trials
 
     # Describe and label the stuff
-    ax.set_xlabel("#Function evaluations")
-    if log:
-        ax.set_ylabel("log10(Minfunction value)")
-    else:
-        ax.set_ylabel("Minfunction value")
+    if xlabel is None:
+        xlabel = "#Function evaluations"
+    ax.set_xlabel(xlabel)
+
+    if ylabel is None:
+        if log:
+            ylabel = "log10(Minfunction value)"
+        else:
+            ylabel = "Minfunction value"
+    ax.set_ylabel(ylabel)
 
     if y_min == y_max:
         ax.set_ylim([min_val - 0.1, max_val + 0.1])
@@ -120,7 +128,13 @@ def plot_optimization_trace(trial_list, name_list, optimum=0, title="", log=Fals
 
 
 def main(pkl_list, name_list, optimum=0, title="", log=False, save="", y_max=0,
-         y_min=0, cut=sys.maxint):
+         y_min=0, cut=sys.maxint, linewidth=1,
+         linestyles=plot_util.get_single_linestyle(), colors=None,
+         markers=plot_util.get_empty_iterator(),
+         ylabel=None, xlabel=None):
+
+    if colors is None:
+        colors= plot_util.get_plot_colors()
 
     trial_list = list()
     for i in range(len(pkl_list)):
@@ -129,12 +143,14 @@ def main(pkl_list, name_list, optimum=0, title="", log=False, save="", y_max=0,
         fh = open(pkl_list[i][0])
         trl = cPickle.load(fh)
         fh.close()
-        trial_list.append(plot_util.extract_trials(trl))
+        trial_list.append(plot_util.extract_results(trl))
 
     sys.stdout.write("Plotting trace\n")
     plot_optimization_trace(trial_list=trial_list, name_list=name_list, optimum=optimum,
                             title=title, log=log, save=save, y_max=y_max,
-                            y_min=y_min, cut=cut)
+                            y_min=y_min, cut=cut, linewidth=linewidth,
+                            linestyles=linestyles, colors=colors,
+                            markers=markers, ylabel=ylabel, xlabel=xlabel)
 
     if save != "":
         sys.stdout.write("Saved plot to " + save + "\n")

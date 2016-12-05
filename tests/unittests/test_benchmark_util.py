@@ -20,7 +20,7 @@ import os
 import unittest
 import sys
 
-import HPOlib.benchmark_util as benchmark_util
+import HPOlib.benchmarks.benchmark_util as benchmark_util
 
 
 class BenchmarkUtilTest(unittest.TestCase):
@@ -41,6 +41,29 @@ class BenchmarkUtilTest(unittest.TestCase):
         args, params = benchmark_util.parse_cli()
         self.assertEqual(params, {'x': '3'})
         self.assertEqual(args, {'folds': '10', 'fold': '0'})
+
+        sys.argv = ["test.py", "--folds", "10", "--fold", "0", "--long",
+                    "long", "long", "li", "long", "long", "long", "HEY",
+                    "--params", "-x", "3"]
+        args, params = benchmark_util.parse_cli()
+        self.assertEqual(params, {'x': '3'})
+        self.assertEqual(args, {'folds': '10', 'fold': '0',
+                                'long': "long long li long long long HEY"})
+
+        sys.argv = ["test.py", "--folds", "10", "--fold", "0", "--long", '"',
+                    "long", "long", "li", "long", "long", "'", "lng", "HEY",
+                    "--params", "-x", "3"]
+        args, params = benchmark_util.parse_cli()
+        self.assertEqual(params, {'x': '3'})
+        self.assertEqual(args, {'folds': '10', 'fold': '0',
+                                'long': "\" long long li long long \' lng HEY"})
+
+        sys.argv = ["test.py", "--folds", "10", "--fold", "0", "--long",
+                    "--params", "-x", "3"]
+        args, params = benchmark_util.parse_cli()
+        self.assertEqual(params, {'x': '3'})
+        self.assertEqual(args, {'folds': '10', 'fold': '0',
+                                'long': ""})
 
         # illegal call, arguments with one minus before --params
         sys.argv = ["test.py", "-folds", "10", "--fold", "0", "--params", "-x",

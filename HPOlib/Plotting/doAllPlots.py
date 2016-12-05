@@ -50,17 +50,19 @@ def _plot_trace(pkl_list, name_list, save="", cut=sys.maxint, log=False):
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def _trace_with_std_per_eval(pkl_list, name_list, save="",
-                             cut=sys.maxint, log=False):
+def _trace_with_std_per_eval(pkl_list, name_list, maxvalue, save="",
+                             cut=sys.maxint, log=False, aggregation="mean"):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
 
     # noinspection PyBroadException
     try:
         os.chdir(plotting_dir)
-        import plotTraceWithStd_perEval
-        plotTraceWithStd_perEval.main(pkl_list, name_list, autofill=True,
-                                      optimum=0, save=save, log=log, cut=cut)
+        import plotTrace_perEval
+        plotTrace_perEval.main(pkl_list, name_list, autofill=True,
+                               aggregation=aggregation, optimum=0,
+                               maxvalue=maxvalue, save=save, log=log,
+                               print_lenght_trial_list=True)
         os.chdir(cur_dir)
         sys.stdout.write("passed\n")
     except Exception, e:
@@ -68,17 +70,18 @@ def _trace_with_std_per_eval(pkl_list, name_list, save="",
         sys.stderr.write("failed: %s %s" % (sys.exc_info()[0], e))
 
 
-def _trace_with_std_per_time(pkl_list, name_list, save="",
-                             cut=sys.maxint, log=False):
+def _trace_with_std_per_time(pkl_list, name_list, maxvalue, save="",
+                             cut=sys.maxint, log=False, aggregation="mean"):
     plotting_dir = os.path.dirname(os.path.realpath(__file__))
     cur_dir = os.getcwd()
 
     # noinspection PyBroadException
     try:
         os.chdir(plotting_dir)
-        import plotTraceWithStd_perTime
-        plotTraceWithStd_perTime.main(pkl_list, name_list, autofill=True,
-                                      optimum=0, save=save, log=log, cut=cut)
+        import plotTrace_perTime
+        plotTrace_perTime.main(pkl_list, name_list, autofill=True,
+                               aggregation=aggregation, optimum=0,
+                               maxvalue=maxvalue, save=save, logy=log)
         os.chdir(cur_dir)
         sys.stdout.write("passed\n")
     except Exception, e:
@@ -95,8 +98,12 @@ def _optimizer_overhead(pkl_list, name_list, save="",
     try:
         os.chdir(plotting_dir)
         import plotOptimizerOverhead
-        plotOptimizerOverhead.main(pkl_list, name_list, autofill=True,
-                                   log=log, save=save, cut=cut)
+        plotOptimizerOverhead.main(pkl_list=pkl_list, name_list=name_list,
+                                   autofill=True, title="", log=log,
+                                   save=save, cut=cut, ylabel="Time [sec]",
+                                   xlabel="#Function evaluations",
+                                   aggregation="mean", properties=None,
+                                   print_lenght_trial_list=True)
         os.chdir(cur_dir)
         sys.stdout.write("passed\n")
     except Exception, e:
@@ -143,21 +150,15 @@ def _statistics(pkl_list, name_list, save="", cut=sys.maxint, log=False):
     # noinspection PyBroadException
     try:
         os.chdir(plotting_dir)
-        cmd = ["python statistics.py", "--cut %d" % cut]
-        for i in range(len(name_list)):
-            cmd.append(name_list[i][0])
-            for pkl in pkl_list[i]:
-                cmd.append(pkl)
+        import statistics
+        stringIO = statistics.get_statistics_as_text(pkl_list, name_list, cut)
+        os.chdir(plotting_dir)
+
         if save is not "":
-            fh = open(save, "w")
-            subprocess.check_call(" ".join(cmd), shell=True, stdin=fh, stdout=fh, stderr=fh)
-            fh.close()
+            with open(save, "w") as fh:
+                fh.write(stringIO.getvalue())
         else:
-            proc = subprocess.Popen(" ".join(cmd), shell=True, stdout=subprocess.PIPE)
-            out = proc.communicate()[0]
-            #print the output of the child process to stdout
-            print (out)
-        os.chdir(cur_dir)
+            print stringIO.getvalue()
         sys.stdout.write("passed\n")
     except Exception, e:
         sys.stderr.write(format_traceback(sys.exc_info()))
@@ -178,6 +179,8 @@ def main():
                         default="", help="Where to save plots? (directory)")
     parser.add_argument("-f", "--file", dest="file",
                         default="png", help="File ending")
+    parser.add_argument("--maxvalue", dest="maxvalue", type=float, required=True,
+                        help="Replace all y values higher than this")
     parser.add_argument("-c", "--cut", dest="cut", default=sys.maxint,
                         type=int, help="Cut experiment pickles after a specified number of trials.")
 
@@ -234,7 +237,7 @@ def main():
             tmp_save = save_dir
         sys.stdout.write("generateTexTable.py ... %s ..." % tmp_save)
         ret = _generate_tex_table(pkl_list=pkl_list, name_list=name_list,
-                            save=tmp_save, log=log, cut=args.cut)
+                                  save=tmp_save, log=log, cut=args.cut)
         if ret is not None:
             print ret
 
@@ -260,20 +263,22 @@ def main():
 
     # Error Trace with Std
     if save_dir is not "":
-        tmp_save = os.path.join(save_dir, "TraceWithStd_perEval_%s.%s" % (time_str, args.file))
+        tmp_save = os.path.join(save_dir, "MeanTrace_perEval_%s.%s" % (time_str, args.file))
     else:
         tmp_save = save_dir
-    sys.stdout.write("TraceWithStd_perEval.py ... %s ..." % tmp_save)
+    sys.stdout.write("MeanTrace_perEval.py ... %s ..." % tmp_save)
     _trace_with_std_per_eval(pkl_list=pkl_list, name_list=name_list,
-                             save=tmp_save, log=log, cut=args.cut)
+                             save=tmp_save, log=log, cut=args.cut,
+                             maxvalue=args.maxvalue)
 
     if save_dir is not "":
-        tmp_save = os.path.join(save_dir, "TraceWithStd_perTime_%s.%s" % (time_str, args.file))
+        tmp_save = os.path.join(save_dir, "MeanTrace_perTime_%s.%s" % (time_str, args.file))
     else:
         tmp_save = save_dir
-    sys.stdout.write("TraceWithStd_perTime.py ... %s ..." % tmp_save)
+    sys.stdout.write("MeanTrace_perTime.py ... %s ..." % tmp_save)
     _trace_with_std_per_time(pkl_list=pkl_list, name_list=name_list,
-                             save=tmp_save, log=log, cut=args.cut)
+                             save=tmp_save, log=log, cut=args.cut,
+                             maxvalue=args.maxvalue)
 
 if __name__ == "__main__":
     main()

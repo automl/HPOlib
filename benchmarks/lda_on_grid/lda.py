@@ -17,8 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import HPOlib.benchmark_util as benchmark_util
-import HPOlib.benchmark_functions as benchmark_functions
+import HPOlib.benchmarks.lda_on_grid
+import HPOlib.benchmarks.benchmark_util as benchmark_util
+
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -27,7 +28,7 @@ __credits__ = ["Jasper Snoek", "Ryan P. Adams", "Hugo Larochelle"]
 
 def main(params, ret_time=False, **kwargs):
     print 'Params: ', params
-    y = benchmark_functions.save_lda_on_grid(params, ret_time=ret_time, **kwargs)
+    y = HPOlib.benchmarks.lda_on_grid.save_lda_on_grid(params, ret_time=ret_time, **kwargs)
     print 'Result: ', y
     return y
 

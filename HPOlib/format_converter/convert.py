@@ -18,63 +18,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from argparse import ArgumentParser
-import os
+from argparse import ArgumentParser, FileType
 from string import upper
-import sys
-import tempfile
 
-import smac_to_spearmint
-import tpe_to_smac
+import pb_parser
+import pcs_parser
+import pyll_parser
 
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
-
-
-def smac_to_spearmint_helper(space, save=""):
-    # print "Convert %s from SMAC to SPEARMINT" % space
-    return smac_to_spearmint.convert_smac_to_spearmint(space)
-
-
-def smac_to_tpe_helper(space, save=""):
-    print "This is not yet implemented"
-
-
-def spearmint_to_smac_helper(space, save=""):
-    print "This is not yet implemented"
-
-
-def spearmint_to_tpe_helper(space, save=""):
-    print "This is not yet implemented"
-
-
-def tpe_to_spearmint_helper(space, save=""):
-    try:
-        import hyperopt
-    except ImportError:
-        print "Cannot find hyperopt. To use this converter, modify $PYTHONPATH to contain a hyperopt installation"
-
-    # First convert to smac
-    tmp = tpe_to_smac.convert_tpe_to_smac_from_file(space)
-    handle, tmp_file_name = tempfile.mkstemp()
-    fh = open(tmp_file_name, 'w')
-    fh.write(tmp)
-    fh.close()
-
-    # From smac convert to spearmint
-    new_space = smac_to_spearmint.convert_smac_to_spearmint(tmp_file_name)
-
-    os.remove(tmp_file_name)
-    return new_space
-
-
-def tpe_to_smac_helper(space, save=""):
-    try:
-        import hyperopt
-    except ImportError:
-        print "Cannot find hyperopt. To use this converter, modify $PYTHONPATH to contain a hyperopt installation"
-    return tpe_to_smac.convert_tpe_to_smac_from_file(space)
 
 
 def main():
@@ -92,17 +45,11 @@ def main():
                                                          'TPE', 'Tpe', 'tpe', 'hyperopt',
                                                          'SPEARMINT', 'Spearmint', 'spearmint'],
                         default="", help="Convert to which format?", required=True)
-    parser.add_argument("-f", "--file", dest="space",
-                        default="", help="Where is the searchspace to be converted?", required=True)
-    parser.add_argument("-s", "--save", dest="save",
+    parser.add_argument('input_file', nargs='?', type=FileType('r'))
+    parser.add_argument("-s", "--save", dest="save", metavar="destination",
                         default="", help="Where to save the new searchspace?")
 
     args, unknown = parser.parse_known_args()
-
-    space = os.path.abspath(args.space)
-    if not os.path.isfile(space):
-        print "%s is not a valid path" % space
-        sys.exit(1)
 
     # Unifying strings
     args.conv_to = upper(args.conv_to)
@@ -110,24 +57,31 @@ def main():
     if args.conv_from == "HYPEROPT":
         args.conv_from = "TPE"
     if args.conv_to == "HYPEROPT":
-        args.conv_to == "TPE"
+        args.conv_to = "TPE"
 
-    if args.conv_to == args.conv_from:
-        print "Converting from %s to %s makes no sense" % (args.conv_to, args.conv_from)
+    if args.input_file is None:
+        raise ValueError("No input file given")
 
-    # This is like a switch statement
-    options = {'SMAC': {'SPEARMINT': smac_to_spearmint_helper,
-                         'TPE': smac_to_tpe_helper},
-               'SPEARMINT': {'SMAC': spearmint_to_smac_helper,
-                             'TPE': spearmint_to_tpe_helper},
-               'TPE': {'SPEARMINT': tpe_to_spearmint_helper,
-                       'SMAC': tpe_to_smac_helper}
-               }
-    new_space = options[args.conv_from][args.conv_to](space, args.save)
+    read_options = {"SMAC": pcs_parser.read,
+                    "SPEARMINT": pb_parser.read,
+                    "TPE": pyll_parser.read
+                    }
+    # First read searchspace
+    print "Reading searchspace..."
+    searchspace = read_options[args.conv_from](args.input_file)
+    print "...done. Found %d params" % len(searchspace)
+
+    write_options = {"SMAC": pcs_parser.write,
+                     "SPEARMINT": pb_parser.write,
+                     "TPE": pyll_parser.write
+                     }
+    new_space = write_options[args.conv_to](searchspace)
+
+    # No write it
     if args.save != "":
-        fh = open(args.save, 'w')
-        fh.write(new_space)
-        fh.close()
+        output_fh = open(args.save, 'w')
+        output_fh.write(new_space)
+        output_fh.close()
     else:
         print new_space
 

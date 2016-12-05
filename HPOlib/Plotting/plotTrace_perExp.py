@@ -34,11 +34,14 @@ __contact__ = "automl.org"
 
 
 def plot_optimization_trace_cv(trial_list, name_list, optimum=0, title="",
-                               log=True, save="", y_max=0, y_min=0):
-    markers =plot_util.get_plot_markers()
-    colors = plot_util.get_plot_colors()
-    linestyles = itertools.cycle(['-'])
-    size = 1
+                               log=True, save="", y_max=0, y_min=0,
+                               linewidth=1,
+                               linestyles=plot_util.get_empty_iterator(),
+                               colors=None, markers=plot_util.get_empty_iterator(),
+                               markersize=6, ylabel=None, xlabel=None):
+
+    if colors is None:
+        colors= plot_util.get_plot_colors()
 
     ratio = 5
     gs = matplotlib.gridspec.GridSpec(ratio, 1)
@@ -64,25 +67,29 @@ def plot_optimization_trace_cv(trial_list, name_list, optimum=0, title="",
             x = range(1, len(tr)+1)
             y = tr
             if not leg:
-                ax1.plot(x, y, color=c, linewidth=size, linestyle=l, label=name_list[i][0])
+                ax1.plot(x, y, color=c, linewidth=linewidth,
+                         markersize=markersize, label=name_list[i][0])
                 leg = True
-            ax1.plot(x, y, color=c, linewidth=size, linestyle=l)
+            ax1.plot(x, y, color=c, linewidth=linewidth, markersize=markersize)
             min_val = min(min_val, min(tr))
             max_val = max(max_val, max(tr))
             max_trials = max(max_trials, len(tr))
 
     # Maybe plot on logscale
     ylabel = ""
-
-    if log:
-        ax1.set_ylabel("log10(Minfunction value)" + ylabel)
-    else:
-        ax1.set_ylabel("Minfunction value" + ylabel)
+    if ylabel is None:
+        if log:
+            ylabel = "log10(Minfunction value)"
+        else:
+            ylabel = "Minfunction value"
+    ax1.set_ylabel(ylabel)
 
     # Descript and label the stuff
     leg = ax1.legend(loc='best', fancybox=True)
     leg.get_frame().set_alpha(0.5)
-    ax1.set_xlabel("#Function evaluations")
+    if xlabel is None:
+        xlabel = "#Function evaluations"
+    ax1.set_xlabel(xlabel)
 
     if y_max == y_min:
          # Set axes limits
@@ -101,8 +108,14 @@ def plot_optimization_trace_cv(trial_list, name_list, optimum=0, title="",
         show()
 
 
-def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
-         y_min=0, y_max=0):
+def main(pkl_list, name_list, autofill, optimum=0, maxvalue=sys.maxint,
+         save="", title="", log=False,
+         y_min=0, y_max=0, linewidth=1, linestyles=plot_util.get_single_linestyle(),
+         colors=None, markers=plot_util.get_empty_iterator(),
+         markersize=6, ylabel=None, xlabel=None):
+
+    if colors is None:
+        colors = plot_util.get_plot_colors()
 
     trial_list = list()
     for i in range(len(pkl_list)):
@@ -113,7 +126,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
             trials = cPickle.load(fh)
             fh.close()
 
-            trace = plot_util.get_Trace_cv(trials)
+            trace = plot_util.get_Trace_cv(trials, maxvalue=maxvalue)
             tmp_trial_list.append(trace)
             max_len = max(max_len, len(trace))
         trial_list.append(list())
@@ -123,7 +136,10 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
             trial_list[-1].append(np.array(tr))
 
     plot_optimization_trace_cv(trial_list, name_list, optimum, title=title, log=log,
-                            save=save, y_min=y_min, y_max=y_max)
+                               save=save, y_min=y_min, y_max=y_max,
+                               linewidth=linewidth, linestyles=linestyles,
+                               colors=colors, markers=markers,
+                               markersize=markersize, ylabel=ylabel, xlabel=xlabel)
 
     if save != "":
         sys.stdout.write("Saved plot to " + save + "\n")
@@ -131,7 +147,7 @@ def main(pkl_list, name_list, autofill, optimum=0, save="", title="", log=False,
         sys.stdout.write("..Done\n")
 
 if __name__ == "__main__":
-    prog = "python plotTraceWithStd.py WhatIsThis <oneOrMorePickles> [WhatIsThis <oneOrMorePickles>]"
+    prog = "python plotTrace_perExp.py WhatIsThis <oneOrMorePickles> [WhatIsThis <oneOrMorePickles>]"
     description = "Plot a Trace with std for multiple experiments"
 
     parser = ArgumentParser(description=description, prog=prog)
@@ -151,6 +167,8 @@ if __name__ == "__main__":
                         default=0, help="Maximum of the plot")
     parser.add_argument("--min", dest="min", type=float,
                         default=0, help="Minimum of the plot")
+    parser.add_argument("--maxvalue", dest="maxvalue", default=10000,
+                        type=float, help="replace all y values higher than this")
     parser.add_argument("-s", "--save", dest="save",
                         default="", help="Where to save plot instead of showing it?")
     parser.add_argument("-t", "--title", dest="title",
@@ -162,5 +180,7 @@ if __name__ == "__main__":
 
     pkl_list_main, name_list_main = plot_util.get_pkl_and_name_list(unknown)
 
-    main(pkl_list=pkl_list_main, name_list=name_list_main, autofill=args.autofill, optimum=args.optimum,
-         save=args.save, title=args.title, log=args.log, y_min=args.min, y_max=args.max)
+    main(pkl_list=pkl_list_main, name_list=name_list_main,
+         autofill=args.autofill, optimum=args.optimum, maxvalue=args.maxvalue,
+         save=args.save, title=args.title, log=args.log, y_min=args.min,
+         y_max=args.max)

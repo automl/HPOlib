@@ -19,8 +19,10 @@
 import sys
 import time
 
-import HPOlib.benchmark_util as benchmark_util
-import HPOlib.benchmark_functions as benchmark_functions
+import HPOlib.benchmarks.benchmark_functions as benchmark_functions
+
+import HPOlib.benchmarks.benchmark_util as benchmark_util
+
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"

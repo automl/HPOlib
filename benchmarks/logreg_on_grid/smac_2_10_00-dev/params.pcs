@@ -1,0 +1,5 @@
+lrate integer [0, 10] [0]
+l2_reg integer [0, 10] [0]
+batchsize integer [0, 7] [0]
+n_epochs integer [0, 9] [0]
+

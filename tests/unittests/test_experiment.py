@@ -52,10 +52,11 @@ class ExperimentTest(unittest.TestCase):
 
     def test_init(self):
         # TODO: Somehow test in which folder the experiment is created
-        # TODO: Remove the case that it is always saved automatically
+        # TODO: Remove the case that it is saved
         exp = Experiment.Experiment(".", "test_exp")
         _sanity_check(exp)
         exp.title = "test"
+        exp._save_jobs()
         del exp
 
         # Make sure reloading works
@@ -108,6 +109,32 @@ class ExperimentTest(unittest.TestCase):
         self.assertEqual(len(experiment.get_broken_jobs()), 1)
         self.assertEqual(experiment.trials[9]['result'], 1000)
         self.assertNotEqual(experiment.trials[8]['result'], np.NaN)
+
+        # and now the same thing for getting the test results...
+        # Complete jobs
+        experiment.set_one_test_fold_running(2, 0)
+        experiment.set_one_test_fold_complete(2, 0, 1, 1)
+        self.assertRaises(ValueError, experiment.set_one_test_fold_running,
+                          2, 1)
+        self.assertRaises(ValueError, experiment.set_one_test_fold_complete,
+                          2, 1, 1, 1)
+        # Running Jobs
+        experiment.set_one_test_fold_running(6, 0)
+        experiment.set_one_test_fold_running(7, 0)
+        # Broken Jobs
+        experiment.set_one_test_fold_running(8, 0)
+        experiment.set_one_test_fold_crashed(8, 0, 1000, 1)
+        experiment.set_one_test_fold_running(9, 0)
+        experiment.set_one_test_fold_crashed(9, 0, 1000, 1)
+
+        self.assertEqual(len(experiment.get_candidate_test_jobs()), 5)
+        self.assertEqual(len(experiment.get_complete_test_jobs()), 1)
+        # Actually, this cannot happen right now...
+        self.assertEqual(len(experiment.get_incomplete_test_jobs()), 0)
+        self.assertEqual(len(experiment.get_running_test_jobs()), 2)
+        self.assertEqual(len(experiment.get_broken_test_jobs()), 2)
+        self.assertEqual(experiment.trials[9]['test_result'], 1000)
+        self.assertNotEqual(experiment.trials[8]['test_result'], np.NaN)
         
     def test_get_arg_best(self):
         experiment = Experiment.Experiment(".", "test_exp", folds=2)
@@ -117,15 +144,25 @@ class ExperimentTest(unittest.TestCase):
         [experiment.set_one_fold_running(i, 1) for i in range(10)]
         [experiment.set_one_fold_complete(i, 1, i, 1) for i in range(10)]
         self.assertEqual(experiment.get_arg_best(), 0)
+        self.assertEqual(experiment.get_best(), 5.0)
 
     def test_get_arg_best_NaNs(self):
         experiment = Experiment.Experiment(".", "test_exp", folds=2)
         [experiment.add_job({"x": i}) for i in range(10)]
         [experiment.set_one_fold_running(i, 0) for i in range(10)]
-        [experiment.set_one_fold_complete(i, 0, 10 - i, 1) for i in range(10)]
+        [experiment.set_one_fold_complete(i, 0, 11 - i, 1) for i in range(10)]
         [experiment.set_one_fold_running(i, 1) for i in range(10)]
-        [experiment.set_one_fold_complete(i, 1, i, 1) for i in range(1, 10)]
+        [experiment.set_one_fold_complete(i, 1, i, 1) for i in range(1, 6)]
+        [experiment.set_one_fold_complete(i, 1, i, 1) for i in range(7, 10)]
         self.assertEqual(experiment.get_arg_best(), 1)
+        self.assertEqual(experiment.get_best(), 5.5)
+        self.assertEqual(experiment.get_arg_best(consider_incomplete=True), 6)
+        self.assertEqual(experiment.get_best(), 5.5)
+
+    def test_get_arg_best_no_results(self):
+        experiment = Experiment.Experiment(".", "test_exp", folds=2)
+        [experiment.add_job({"x": i}) for i in range(10)]
+        self.assertRaises(ValueError, experiment.get_arg_best)
         
     def test_add_job(self):
         exp = Experiment.Experiment(".", "test_exp", folds=5)
@@ -133,22 +170,77 @@ class ExperimentTest(unittest.TestCase):
         self.assertEqual(len(exp.instance_order), 0)
 
         _id = exp.add_job({"x": 1, "y": 2})
+        trial = exp.get_trial_from_id(_id)
         self.assertEqual(len(exp.trials), 1)
         self.assertEqual(len(exp.instance_order), 0)
-        self.assertEqual(exp.get_trial_from_id(_id)['instance_results'].shape,
-                         (5,))
-        self.assertEqual(exp.get_trial_from_id(_id)['instance_durations'].shape,
-                         (5,))
-        self.assertEqual(exp.get_trial_from_id(_id)['instance_status'].shape,
-                         (5,))
-        self.assertDictEqual(exp.get_trial_from_id(_id)['params'], {"x": 1, "y": 2})
+        self.assertDictEqual(trial['params'], {"x": 1, "y": 2})
         _sanity_check(exp)
+
+    # There is no seperate method which checks that set_one_fold_running
+    # works, as this is implicitly tested in test_set_one_fold_crashed and
+    # test_set_one_fold_complete
+
+    def test_clean_test_outputs(self):
+        experiment = Experiment.Experiment(".", "test_exp", folds=2)
+        for i in range(2):
+            _id = experiment.add_job({"x": i})
+            experiment.set_one_fold_running(_id, 0)
+            experiment.set_one_fold_running(_id, 1)
+            experiment.set_one_fold_complete(_id, 0, 1, 1, "")
+            experiment.set_one_fold_complete(_id, 1, 2, 2, "")
+            experiment.set_one_test_fold_running(_id, 0)
+            experiment.set_one_test_fold_complete(_id, 0, 1, 5, "")
+        self.assertEqual(experiment.total_wallclock_time, 16)
+        experiment.clean_test_outputs(0)
+        trial = experiment.get_trial_from_id(0)
+        self.assertEqual(experiment.total_wallclock_time, 11)
+        self.assertFalse(np.isfinite(trial['test_duration']))
+        self.assertFalse(np.isfinite(trial['test_result']))
+        self.assertFalse(np.isfinite(trial['test_std']))
+        self.assertEqual(trial['test_status'], 0)
+        self.assertFalse(all(np.isfinite(trial['test_instance_durations'])))
+        self.assertFalse(all(np.isfinite(trial['test_instance_results'])))
+        self.assertEqual(np.sum(trial['test_instance_status']), 0)
+
+    def test_set_one_fold_complete(self):
+        experiment = Experiment.Experiment(".", "test_exp", folds=1)
+        experiment.add_job({"x": 0})
+        experiment.set_one_fold_running(0, 0)
+        experiment.set_one_fold_complete(0, 0, 1000, 0)
+        self.assertEqual(len(experiment.trials), 1)
+        self.assertEqual(experiment.trials[0]['instance_status'][0],
+                         Experiment.COMPLETE_STATE)
+
+        # Test that the target fold was actually running
+        self.assertRaises(AssertionError, experiment.set_one_fold_crashed,
+                          0, 0, 1000, 0)
 
     def test_set_one_fold_crashed(self):
         experiment = Experiment.Experiment(".", "test_exp", folds=1)
         experiment.add_job({"x": 0})
         experiment.set_one_fold_running(0, 0)
         experiment.set_one_fold_crashed(0, 0, 1000, 0)
+        self.assertEqual(len(experiment.trials), 1)
+        self.assertEqual(experiment.trials[0]['instance_status'][0],
+                         Experiment.BROKEN_STATE)
+
+        # Test that the target fold was actually running
+        self.assertRaises(AssertionError, experiment.set_one_fold_crashed,
+                          0, 0, 1000, 0)
+
+    def test_additional_data(self):
+        experiment = Experiment.Experiment(".", "test_exp", folds=1)
+        id0 = experiment.add_job({"x": 0})
+        experiment.set_one_fold_running(id0, 0)
+        experiment.set_one_fold_complete(id0, 0, 0.1, 0, additional_data="A")
+        self.assertEqual("A", experiment.get_trial_from_id(id0)
+            ['additional_data'][0])
+
+        id1 = experiment.add_job({"x": 1})
+        experiment.set_one_fold_running(id1, 0)
+        experiment.set_one_fold_crashed(id1, 0, 1, 0, additional_data="B")
+        self.assertEqual("B", experiment.get_trial_from_id(id1)
+            ['additional_data'][0])
         
     def test_one_fold_workflow(self):
         experiment = Experiment.Experiment(".", "test_exp", folds=5)

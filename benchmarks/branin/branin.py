@@ -17,10 +17,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import HPOlib.benchmark_util as benchmark_util
-import HPOlib.benchmark_functions as benchmark_functions
-
 import time
+
+import HPOlib.benchmarks.benchmark_functions as benchmark_functions
+
+import HPOlib.benchmarks.benchmark_util as benchmark_util
+
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"

@@ -16,10 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import time
+import HPOlib.benchmarks.svm_on_grid
 
-import HPOlib.benchmark_util as benchmark_util
-import HPOlib.benchmark_functions as benchmark_functions
+import HPOlib.benchmarks.benchmark_util as benchmark_util
+
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
 __contact__ = "automl.org"
@@ -28,7 +28,9 @@ __credits__ = ["Jasper Snoek", "Ryan P. Adams", "Hugo Larochelle"]
 
 def main(params, ret_time=False, **kwargs):
     print 'Params: ', params, '\n'
-    y = benchmark_functions.save_svm_on_grid(params, opt_time=ret_time, **kwargs)
+    y = HPOlib.benchmarks.svm_on_grid.save_svm_on_grid(params,
+                                                       ret_time=ret_time,
+                                                       **kwargs)
     print 'Result: ', y
     return y
 

@@ -22,6 +22,7 @@ import logging
 import os
 import subprocess
 import sys
+import inspect
 
 logger = logging.getLogger("HPOlib.check_before_start")
 
@@ -60,44 +61,38 @@ def _check_modules():
     except:
         raise ImportError("Scipy cannot be imported. Are you sure that it's installed?")
 
-    try:
-        import theano
-        logger.debug("\tTheano: %s" % str(theano.__version__))
-    except ImportError:
-        logger.warning("Theano not found. You might need this to run some "
-                       "more complex benchmarks!")
-
-    if 'cuda' not in os.environ['PATH']:
-        logger.warning("CUDA not in $PATH")
-
 
 def _check_config(experiment_dir):
     # check whether config file exists
     config_file = os.path.join(experiment_dir, "config.cfg")
     if not os.path.exists(config_file):
-        logger.warn("There is no config.cfg in %s, all options need to be provided by CLI arguments" % experiment_dir)
+        logger.warn("There is no config.cfg in %s, all options need to be "
+                    "provided as CLI arguments" % experiment_dir)
 
 
 def check_optimizer(optimizer):
+    # *parser.py files were integrated into optimizer class files but parser variable is still used to avoid too many
+    # variable changes
     path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "optimizers", optimizer)
     if os.path.isdir(path):
         # User told us, e.g. "tpe"
         # Optimizer is in our optimizer directory
         # Now check how many versions are present
-        parser = glob.glob(os.path.join(path, '*_parser.py'))
+        parser = glob.glob(path + '*.py')
+        logger.info("parser %s", parser)
         if len(parser) > 1:
             logger.critical("Sorry I don't know which optimizer to use: %s",
                             parser)
             sys.exit(1)
-        version = parser[0][:-10]
-    elif len(glob.glob(path + '*_parser.py')) == 1:
-        parser = glob.glob(path + '*_parser.py')
-        version = parser[0][:-10]
-    elif len(glob.glob(path + '*_parser.py')) > 1:
+        version = parser[0][:-3]
+    elif len(glob.glob(path + '.py')) == 1:
+        parser = glob.glob(path + '.py')
+        version = parser[0][:-3]
+    elif len(glob.glob(path + '.py')) > 1:
         # Note this is a different case
         # User told us e.g. "tpe/hyperopt_august" but this was not specific enough
         logger.critical("Sorry I don't know which optimizer to use: %s",
-                        glob.glob(path + '*_parser.py'))
+                        glob.glob(path + '*.py'))
         sys.exit(1)
     else:
         logger.critical("We cannot find: %s", path)
@@ -113,10 +108,14 @@ def check_optimizer(optimizer):
                         "optimizer: %s.py", version)
         sys.exit(1)
 
-    # Check the optimizer dependencies
-    optimizer_module = imp.load_source(version, version + ".py")
-    optimizer_module.check_dependencies()
-    return version
+    # dynamically load optimizer class which is abstracted by OptimizerAlgorithm
+    imp.load_source("opt", version + ".py")
+    import opt
+    opt_class = [m[1] for m in inspect.getmembers(opt, inspect.isclass) if m[0] != "OptimizerAlgorithm"]
+    obj = getattr(opt, opt_class[0].__name__)
+    opt_obj = obj()
+    opt_obj.check_dependencies()
+    return version, opt_obj
 
 
 # noinspection PyUnusedLocal

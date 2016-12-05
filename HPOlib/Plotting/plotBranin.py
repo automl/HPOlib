@@ -18,7 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from argparse import ArgumentParser
-
 import cPickle
 import itertools
 import sys
@@ -28,7 +27,7 @@ import matplotlib.gridspec as gridSpec
 import matplotlib.pyplot
 import numpy as np
 
-import HPOlib.benchmark_functions
+import HPOlib.benchmarks.benchmark_functions
 import HPOlib.Plotting.plot_util as plotUtil
 
 __authors__ = ["Katharina Eggensperger", "Matthias Feurer"]
@@ -64,7 +63,7 @@ def plot_contour(trial_list, name_list, save="", title=""):
     for i in range(len(xi)):
         for j in range(len(yi)):
             #z[j, i] = np.power(np.e, branin.branin({"x":xi[i], "y":yi[j]}))
-            z[j, i] = HPOlib.benchmark_functions.branin(x=xi[i], y=yi[j])
+            z[j, i] = HPOlib.benchmarks.benchmark_functions.branin(x=xi[i], y=yi[j])
     xi, yi = np.meshgrid(xi, yi)
     cax = ax.contourf(xi, yi, z, 50, cmap=matplotlib.cm.gray)
     fig.colorbar(cax)

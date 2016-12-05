@@ -1,13 +1,23 @@
+# Documentation
+docs/build/*
+
 *.py[cod]
 
 # Optimizers
 *_src*
+optimizers/irace/irace/
 
 # Runsolver
 runsolver/src/*
+runsolver-3.3.4.tar.bz2
 
 # benchmark runs
 HPOlib/benchmarks/*/*_*/*
+runsolver-3.3.4.tar.bz2
+
+# Java plugins
+HPOlib/dispatcher/MySQLDBTAE
+MySQLDBTAE.tar.gz
 
 # C extensions
 *.so
@@ -32,6 +42,7 @@ __pycache__
 pip-log.txt
 
 # Unit test / coverage reports
+htmlcov
 .coverage
 .tox
 nosetests.xml

@@ -41,7 +41,7 @@ def parse_config(config_files, allow_no_value=True, optimizer_version="",
     config.read(config_files)
     if cli_values is not None:
         config.readfp(cli_values)
-    return  config
+    return config
 
 
 def check_config(config):
@@ -54,9 +54,36 @@ def check_config(config):
     if not config.has_option('HPOLIB', 'result_on_terminate') or \
             config.get('HPOLIB', 'result_on_terminate') == '':
         raise Exception('No result_on_terminate specified in .cfg')
-    if not config.has_option('HPOLIB', 'function') or \
-            config.get('HPOLIB', 'function') == '':
-        raise Exception('No function specified in .cfg')
     if config.getint('HPOLIB', "number_cv_folds") < 1:
         raise Exception("The number of crossvalidation folds must be at least one!")
+
+    # --------------------------------------------------------------------------
+    # Check for forbidden values/combinations
+    # --------------------------------------------------------------------------
+    if not config.getboolean('HPOLIB', 'use_HPOlib_time_measurement'):
+        runtime_on_terminate = config.getfloat('HPOLIB', 'runtime_on_terminate')
+        if runtime_on_terminate <= 0:
+            raise Exception('Configuration error: You cannot use the '
+                             'option "use_HPOlib_time_measurement = False'
+                             ' without setting "runtime_on_terminate" '
+                             'or setting a negative value for '
+                             '"runtime_on_terminate".')
+
+    # -----------
+    # Check function
+    # -----------
+    if config.has_option('HPOLIB', 'dispatcher'):
+        if config.get('HPOLIB', 'dispatcher') == 'runsolver_wrapper.py' and \
+            (not config.has_option('HPOLIB', 'function') or \
+             config.get('HPOLIB', 'function') == ''):
+            raise Exception('No function specified in .cfg')
+        elif config.get('HPOLIB', 'dispatcher') == 'python_function.py' and \
+            ((not config.has_option('HPOLIB', 'python_module') or \
+             config.get('HPOLIB', 'python_module') == '') or \
+            (not config.has_option('HPOLIB', 'python_function') or \
+             config.get('HPOLIB', 'python_function') == '')) :
+            raise Exception('No python_function and/or python_module specified in .cfg')
+    else:
+        raise Exception('No dispatcher given: %s')
+
     return True
