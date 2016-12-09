@@ -1,5 +1,7 @@
 HPOlib: A hyperparameter optimization library.
 ===============================================================
+
+This package is discontinued. We have merged all changes that we have done since the initial release into the master branch, hoping that they are useful for some of you. The current software has several known bugs, which can be found in the issue tracker. In case someone wants to continue working on HPOlib, we're happy to answer questions, accept and merge pull requests. If you're looking for a set of benchmarks, please use the predecessor [HPOlib2](github.com/automl/HPOlib2). HPOlib2 does not contain any optimization packages. We will add a list of Bayesian optimization packages to the documentation of HPOlib2.
  
 This software provides a commen interface to the three hyperparameter
 Optimization packages hyperopt (TPE), SMAC and spearmint. For further information,
@@ -9,26 +11,4 @@ documentation can be found at [http://hpolib.readthedocs.org](http://hpolib.read
 
 This software is licensed under the GPL license. You find the license text
 shipped with this package.
-
-
-=======
-
-Status for master branch:
-
-[![Build Status](https://travis-ci.org/automl/HPOlib.svg?branch=master)](https://travis-ci.org/automl/HPOlib)
-[![Code Health](https://landscape.io/github/automl/HPOlib/master/landscape.png)](https://landscape.io/github/automl/HPOlib/master)
-
-Status for development branch
-
-[![Build Status](https://travis-ci.org/automl/HPOlib.svg?branch=development)](https://travis-ci.org/automl/HPOlib)
-[![Code Health](https://landscape.io/github/automl/HPOlib/development/landscape.png)](https://landscape.io/github/automl/HPOlib/development)
-
-Issue tracking
-
-[![Issue Tracking](https://badge.waffle.io/automl/HPOlib.png?label=ready&title=Ready)](https://waffle.io/automl/HPOlib)
-
-Documentation
-
-[![Documentation Status](https://readthedocs.org/projects/hpolib/badge/?version=development)](http://hpolib.readthedocs.org/en/development/)
-=======
 
