@@ -6,6 +6,8 @@
 Welcome to HPOlib's documentation!
 ==================================
 
+This package is discontinued. We have merged all changes that we have done since the initial release into the master branch, hoping that they are useful for some of you. The current software has several known bugs, which can be found in the issue tracker. In case someone wants to continue working on HPOlib, we're happy to accept and merge pull requests. If you're looking for a set of benchmarks, please use the predecessor `HPOlib2 <http://github.com/automl/HPOlib2>`_. HPOlib2 does not contain any optimization packages. We will add a list of Bayesian optimization packages to the documentation of HPOlib2.
+
 HPOlib is a package which aiming to simplify the development and use of hyperparameter optimization algorithms. It features benchmarks which have been used in papers introducing state-of-the-art hyperparameter optimization tools like spearmint and hyperopt. Furthermore, it provides a common interface to several Bayesian optimization packages as well as the possibility to add your own optimization package.
 
 Contents:
